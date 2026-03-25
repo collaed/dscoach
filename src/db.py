@@ -12,7 +12,8 @@ DB_CONFIG = {
 
 
 def get_db():
-    return pymysql.connect(**DB_CONFIG, cursorclass=pymysql.cursors.DictCursor, autocommit=True)
+    return pymysql.connect(**DB_CONFIG, cursorclass=pymysql.cursors.DictCursor, autocommit=True,
+                           ssl_disabled=True)
 
 
 def init_db():

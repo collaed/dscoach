@@ -420,4 +420,7 @@ def coachee_history():
 # ── Bootstrap ──
 
 with app.app_context():
-    init_db()
+    try:
+        init_db()
+    except Exception as e:
+        print(f"DB init warning: {e}")
