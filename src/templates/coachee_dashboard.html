@@ -3,32 +3,37 @@
 <title>My Dashboard</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
-a{color:#e94560;text-decoration:none}
-nav{display:flex;gap:1rem;align-items:center;margin-bottom:2rem;flex-wrap:wrap}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:0}
+nav{display:flex;gap:1rem;align-items:center;padding:1rem;flex-wrap:wrap;background:#16213e}
 nav .title{color:#e94560;font-size:1.3rem;font-weight:bold;margin-right:auto}
-nav a{padding:.4rem .8rem;border:1px solid #e94560;border-radius:6px;font-size:.9rem}
+nav a{color:#e94560;text-decoration:none;padding:.4rem .8rem;border:1px solid #e94560;border-radius:6px;font-size:.9rem}
 nav a:hover{background:#e94560;color:#fff}
-h2{color:#e94560;margin-bottom:.5rem}
-h3{color:#e94560;margin:1.2rem 0 .5rem}
-.section{background:#16213e;padding:1.2rem;border-radius:10px;margin-bottom:1rem}
-.alert{background:#e94560;color:#fff;padding:.8rem;border-radius:8px;margin-bottom:1rem;text-align:center}
+.tabs{display:flex;flex-wrap:wrap;gap:0;border-bottom:2px solid #333;background:#16213e;padding:0 1rem;position:sticky;top:0;z-index:10}
+.tab{padding:.8rem 1.2rem;cursor:pointer;color:#888;border-bottom:3px solid transparent;position:relative;font-size:.95rem;user-select:none}
+.tab:hover{color:#e0e0e0}
+.tab.active{color:#e94560;border-bottom-color:#e94560}
+.tab .badge{position:absolute;top:4px;right:2px;background:#e94560;color:#fff;font-size:.7rem;padding:1px 5px;border-radius:8px;min-width:16px;text-align:center}
+.panel{display:none;padding:1rem;max-width:800px}
+.panel.active{display:block}
+.alert{background:#e94560;color:#fff;padding:.8rem;border-radius:8px;margin:1rem;text-align:center}
 .alert.paused{background:#f5a623;color:#000}
+h3{color:#e94560;margin:1rem 0 .5rem}
+.section{background:#16213e;padding:1rem;border-radius:10px;margin-bottom:1rem}
 textarea{width:100%;padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;min-height:100px;resize:vertical;font-size:.9rem}
-select{padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
+select,input[type=text]{padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
 button{padding:.5rem 1rem;background:#e94560;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.9rem;margin-top:.4rem}
 button.secondary{background:#333}
 .entry{border-bottom:1px solid #1a1a2e;padding:.5rem 0;font-size:.9rem}
 .entry:last-child{border:none}
 .time{color:#888;font-size:.8rem}
 .type{color:#e94560;font-weight:bold;font-size:.8rem;text-transform:uppercase}
-.badge{display:inline-block;padding:.1rem .4rem;border-radius:3px;font-size:.75rem}
-.badge.positive{background:#2d6a4f;color:#fff}
-.badge.negative{background:#e94560;color:#fff}
-.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:end}
+.badge-inline{display:inline-block;padding:.1rem .4rem;border-radius:3px;font-size:.75rem}
+.badge-inline.positive{background:#2d6a4f;color:#fff}
+.badge-inline.negative{background:#e94560;color:#fff}
+.contract{white-space:pre-wrap;font-size:.85rem;color:#aaa;padding:.5rem;background:#0f3460;border-radius:6px;max-height:60vh;overflow-y:auto}
 </style></head><body>
 <nav>
-<span class="title">🌟 My Dashboard</span>
+<span class="title">🌟 {{ coachee.name }}</span>
 <a href="/me/history">📖 History</a>
 <a href="/logout">Logout</a>
 </nav>
@@ -39,60 +44,104 @@ button.secondary{background:#333}
 <div class="alert">🛑 Dynamic stopped (safe word used). Written clarification required before proceeding.</div>
 {% endif %}
 
-<!-- Pause / Safe Word -->
-<div class="section">
-<h3>⚠️ Boundaries</h3>
-<form method="post" action="/me/pause" style="display:flex;gap:.5rem">
-<button type="submit" name="word" value="pause" class="secondary">⏸️ I need to pause</button>
-<button type="submit" name="word" value="RED" onclick="return confirm('This will STOP the dynamic. Are you sure?')">🛑 RED</button>
-</form>
+<div class="tabs">
+<div class="tab active" data-tab="rules">📜 Rules</div>
+<div class="tab" data-tab="morning">🌅 Morning{% if badges.morning %}<span class="badge">{{ badges.morning }}</span>{% endif %}</div>
+<div class="tab" data-tab="evening">🌙 Evening{% if badges.evening %}<span class="badge">{{ badges.evening }}</span>{% endif %}</div>
+<div class="tab" data-tab="tasks">📋 Tasks{% if badges.tasks %}<span class="badge">{{ badges.tasks }}</span>{% endif %}</div>
+<div class="tab" data-tab="conditioning">🧠 Mind{% if badges.conditioning %}<span class="badge">{{ badges.conditioning }}</span>{% endif %}</div>
+<div class="tab" data-tab="tracking">📊 Tracking</div>
+<div class="tab" data-tab="notes">💬 Notes{% if badges.notes %}<span class="badge">{{ badges.notes }}</span>{% endif %}</div>
+<div class="tab" data-tab="boundaries">⚠️ Boundaries</div>
 </div>
 
-<!-- Morning / Evening Check-in -->
+<!-- RULES TAB -->
+<div class="panel active" id="tab-rules">
 <div class="section">
-<h3>📝 Check-In</h3>
-{% if today_checkins %}
-<p style="color:#888;font-size:.85rem;margin-bottom:.5rem">Today's entries:</p>
-{% for ci in today_checkins %}
-<div class="entry"><span class="type">{{ ci.checkin_type }}</span> <span class="time">{{ ci.created_at }}</span><div style="white-space:pre-wrap">{{ ci.content }}</div></div>
-{% endfor %}
-<hr style="border-color:#333;margin:.8rem 0">
+<h3>📜 Contract & Rules</h3>
+{% if coachee.contract_text %}
+<div class="contract">{{ coachee.contract_text }}</div>
+{% else %}
+<p style="color:#888">No contract set yet. Your coach will define the rules here.</p>
 {% endif %}
+</div>
+{% if acks %}
+<div class="section">
+<h3>✅ Recent Acknowledgements</h3>
+{% for a in acks %}
+<div class="entry">
+<span class="badge-inline {{ a.ack_type }}">{{ a.ack_type }}</span> {{ a.description }}
+{% if a.notes %}<br><em style="color:#aaa">{{ a.notes }}</em>{% endif %}
+<div class="time">{{ a.created_at }}</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+
+<!-- MORNING TAB -->
+<div class="panel" id="tab-morning">
+<div class="section">
+<h3>🌅 Morning Check-In</h3>
+<p style="color:#888;font-size:.85rem;margin-bottom:.8rem">To be completed within 2 hours of starting your day.</p>
+{% for ci in today_checkins if ci.checkin_type == 'morning' %}
+<div class="entry">
+<div class="time">✅ Submitted at {{ ci.created_at }}</div>
+<div style="white-space:pre-wrap">{{ ci.content }}</div>
+</div>
+{% endfor %}
+{% if not today_checkins or not today_checkins|selectattr('checkin_type','equalto','morning')|list %}
 <form method="post" action="/me/checkin">
-<select name="checkin_type" style="margin-bottom:.5rem">
-<option value="morning">🌅 Morning Check-In</option>
-<option value="evening">🌙 Evening Reflection</option>
-<option value="weekly">📊 Weekly Review</option>
-</select>
-<textarea name="content" required placeholder="How are you feeling? What are your intentions?..."></textarea>
-<button type="submit">Submit Check-In</button>
+<input type="hidden" name="checkin_type" value="morning">
+<textarea name="content" required placeholder="• How you are feeling physically
+• How you slept
+• One intention for the day
+• One behavior you will consciously improve today
+• One physical activity goal
+
+Close with your sign-off..."></textarea>
+<button type="submit">Submit Morning Check-In</button>
 </form>
+{% endif %}
+</div>
 </div>
 
-<!-- Mental Conditioning -->
-{% if conditioning %}
+<!-- EVENING TAB -->
+<div class="panel" id="tab-evening">
 <div class="section">
-<h3>🧠 Today's Mental Conditioning</h3>
-{% for mc in conditioning %}
-<div style="margin-bottom:1rem">
-<p>{{ mc.prompt_text }}</p>
-<form method="post" action="/me/conditioning/{{ mc.id }}">
-<textarea name="content" required placeholder="Your response..."></textarea>
-<button type="submit">Submit Response</button>
-</form>
+<h3>🌙 Evening Reflection</h3>
+<p style="color:#888;font-size:.85rem;margin-bottom:.8rem">To be completed within 1 hour of going to bed.</p>
+{% for ci in today_checkins if ci.checkin_type == 'evening' %}
+<div class="entry">
+<div class="time">✅ Submitted at {{ ci.created_at }}</div>
+<div style="white-space:pre-wrap">{{ ci.content }}</div>
 </div>
 {% endfor %}
-</div>
-{% endif %}
+{% if not today_checkins or not today_checkins|selectattr('checkin_type','equalto','evening')|list %}
+<form method="post" action="/me/checkin">
+<input type="hidden" name="checkin_type" value="evening">
+<textarea name="content" required placeholder="• What you did well in serving today
+• Where you fell short
+• One thing you successfully completed
+• One way you will improve tomorrow
 
-<!-- Pending Tasks -->
-{% if tasks %}
+Close with your sign-off..."></textarea>
+<button type="submit">Submit Evening Reflection</button>
+</form>
+{% endif %}
+</div>
+</div>
+
+<!-- TASKS TAB -->
+<div class="panel" id="tab-tasks">
 <div class="section">
 <h3>📋 Pending Tasks</h3>
+{% if tasks %}
 {% for t in tasks %}
-<div class="entry">
+<div class="entry" style="margin-bottom:1rem">
 <strong>{{ t.title }}</strong> <span class="type">{{ t.category }}</span>
 {% if t.due_date %} · Due: {{ t.due_date }}{% endif %}
+{% if t.frozen_after %}<br><span style="color:#f5a623;font-size:.8rem">⏰ Freezes at {{ t.frozen_after }}</span>{% endif %}
 {% if t.task_desc %}<div style="color:#aaa;font-size:.85rem">{{ t.task_desc }}</div>{% endif %}
 <form method="post" action="/me/task/{{ t.id }}" style="margin-top:.3rem">
 <textarea name="response" required placeholder="Report on this task..."></textarea>
@@ -100,47 +149,103 @@ button.secondary{background:#333}
 </form>
 </div>
 {% endfor %}
-</div>
+{% else %}
+<p style="color:#888">No pending tasks right now. Check back after your unveil time.</p>
 {% endif %}
+</div>
+</div>
 
-<!-- Tracking -->
+<!-- CONDITIONING TAB -->
+<div class="panel" id="tab-conditioning">
+<div class="section">
+<h3>🧠 Today's Mental Conditioning</h3>
+{% if conditioning %}
+{% for mc in conditioning %}
+<div style="margin-bottom:1rem">
+<p>{{ mc.prompt_text }}</p>
+<form method="post" action="/me/conditioning/{{ mc.id }}">
+<textarea name="content" required placeholder="Your response... include timestamps."></textarea>
+<button type="submit">Submit Response</button>
+</form>
+</div>
+{% endfor %}
+{% else %}
+<p style="color:#888">No conditioning prompt today, or you've already responded.</p>
+{% endif %}
+</div>
+</div>
+
+<!-- TRACKING TAB -->
+<div class="panel" id="tab-tracking">
 <div class="section">
 <h3>📊 Log Tracking</h3>
 <form method="post" action="/me/tracking">
-<div class="row" style="margin-bottom:.5rem">
-<select name="category">
-<option value="food">🍽️ Food</option>
+<select name="category" style="margin-bottom:.5rem;width:100%">
+<option value="food">🍽️ Food / Meals</option>
 <option value="hydration">💧 Hydration</option>
 <option value="alcohol">🍷 Alcohol</option>
 <option value="exercise">🏃 Exercise</option>
-<option value="emotional">💭 Emotional</option>
+<option value="emotional">💭 Emotional Regulation</option>
 </select>
-</div>
-<textarea name="content" required placeholder="What did you eat/drink/do? How did it go?"></textarea>
-<button type="submit">Log</button>
+<textarea name="content" required placeholder="What did you eat/drink/do? Details, duration, effort..."></textarea>
+<button type="submit">Log Entry</button>
 </form>
 </div>
-
-<!-- Notes -->
+{% if today_tracking %}
 <div class="section">
-<h3>💬 Send a Note</h3>
-<form method="post" action="/me/note">
-<textarea name="content" required placeholder="Write to your coach..."></textarea>
-<button type="submit">Send</button>
-</form>
-</div>
-
-<!-- Recent Acknowledgements -->
-{% if acks %}
-<div class="section">
-<h3>✅ Recent Acknowledgements</h3>
-{% for a in acks %}
+<h3>Today's Logs</h3>
+{% for l in today_tracking %}
 <div class="entry">
-<span class="badge {{ a.ack_type }}">{{ a.ack_type }}</span> {{ a.description }}
-{% if a.notes %}<br><em style="color:#aaa">{{ a.notes }}</em>{% endif %}
-<div class="time">{{ a.created_at }}</div>
+<span class="type">{{ l.category }}</span> {{ l.content }}
+<div class="time">{{ l.created_at }}</div>
 </div>
 {% endfor %}
 </div>
 {% endif %}
+</div>
+
+<!-- NOTES TAB -->
+<div class="panel" id="tab-notes">
+<div class="section">
+<h3>💬 Notes</h3>
+<form method="post" action="/me/note">
+<textarea name="content" required placeholder="Write to your coach..."></textarea>
+<button type="submit">Send Note</button>
+</form>
+</div>
+{% if notes %}
+<div class="section">
+<h3>Recent Notes</h3>
+{% for n in notes %}
+<div class="entry">
+<span class="type">{{ n.author_role }}</span> {{ n.content }}
+<div class="time">{{ n.created_at }}</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+
+<!-- BOUNDARIES TAB -->
+<div class="panel" id="tab-boundaries">
+<div class="section">
+<h3>⚠️ Safe Word & Pause</h3>
+<p style="color:#888;font-size:.85rem;margin-bottom:1rem">Your safe word is: <strong style="color:#e94560">{{ coachee.safe_word }}</strong></p>
+<form method="post" action="/me/pause" style="display:flex;gap:.5rem;flex-wrap:wrap">
+<button type="submit" name="word" value="pause" class="secondary">⏸️ I need to pause</button>
+<button type="submit" name="word" value="RED" onclick="return confirm('This will STOP the dynamic entirely. Are you sure?')">🛑 {{ coachee.safe_word }}</button>
+</form>
+</div>
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    });
+});
+</script>
 </body></html>

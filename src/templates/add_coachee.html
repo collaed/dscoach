@@ -10,7 +10,10 @@ h2{color:#e94560;margin-bottom:1.5rem}
 label{display:block;margin-bottom:.3rem;color:#a0a0b0;font-size:.9rem;margin-top:.8rem}
 input,textarea{width:100%;padding:.7rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:1rem}
 textarea{min-height:120px;resize:vertical}
+.row{display:flex;gap:1rem}
+.row>div{flex:1}
 button{margin-top:1.2rem;width:100%;padding:.8rem;background:#e94560;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer}
+.hint{color:#666;font-size:.8rem}
 </style></head><body>
 <p style="margin-bottom:1rem"><a href="/coach">← Back to Dashboard</a></p>
 <div class="card">
@@ -20,6 +23,18 @@ button{margin-top:1.2rem;width:100%;padding:.8rem;background:#e94560;color:#fff;
 <label>Username</label><input type="text" name="username" required>
 <label>Password</label><input type="password" name="password" required>
 <label>Safe Word (default: RED)</label><input type="text" name="safe_word" value="RED">
+<div class="row">
+<div>
+<label>Task Unveil Time</label>
+<input type="time" name="task_unveil_time" value="08:00">
+<div class="hint">Tasks become visible at this time</div>
+</div>
+<div>
+<label>Task Freeze Time</label>
+<input type="time" name="task_freeze_time" value="22:00">
+<div class="hint">Pending tasks lock after this time</div>
+</div>
+</div>
 <label>Contract / Boundaries</label><textarea name="contract" placeholder="Paste or write the consent and boundaries agreement here..."></textarea>
 <button type="submit">Create Coachee</button>
 </form>

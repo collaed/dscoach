@@ -16,6 +16,11 @@ button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border
 .entry{border-bottom:1px solid #1a1a2e;padding:.5rem 0;font-size:.9rem}
 .entry:last-child{border:none}
 .meta{color:#888;font-size:.8rem}
+.reserve-tag{background:#f5a623;color:#000;padding:.1rem .4rem;border-radius:3px;font-size:.75rem}
+.check{display:flex;align-items:center;gap:.5rem;margin-top:.6rem}
+.check input{width:auto}
+.hint{color:#666;font-size:.8rem}
+#assign-section{transition:opacity .2s}
 </style></head><body>
 <p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
 <h2>📋 Task Management</h2>
@@ -38,12 +43,19 @@ button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border
 <option value="daily">Daily</option>
 <option value="weekly">Weekly</option>
 </select>
+<div class="check">
+<input type="checkbox" name="is_reserve" id="is_reserve" value="1" onchange="document.getElementById('assign-section').style.opacity=this.checked?'0.3':'1'">
+<label for="is_reserve" style="margin:0;color:#f5a623">🏦 Reserve task (auto-assigned if no manual task sent by unveil time)</label>
+</div>
+<div id="assign-section">
 <label>Due Date (optional)</label><input type="date" name="due_date">
 <label>Assign to (hold Ctrl/Cmd to select multiple)</label>
-<select name="coachee_ids" multiple required>
+<select name="coachee_ids" multiple>
 {% for cc in coachees %}<option value="{{ cc.id }}">{{ cc.name }}</option>{% endfor %}
 </select>
-<button type="submit">Create & Assign</button>
+<div class="hint">Not needed for reserve tasks — they auto-assign.</div>
+</div>
+<button type="submit">Create Task</button>
 </form>
 </div>
 
@@ -52,6 +64,7 @@ button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border
 {% for t in templates %}
 <div class="entry">
 <strong>{{ t.title }}</strong> · {{ t.category }} · {{ t.recurrence }}
+{% if t.is_reserve %}<span class="reserve-tag">reserve</span>{% endif %}
 {% if t.description %}<br><span class="meta">{{ t.description }}</span>{% endif %}
 </div>
 {% else %}<p style="color:#888">No tasks created yet.</p>{% endfor %}

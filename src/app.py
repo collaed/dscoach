@@ -2,7 +2,7 @@ import os
 import hashlib
 import secrets
 from functools import wraps
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from flask import Flask, request, redirect, url_for, session, render_template_string, g
 from db import get_db, init_db
@@ -46,6 +46,56 @@ def close_db(exc):
         conn.close()
 
 
+def _auto_assign_reserves(coachee_id, coach_id):
+    """If no task was manually assigned today for this coachee, pick one reserve task."""
+    c = db().cursor()
+    c.execute("""SELECT COUNT(*) as cnt FROM task_assignment ta
+                 JOIN task_template tt ON ta.template_id=tt.id
+                 WHERE ta.coachee_id=%s AND DATE(ta.created_at)=CURDATE() AND tt.is_reserve=0""", (coachee_id,))
+    if c.fetchone()["cnt"] > 0:
+        return
+    # already got a reserve today?
+    c.execute("""SELECT COUNT(*) as cnt FROM task_assignment ta
+                 JOIN task_template tt ON ta.template_id=tt.id
+                 WHERE ta.coachee_id=%s AND DATE(ta.created_at)=CURDATE() AND tt.is_reserve=1""", (coachee_id,))
+    if c.fetchone()["cnt"] > 0:
+        return
+    # pick one reserve not yet assigned to this coachee
+    c.execute("""SELECT tt.id FROM task_template tt
+                 WHERE tt.coach_id=%s AND tt.is_reserve=1
+                 AND tt.id NOT IN (SELECT template_id FROM task_assignment WHERE coachee_id=%s)
+                 ORDER BY RAND() LIMIT 1""", (coach_id, coachee_id))
+    row = c.fetchone()
+    if row:
+        c.execute("SELECT task_unveil_time, task_freeze_time FROM coachee WHERE id=%s", (coachee_id,))
+        cc = c.fetchone()
+        today = date.today().isoformat()
+        vis = f"{today} {cc['task_unveil_time']}" if cc["task_unveil_time"] else None
+        frz = f"{today} {cc['task_freeze_time']}" if cc["task_freeze_time"] else None
+        c.execute("""INSERT INTO task_assignment (template_id, coachee_id, due_date, visible_after, frozen_after)
+                     VALUES (%s,%s,%s,%s,%s)""", (row["id"], coachee_id, today, vis, frz))
+
+
+def _freeze_overdue(coachee_id):
+    """Mark pending tasks as missed if past freeze time."""
+    c = db().cursor()
+    c.execute("""UPDATE task_assignment SET status='missed'
+                 WHERE coachee_id=%s AND status='pending' AND frozen_after IS NOT NULL AND frozen_after < NOW()""",
+              (coachee_id,))
+
+
+def _visible_tasks(coachee_id):
+    """Get tasks that are visible (past unveil time) and not yet frozen/completed."""
+    c = db().cursor()
+    c.execute("""SELECT ta.*, tt.title, tt.description as task_desc, tt.category
+                 FROM task_assignment ta JOIN task_template tt ON ta.template_id=tt.id
+                 WHERE ta.coachee_id=%s AND ta.status='pending'
+                 AND (ta.visible_after IS NULL OR ta.visible_after <= NOW())
+                 AND (ta.frozen_after IS NULL OR ta.frozen_after > NOW())
+                 ORDER BY ta.due_date""", (coachee_id,))
+    return c.fetchall()
+
+
 # ── Auth ──
 
 @app.route("/")
@@ -84,7 +134,6 @@ def logout():
 
 @app.route("/setup", methods=["GET", "POST"])
 def setup():
-    """One-time coach account creation."""
     c = db().cursor()
     c.execute("SELECT COUNT(*) as cnt FROM coach")
     if c.fetchone()["cnt"] > 0:
@@ -104,7 +153,6 @@ def coach_dashboard():
     c = db().cursor()
     c.execute("SELECT * FROM coachee WHERE coach_id=%s ORDER BY name", (session["user_id"],))
     coachees = c.fetchall()
-    # today's pending tasks per coachee
     for cc in coachees:
         c.execute("""SELECT COUNT(*) as cnt FROM task_assignment ta
                      JOIN task_template tt ON ta.template_id=tt.id
@@ -120,9 +168,11 @@ def coach_dashboard():
 def add_coachee():
     if request.method == "POST":
         c = db().cursor()
-        c.execute("INSERT INTO coachee (username, password_hash, name, coach_id, contract_text, safe_word) VALUES (%s,%s,%s,%s,%s,%s)",
+        c.execute("""INSERT INTO coachee (username, password_hash, name, coach_id, contract_text, safe_word,
+                     task_unveil_time, task_freeze_time) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
                   (request.form["username"], _hash(request.form["password"]), request.form["name"],
-                   session["user_id"], request.form.get("contract", ""), request.form.get("safe_word", "RED")))
+                   session["user_id"], request.form.get("contract", ""), request.form.get("safe_word", "RED"),
+                   request.form.get("task_unveil_time", "08:00"), request.form.get("task_freeze_time", "22:00")))
         return redirect(url_for("coach_dashboard"))
     return render_template_string(_tpl("add_coachee.html"))
 
@@ -158,20 +208,43 @@ def coach_view_coachee(cid):
                                  acks=acks, logs=logs, notes=notes, conditioning=conditioning)
 
 
+@app.route("/coach/coachee/<int:cid>/edit", methods=["POST"])
+@login_required("coach")
+def edit_coachee(cid):
+    c = db().cursor()
+    c.execute("""UPDATE coachee SET contract_text=%s, safe_word=%s, task_unveil_time=%s, task_freeze_time=%s
+                 WHERE id=%s AND coach_id=%s""",
+              (request.form.get("contract", ""), request.form.get("safe_word", "RED"),
+               request.form.get("task_unveil_time", "08:00"), request.form.get("task_freeze_time", "22:00"),
+               cid, session["user_id"]))
+    return redirect(url_for("coach_view_coachee", cid=cid))
+
+
 @app.route("/coach/tasks", methods=["GET", "POST"])
 @login_required("coach")
 def manage_tasks():
     c = db().cursor()
     if request.method == "POST":
-        c.execute("INSERT INTO task_template (coach_id, title, description, recurrence, category) VALUES (%s,%s,%s,%s,%s)",
+        is_reserve = 1 if request.form.get("is_reserve") else 0
+        c.execute("INSERT INTO task_template (coach_id, title, description, recurrence, category, is_reserve) VALUES (%s,%s,%s,%s,%s,%s)",
                   (session["user_id"], request.form["title"], request.form["description"],
-                   request.form["recurrence"], request.form["category"]))
+                   request.form["recurrence"], request.form["category"], is_reserve))
         tmpl_id = c.lastrowid
-        coachee_ids = request.form.getlist("coachee_ids")
-        due = request.form.get("due_date") or None
-        for cid in coachee_ids:
-            c.execute("INSERT INTO task_assignment (template_id, coachee_id, due_date) VALUES (%s,%s,%s)",
-                      (tmpl_id, int(cid), due))
+        if not is_reserve:
+            coachee_ids = request.form.getlist("coachee_ids")
+            due = request.form.get("due_date") or None
+            for cid_str in coachee_ids:
+                cid = int(cid_str)
+                c.execute("SELECT task_unveil_time, task_freeze_time FROM coachee WHERE id=%s", (cid,))
+                cc = c.fetchone()
+                today = date.today().isoformat()
+                vis = f"{today} {cc['task_unveil_time']}" if cc and cc["task_unveil_time"] else None
+                frz = f"{today} {cc['task_freeze_time']}" if cc and cc["task_freeze_time"] else None
+                if due:
+                    vis = f"{due} {cc['task_unveil_time']}" if cc and cc["task_unveil_time"] else None
+                    frz = f"{due} {cc['task_freeze_time']}" if cc and cc["task_freeze_time"] else None
+                c.execute("INSERT INTO task_assignment (template_id, coachee_id, due_date, visible_after, frozen_after) VALUES (%s,%s,%s,%s,%s)",
+                          (tmpl_id, cid, due or today, vis, frz))
         return redirect(url_for("manage_tasks"))
     c.execute("SELECT * FROM task_template WHERE coach_id=%s ORDER BY created_at DESC", (session["user_id"],))
     templates = c.fetchall()
@@ -191,7 +264,9 @@ def manage_conditioning():
                   (session["user_id"], request.form.get("prompt_date", date.today().isoformat()),
                    request.form["prompt_text"], target, coachee_id))
         return redirect(url_for("manage_conditioning"))
-    c.execute("SELECT mc.*, co.name as coachee_name FROM mental_conditioning mc LEFT JOIN coachee co ON mc.coachee_id=co.id WHERE mc.coach_id=%s ORDER BY prompt_date DESC LIMIT 30", (session["user_id"],))
+    c.execute("""SELECT mc.*, co.name as coachee_name FROM mental_conditioning mc
+                 LEFT JOIN coachee co ON mc.coachee_id=co.id
+                 WHERE mc.coach_id=%s ORDER BY prompt_date DESC LIMIT 30""", (session["user_id"],))
     prompts = c.fetchall()
     c.execute("SELECT id, name FROM coachee WHERE coach_id=%s", (session["user_id"],))
     coachees = c.fetchall()
@@ -225,10 +300,16 @@ def coachee_dashboard():
     cid = session["user_id"]
     c.execute("SELECT * FROM coachee WHERE id=%s", (cid,))
     coachee = c.fetchone()
-    c.execute("""SELECT ta.*, tt.title, tt.description as task_desc, tt.category FROM task_assignment ta
-                 JOIN task_template tt ON ta.template_id=tt.id
-                 WHERE ta.coachee_id=%s AND ta.status='pending' ORDER BY ta.due_date""", (cid,))
-    tasks = c.fetchall()
+
+    # auto-assign reserve if past unveil time and no task today
+    now = datetime.now().time()
+    if coachee["task_unveil_time"] and now >= coachee["task_unveil_time"]:
+        _auto_assign_reserves(cid, coachee["coach_id"])
+
+    _freeze_overdue(cid)
+
+    tasks = _visible_tasks(cid)
+
     c.execute("""SELECT mc.* FROM mental_conditioning mc
                  WHERE (mc.target='all' OR mc.coachee_id=%s) AND mc.prompt_date=CURDATE()
                  AND mc.id NOT IN (SELECT conditioning_id FROM mental_conditioning_response WHERE coachee_id=%s)""", (cid, cid))
@@ -237,9 +318,29 @@ def coachee_dashboard():
     today_checkins = c.fetchall()
     c.execute("SELECT * FROM acknowledgement WHERE coachee_id=%s ORDER BY created_at DESC LIMIT 10", (cid,))
     acks = c.fetchall()
+    c.execute("SELECT * FROM note WHERE coachee_id=%s ORDER BY created_at DESC LIMIT 10", (cid,))
+    notes = c.fetchall()
+    c.execute("SELECT * FROM tracking_log WHERE coachee_id=%s AND DATE(created_at)=CURDATE() ORDER BY created_at", (cid,))
+    today_tracking = c.fetchall()
+
+    # badge counts
+    has_morning = any(ci["checkin_type"] == "morning" for ci in today_checkins)
+    has_evening = any(ci["checkin_type"] == "evening" for ci in today_checkins)
+    unread_notes = 0  # could track read status later
+    pending_conditioning = len(conditioning)
+
+    badges = {
+        "tasks": len(tasks),
+        "morning": 0 if has_morning else 1,
+        "evening": 0 if has_evening else 1,
+        "conditioning": pending_conditioning,
+        "notes": unread_notes,
+    }
+
     return render_template_string(_tpl("coachee_dashboard.html"),
                                  coachee=coachee, tasks=tasks, conditioning=conditioning,
-                                 today_checkins=today_checkins, acks=acks)
+                                 today_checkins=today_checkins, acks=acks, notes=notes,
+                                 today_tracking=today_tracking, badges=badges)
 
 
 @app.route("/me/checkin", methods=["POST"])
@@ -255,6 +356,11 @@ def submit_checkin():
 @login_required("coachee")
 def complete_task(tid):
     c = db().cursor()
+    # check not frozen
+    c.execute("SELECT frozen_after FROM task_assignment WHERE id=%s AND coachee_id=%s", (tid, session["user_id"]))
+    row = c.fetchone()
+    if row and row["frozen_after"] and datetime.now() > row["frozen_after"]:
+        return redirect(url_for("coachee_dashboard"))  # too late
     c.execute("UPDATE task_assignment SET status='completed', response=%s, responded_at=NOW() WHERE id=%s AND coachee_id=%s",
               (request.form["response"], tid, session["user_id"]))
     return redirect(url_for("coachee_dashboard"))

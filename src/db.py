@@ -33,9 +33,17 @@ def init_db():
         contract_text TEXT,
         safe_word VARCHAR(100) DEFAULT 'RED',
         status ENUM('active','paused','stopped') DEFAULT 'active',
+        task_unveil_time TIME DEFAULT '08:00:00',
+        task_freeze_time TIME DEFAULT '22:00:00',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (coach_id) REFERENCES coach(id)
     )""")
+    # migrate existing tables
+    for col, dfn in [("task_unveil_time", "TIME DEFAULT '08:00:00'"), ("task_freeze_time", "TIME DEFAULT '22:00:00'")]:
+        try:
+            c.execute(f"ALTER TABLE coachee ADD COLUMN {col} {dfn}")
+        except Exception:
+            pass
     c.execute("""CREATE TABLE IF NOT EXISTS task_template (
         id INT AUTO_INCREMENT PRIMARY KEY,
         coach_id INT NOT NULL,
@@ -43,21 +51,33 @@ def init_db():
         description TEXT,
         recurrence ENUM('once','daily','weekly') DEFAULT 'once',
         category ENUM('mental','physical','emotional','admin') DEFAULT 'mental',
+        is_reserve TINYINT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (coach_id) REFERENCES coach(id)
     )""")
+    try:
+        c.execute("ALTER TABLE task_template ADD COLUMN is_reserve TINYINT DEFAULT 0")
+    except Exception:
+        pass
     c.execute("""CREATE TABLE IF NOT EXISTS task_assignment (
         id INT AUTO_INCREMENT PRIMARY KEY,
         template_id INT NOT NULL,
         coachee_id INT NOT NULL,
         due_date DATE,
         status ENUM('pending','completed','missed','excused') DEFAULT 'pending',
+        visible_after DATETIME NULL,
+        frozen_after DATETIME NULL,
         response TEXT,
         responded_at TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (template_id) REFERENCES task_template(id),
         FOREIGN KEY (coachee_id) REFERENCES coachee(id)
     )""")
+    for col, dfn in [("visible_after", "DATETIME NULL"), ("frozen_after", "DATETIME NULL")]:
+        try:
+            c.execute(f"ALTER TABLE task_assignment ADD COLUMN {col} {dfn}")
+        except Exception:
+            pass
     c.execute("""CREATE TABLE IF NOT EXISTS checkin (
         id INT AUTO_INCREMENT PRIMARY KEY,
         coachee_id INT NOT NULL,
