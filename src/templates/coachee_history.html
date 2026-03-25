@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My History</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+h2{color:#e94560;margin-bottom:1rem}
+h3{color:#e94560;margin:1.5rem 0 .5rem}
+.section{background:#16213e;padding:1.2rem;border-radius:10px;margin-bottom:1rem}
+.entry{border-bottom:1px solid #1a1a2e;padding:.5rem 0;font-size:.9rem}
+.entry:last-child{border:none}
+.time{color:#888;font-size:.8rem}
+.type{color:#e94560;font-weight:bold;font-size:.8rem;text-transform:uppercase}
+</style></head><body>
+<p style="margin-bottom:1rem"><a href="/me">← Dashboard</a></p>
+<h2>📖 My History</h2>
+
+<div class="section">
+<h3>Check-Ins</h3>
+{% for ci in checkins %}
+<div class="entry">
+<span class="type">{{ ci.checkin_type }}</span> <span class="time">{{ ci.created_at }}</span>
+<div style="white-space:pre-wrap">{{ ci.content }}</div>
+</div>
+{% else %}<p style="color:#888">No check-ins yet.</p>{% endfor %}
+</div>
+
+<div class="section">
+<h3>Tracking Logs</h3>
+{% for l in logs %}
+<div class="entry">
+<span class="type">{{ l.category }}</span> {{ l.content }}
+<div class="time">{{ l.created_at }}</div>
+</div>
+{% else %}<p style="color:#888">No logs yet.</p>{% endfor %}
+</div>
+
+<div class="section">
+<h3>Notes</h3>
+{% for n in notes %}
+<div class="entry">
+<span class="type">{{ n.author_role }}</span> {{ n.content }}
+<div class="time">{{ n.created_at }}</div>
+</div>
+{% else %}<p style="color:#888">No notes yet.</p>{% endfor %}
+</div>
+</body></html>

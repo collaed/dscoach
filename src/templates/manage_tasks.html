@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manage Tasks</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+h2{color:#e94560;margin-bottom:1rem}
+h3{color:#e94560;margin:1.5rem 0 .5rem}
+.section{background:#16213e;padding:1.2rem;border-radius:10px;margin-bottom:1rem;max-width:700px}
+label{display:block;margin-bottom:.3rem;color:#a0a0b0;font-size:.9rem;margin-top:.6rem}
+input,textarea,select{width:100%;padding:.6rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
+textarea{min-height:80px;resize:vertical}
+select[multiple]{min-height:80px}
+button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.95rem}
+.entry{border-bottom:1px solid #1a1a2e;padding:.5rem 0;font-size:.9rem}
+.entry:last-child{border:none}
+.meta{color:#888;font-size:.8rem}
+</style></head><body>
+<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
+<h2>📋 Task Management</h2>
+
+<div class="section">
+<h3>Create & Assign Task</h3>
+<form method="post">
+<label>Title</label><input type="text" name="title" required>
+<label>Description</label><textarea name="description"></textarea>
+<label>Category</label>
+<select name="category">
+<option value="mental">Mental</option>
+<option value="physical">Physical</option>
+<option value="emotional">Emotional</option>
+<option value="admin">Admin</option>
+</select>
+<label>Recurrence</label>
+<select name="recurrence">
+<option value="once">One-time</option>
+<option value="daily">Daily</option>
+<option value="weekly">Weekly</option>
+</select>
+<label>Due Date (optional)</label><input type="date" name="due_date">
+<label>Assign to (hold Ctrl/Cmd to select multiple)</label>
+<select name="coachee_ids" multiple required>
+{% for cc in coachees %}<option value="{{ cc.id }}">{{ cc.name }}</option>{% endfor %}
+</select>
+<button type="submit">Create & Assign</button>
+</form>
+</div>
+
+<div class="section">
+<h3>Existing Templates</h3>
+{% for t in templates %}
+<div class="entry">
+<strong>{{ t.title }}</strong> · {{ t.category }} · {{ t.recurrence }}
+{% if t.description %}<br><span class="meta">{{ t.description }}</span>{% endif %}
+</div>
+{% else %}<p style="color:#888">No tasks created yet.</p>{% endfor %}
+</div>
+</body></html>

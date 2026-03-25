@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+nav{display:flex;gap:1rem;align-items:center;margin-bottom:2rem;flex-wrap:wrap}
+nav .title{color:#e94560;font-size:1.3rem;font-weight:bold;margin-right:auto}
+nav a{padding:.4rem .8rem;border:1px solid #e94560;border-radius:6px;font-size:.9rem}
+nav a:hover{background:#e94560;color:#fff}
+h2{color:#e94560;margin-bottom:.5rem}
+h3{color:#e94560;margin:1.2rem 0 .5rem}
+.section{background:#16213e;padding:1.2rem;border-radius:10px;margin-bottom:1rem}
+.alert{background:#e94560;color:#fff;padding:.8rem;border-radius:8px;margin-bottom:1rem;text-align:center}
+.alert.paused{background:#f5a623;color:#000}
+textarea{width:100%;padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;min-height:100px;resize:vertical;font-size:.9rem}
+select{padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
+button{padding:.5rem 1rem;background:#e94560;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.9rem;margin-top:.4rem}
+button.secondary{background:#333}
+.entry{border-bottom:1px solid #1a1a2e;padding:.5rem 0;font-size:.9rem}
+.entry:last-child{border:none}
+.time{color:#888;font-size:.8rem}
+.type{color:#e94560;font-weight:bold;font-size:.8rem;text-transform:uppercase}
+.badge{display:inline-block;padding:.1rem .4rem;border-radius:3px;font-size:.75rem}
+.badge.positive{background:#2d6a4f;color:#fff}
+.badge.negative{background:#e94560;color:#fff}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:end}
+</style></head><body>
+<nav>
+<span class="title">🌟 My Dashboard</span>
+<a href="/me/history">📖 History</a>
+<a href="/logout">Logout</a>
+</nav>
+
+{% if coachee.status == 'paused' %}
+<div class="alert paused">⏸️ Your dynamic is currently paused. Your coach has been notified.</div>
+{% elif coachee.status == 'stopped' %}
+<div class="alert">🛑 Dynamic stopped (safe word used). Written clarification required before proceeding.</div>
+{% endif %}
+
+<!-- Pause / Safe Word -->
+<div class="section">
+<h3>⚠️ Boundaries</h3>
+<form method="post" action="/me/pause" style="display:flex;gap:.5rem">
+<button type="submit" name="word" value="pause" class="secondary">⏸️ I need to pause</button>
+<button type="submit" name="word" value="RED" onclick="return confirm('This will STOP the dynamic. Are you sure?')">🛑 RED</button>
+</form>
+</div>
+
+<!-- Morning / Evening Check-in -->
+<div class="section">
+<h3>📝 Check-In</h3>
+{% if today_checkins %}
+<p style="color:#888;font-size:.85rem;margin-bottom:.5rem">Today's entries:</p>
+{% for ci in today_checkins %}
+<div class="entry"><span class="type">{{ ci.checkin_type }}</span> <span class="time">{{ ci.created_at }}</span><div style="white-space:pre-wrap">{{ ci.content }}</div></div>
+{% endfor %}
+<hr style="border-color:#333;margin:.8rem 0">
+{% endif %}
+<form method="post" action="/me/checkin">
+<select name="checkin_type" style="margin-bottom:.5rem">
+<option value="morning">🌅 Morning Check-In</option>
+<option value="evening">🌙 Evening Reflection</option>
+<option value="weekly">📊 Weekly Review</option>
+</select>
+<textarea name="content" required placeholder="How are you feeling? What are your intentions?..."></textarea>
+<button type="submit">Submit Check-In</button>
+</form>
+</div>
+
+<!-- Mental Conditioning -->
+{% if conditioning %}
+<div class="section">
+<h3>🧠 Today's Mental Conditioning</h3>
+{% for mc in conditioning %}
+<div style="margin-bottom:1rem">
+<p>{{ mc.prompt_text }}</p>
+<form method="post" action="/me/conditioning/{{ mc.id }}">
+<textarea name="content" required placeholder="Your response..."></textarea>
+<button type="submit">Submit Response</button>
+</form>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<!-- Pending Tasks -->
+{% if tasks %}
+<div class="section">
+<h3>📋 Pending Tasks</h3>
+{% for t in tasks %}
+<div class="entry">
+<strong>{{ t.title }}</strong> <span class="type">{{ t.category }}</span>
+{% if t.due_date %} · Due: {{ t.due_date }}{% endif %}
+{% if t.task_desc %}<div style="color:#aaa;font-size:.85rem">{{ t.task_desc }}</div>{% endif %}
+<form method="post" action="/me/task/{{ t.id }}" style="margin-top:.3rem">
+<textarea name="response" required placeholder="Report on this task..."></textarea>
+<button type="submit">Mark Complete</button>
+</form>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<!-- Tracking -->
+<div class="section">
+<h3>📊 Log Tracking</h3>
+<form method="post" action="/me/tracking">
+<div class="row" style="margin-bottom:.5rem">
+<select name="category">
+<option value="food">🍽️ Food</option>
+<option value="hydration">💧 Hydration</option>
+<option value="alcohol">🍷 Alcohol</option>
+<option value="exercise">🏃 Exercise</option>
+<option value="emotional">💭 Emotional</option>
+</select>
+</div>
+<textarea name="content" required placeholder="What did you eat/drink/do? How did it go?"></textarea>
+<button type="submit">Log</button>
+</form>
+</div>
+
+<!-- Notes -->
+<div class="section">
+<h3>💬 Send a Note</h3>
+<form method="post" action="/me/note">
+<textarea name="content" required placeholder="Write to your coach..."></textarea>
+<button type="submit">Send</button>
+</form>
+</div>
+
+<!-- Recent Acknowledgements -->
+{% if acks %}
+<div class="section">
+<h3>✅ Recent Acknowledgements</h3>
+{% for a in acks %}
+<div class="entry">
+<span class="badge {{ a.ack_type }}">{{ a.ack_type }}</span> {{ a.description }}
+{% if a.notes %}<br><em style="color:#aaa">{{ a.notes }}</em>{% endif %}
+<div class="time">{{ a.created_at }}</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+</body></html>

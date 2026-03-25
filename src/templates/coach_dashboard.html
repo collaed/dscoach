@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coach Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+nav{display:flex;gap:1rem;align-items:center;margin-bottom:2rem;flex-wrap:wrap}
+nav a{color:#e94560;text-decoration:none;padding:.4rem .8rem;border:1px solid #e94560;border-radius:6px;font-size:.9rem}
+nav a:hover{background:#e94560;color:#fff}
+nav .title{color:#e94560;font-size:1.3rem;font-weight:bold;margin-right:auto}
+h2{color:#e94560;margin-bottom:1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.card{background:#16213e;padding:1.2rem;border-radius:10px;border-left:4px solid #e94560}
+.card.paused{border-left-color:#f5a623}
+.card.stopped{border-left-color:#888}
+.card h3{margin-bottom:.5rem}
+.card .meta{color:#888;font-size:.85rem}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.8rem;margin-right:.3rem}
+.badge.ok{background:#2d6a4f;color:#fff}
+.badge.warn{background:#f5a623;color:#000}
+.badge.danger{background:#e94560;color:#fff}
+</style></head><body>
+<nav>
+<span class="title">🏠 Coach Dashboard</span>
+<a href="/coach/tasks">📋 Tasks</a>
+<a href="/coach/conditioning">🧠 Conditioning</a>
+<a href="/coach/coachee/add">➕ Add Coachee</a>
+<a href="/logout">Logout</a>
+</nav>
+<h2>Your Coachees</h2>
+{% if not coachees %}<p style="color:#888">No coachees yet. Add one to get started.</p>{% endif %}
+<div class="grid">
+{% for cc in coachees %}
+<a href="/coach/coachee/{{ cc.id }}" style="text-decoration:none;color:inherit">
+<div class="card {{ cc.status }}">
+<h3>{{ cc.name }}</h3>
+<div class="meta">
+<span class="badge {% if cc.status=='active' %}ok{% elif cc.status=='paused' %}warn{% else %}danger{% endif %}">{{ cc.status }}</span>
+<span class="badge {% if cc.pending_tasks > 0 %}warn{% else %}ok{% endif %}">{{ cc.pending_tasks }} pending</span>
+<span class="badge {% if cc.checkins_today > 0 %}ok{% else %}warn{% endif %}">{{ cc.checkins_today }} check-ins today</span>
+</div>
+</div>
+</a>
+{% endfor %}
+</div>
+</body></html>

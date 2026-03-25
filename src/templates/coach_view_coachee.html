@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ coachee.name }} - Coach View</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+h2{color:#e94560;margin-bottom:.5rem}
+h3{color:#e94560;margin:1.5rem 0 .5rem}
+.status{display:inline-block;padding:.2rem .6rem;border-radius:4px;font-size:.85rem;margin-left:.5rem}
+.status.active{background:#2d6a4f;color:#fff}
+.status.paused{background:#f5a623;color:#000}
+.status.stopped{background:#e94560;color:#fff}
+.section{background:#16213e;padding:1.2rem;border-radius:10px;margin-bottom:1rem}
+.entry{border-bottom:1px solid #1a1a2e;padding:.6rem 0;font-size:.9rem}
+.entry:last-child{border:none}
+.entry .time{color:#888;font-size:.8rem}
+.entry .type{color:#e94560;font-weight:bold;font-size:.8rem;text-transform:uppercase}
+.badge{display:inline-block;padding:.1rem .4rem;border-radius:3px;font-size:.75rem}
+.badge.positive{background:#2d6a4f;color:#fff}
+.badge.negative{background:#e94560;color:#fff}
+.badge.completed{background:#2d6a4f;color:#fff}
+.badge.pending{background:#f5a623;color:#000}
+.badge.missed{background:#e94560;color:#fff}
+form{margin-top:.8rem}
+textarea{width:100%;padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;min-height:60px;resize:vertical;font-size:.9rem}
+select,input[type=text],input[type=date]{padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
+button{padding:.5rem 1rem;background:#e94560;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.9rem;margin-top:.4rem}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:end}
+.contract{white-space:pre-wrap;font-size:.85rem;color:#aaa;max-height:200px;overflow-y:auto;padding:.5rem;background:#0f3460;border-radius:6px}
+</style></head><body>
+<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
+<h2>{{ coachee.name }} <span class="status {{ coachee.status }}">{{ coachee.status }}</span></h2>
+<p style="color:#888;font-size:.85rem">Safe word: {{ coachee.safe_word }} · Joined: {{ coachee.created_at }}</p>
+
+{% if coachee.contract_text %}
+<div class="section"><h3>📜 Contract</h3><div class="contract">{{ coachee.contract_text }}</div></div>
+{% endif %}
+
+<div class="section">
+<h3>✅ Give Acknowledgement</h3>
+<form method="post" action="/coach/ack/{{ coachee.id }}">
+<div class="row">
+<select name="ack_type"><option value="positive">👍 Positive</option><option value="negative">👎 Negative</option></select>
+<input type="text" name="description" placeholder="e.g. Discipline, Follow-through..." required style="flex:1">
+</div>
+<textarea name="notes" placeholder="Optional notes..."></textarea>
+<button type="submit">Record</button>
+</form>
+</div>
+
+<div class="section">
+<h3>📝 Add Note</h3>
+<form method="post" action="/coach/note/{{ coachee.id }}">
+<textarea name="content" placeholder="Write a note..." required></textarea>
+<button type="submit">Send Note</button>
+</form>
+</div>
+
+<div class="section">
+<h3>📋 Recent Tasks</h3>
+{% for t in tasks %}
+<div class="entry">
+<span class="badge {{ t.status }}">{{ t.status }}</span> <strong>{{ t.title }}</strong> ({{ t.category }})
+{% if t.due_date %} · Due: {{ t.due_date }}{% endif %}
+{% if t.response %}<br><em style="color:#aaa">Response: {{ t.response }}</em>{% endif %}
+<div class="time">{{ t.created_at }}</div>
+</div>
+{% else %}<p style="color:#888">No tasks yet.</p>{% endfor %}
+</div>
+
+<div class="section">
+<h3>📖 Check-Ins</h3>
+{% for ci in checkins %}
+<div class="entry">
+<span class="type">{{ ci.checkin_type }}</span>
+<div style="white-space:pre-wrap">{{ ci.content }}</div>
+<div class="time">{{ ci.created_at }}</div>
+</div>
+{% else %}<p style="color:#888">No check-ins yet.</p>{% endfor %}
+</div>
+
+<div class="section">
+<h3>🧠 Mental Conditioning</h3>
+{% for mc in conditioning %}
+<div class="entry">
+<strong>{{ mc.prompt_date }}</strong>: {{ mc.prompt_text }}
+{% if mc.response %}<br><em style="color:#aaa">↳ {{ mc.response }}</em> <span class="time">{{ mc.response_at }}</span>{% else %}<br><em style="color:#666">No response yet</em>{% endif %}
+</div>
+{% else %}<p style="color:#888">No prompts yet.</p>{% endfor %}
+</div>
+
+<div class="section">
+<h3>✅ Acknowledgements</h3>
+{% for a in acks %}
+<div class="entry">
+<span class="badge {{ a.ack_type }}">{{ a.ack_type }}</span> {{ a.description }}
+{% if a.notes %}<br><em style="color:#aaa">{{ a.notes }}</em>{% endif %}
+<div class="time">{{ a.created_at }}</div>
+</div>
+{% else %}<p style="color:#888">None yet.</p>{% endfor %}
+</div>
+
+<div class="section">
+<h3>📊 Tracking Logs</h3>
+{% for l in logs %}
+<div class="entry">
+<span class="type">{{ l.category }}</span> {{ l.content }}
+<div class="time">{{ l.created_at }}</div>
+</div>
+{% else %}<p style="color:#888">No logs yet.</p>{% endfor %}
+</div>
+
+<div class="section">
+<h3>💬 Notes</h3>
+{% for n in notes %}
+<div class="entry">
+<span class="type">{{ n.author_role }}</span> {{ n.content }}
+<div class="time">{{ n.created_at }}</div>
+</div>
+{% else %}<p style="color:#888">No notes yet.</p>{% endfor %}
+</div>
+</body></html>

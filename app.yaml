@@ -1,0 +1,25 @@
+kind: wasmer.io/App.v0
+name: coaching-system
+package: .
+
+cli_args:
+  - -m
+  - flask
+  - --app
+  - /src/app
+  - run
+  - --no-reload
+
+env:
+  PYTHONEXECUTABLE: /bin/python
+
+capabilities:
+  database:
+    engine: mysql
+
+locality:
+  regions:
+    - eu-stockholm
+
+scaling:
+  mode: single_concurrency

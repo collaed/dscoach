@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Add Coachee</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+.card{background:#16213e;padding:2rem;border-radius:12px;max-width:600px;margin:0 auto}
+h2{color:#e94560;margin-bottom:1.5rem}
+label{display:block;margin-bottom:.3rem;color:#a0a0b0;font-size:.9rem;margin-top:.8rem}
+input,textarea{width:100%;padding:.7rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:1rem}
+textarea{min-height:120px;resize:vertical}
+button{margin-top:1.2rem;width:100%;padding:.8rem;background:#e94560;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer}
+</style></head><body>
+<p style="margin-bottom:1rem"><a href="/coach">← Back to Dashboard</a></p>
+<div class="card">
+<h2>➕ Add Coachee</h2>
+<form method="post">
+<label>Display Name</label><input type="text" name="name" required>
+<label>Username</label><input type="text" name="username" required>
+<label>Password</label><input type="password" name="password" required>
+<label>Safe Word (default: RED)</label><input type="text" name="safe_word" value="RED">
+<label>Contract / Boundaries</label><textarea name="contract" placeholder="Paste or write the consent and boundaries agreement here..."></textarea>
+<button type="submit">Create Coachee</button>
+</form>
+</div>
+</body></html>

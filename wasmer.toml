@@ -1,0 +1,24 @@
+[package]
+name = "collaed/coaching-system"
+version = "0.1.0"
+description = "1-to-many coaching relationship management system"
+readme = "README.md"
+
+[dependencies]
+"wasmer/python" = "^3.12.6"
+
+[fs]
+"/src" = "./src"
+"/static" = "./static"
+"/cpython/lib/python3.12" = "./.env/lib/python3.11"
+
+[[command]]
+name = "script"
+module = "wasmer/python:python"
+runner = "wasi"
+
+[command.annotations.wasi]
+main-args = [
+    "-m", "flask", "--app", "/src/app", "run", "--no-reload",
+]
+env = ["PYTHONEXECUTABLE: /bin/python"]
