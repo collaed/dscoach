@@ -36,7 +36,49 @@ button{margin-top:1.2rem;width:100%;padding:.8rem;background:#e94560;color:#fff;
 </div>
 </div>
 <label>Contract / Boundaries</label><textarea name="contract" placeholder="Paste or write the consent and boundaries agreement here..."></textarea>
+<label>Coachee Timezone</label>
+<select name="timezone" id="tz-select" style="width:100%;padding:.7rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:1rem"></select>
+<div id="tz-preview" class="hint" style="margin-top:.4rem"></div>
 <button type="submit">Create Coachee</button>
 </form>
 </div>
+<script>
+const coachTz='{{ coach_tz }}';
+const sel=document.getElementById('tz-select');
+const preview=document.getElementById('tz-preview');
+const unveil=document.querySelector('[name=task_unveil_time]');
+const freeze=document.querySelector('[name=task_freeze_time]');
+Intl.supportedValuesOf('timeZone').forEach(tz=>{const o=document.createElement('option');o.value=tz;o.textContent=tz.replace(/_/g,' ');sel.appendChild(o)});
+sel.value=coachTz;
+function update(){
+  const ctz=sel.value;
+  if(!ctz)return;
+  const now=new Date();
+  const coachNow=now.toLocaleTimeString('en-GB',{timeZone:coachTz,hour:'2-digit',minute:'2-digit'});
+  const coacheeNow=now.toLocaleTimeString('en-GB',{timeZone:ctz,hour:'2-digit',minute:'2-digit'});
+  let info=`🕐 Right now — You: ${coachNow} · Coachee: ${coacheeNow}`;
+  if(unveil.value){
+    const [h,m]=unveil.value.split(':').map(Number);
+    const d=new Date();d.setHours(h,m,0,0);
+    // convert: treat input as coachee-local, show coach-local
+    const coacheeStr=d.toLocaleTimeString('en-GB',{timeZone:ctz,hour:'2-digit',minute:'2-digit'});
+    // build a date in coachee tz, then show in coach tz
+    const unveilCoach=new Date(d.toLocaleString('en-US',{timeZone:ctz}));
+    // offset trick: get the offset difference
+    const inCoach=new Date(d.getTime()+getOffsetDiff(ctz,coachTz));
+    info+=`<br>Unveil ${unveil.value} coachee-local = ${inCoach.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})} your time`;
+  }
+  preview.innerHTML=info;
+}
+function getOffsetDiff(tz1,tz2){
+  const now=new Date();
+  const d1=new Date(now.toLocaleString('en-US',{timeZone:tz1}));
+  const d2=new Date(now.toLocaleString('en-US',{timeZone:tz2}));
+  return d2-d1;
+}
+sel.addEventListener('change',update);
+unveil.addEventListener('change',update);
+freeze.addEventListener('change',update);
+update();
+</script>
 </body></html>

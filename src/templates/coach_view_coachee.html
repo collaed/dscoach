@@ -24,18 +24,65 @@ h3{color:#e94560;margin:1.5rem 0 .5rem}
 .badge.missed{background:#e94560;color:#fff}
 form{margin-top:.8rem}
 textarea{width:100%;padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;min-height:60px;resize:vertical;font-size:.9rem}
-select,input[type=text],input[type=date]{padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
+select,input[type=text],input[type=date],input[type=time]{padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
 button{padding:.5rem 1rem;background:#e94560;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.9rem;margin-top:.4rem}
 .row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:end}
 .contract{white-space:pre-wrap;font-size:.85rem;color:#aaa;max-height:200px;overflow-y:auto;padding:.5rem;background:#0f3460;border-radius:6px}
 </style></head><body>
 <p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
-<h2>{{ coachee.name }} <span class="status {{ coachee.status }}">{{ coachee.status }}</span></h2>
+<h2>{{ coachee.avatar or '🐕' }} {{ coachee.name }} <span class="status {{ coachee.status }}">{{ coachee.status }}</span></h2>
 <p style="color:#888;font-size:.85rem">Safe word: {{ coachee.safe_word }} · Joined: {{ coachee.created_at }}</p>
+
+<div class="section">
+<h3>🪞 Psychological Profile <button onclick="genProfile()" id="gen-btn" style="font-size:.8rem;padding:.3rem .8rem;vertical-align:middle">🔄 Generate</button></h3>
+<div id="profile-text" style="white-space:pre-wrap;line-height:1.6;font-size:.9rem">{% if profile_text %}{{ profile_text }}{% else %}<span style="color:#888">No profile yet. Click Generate or add context below.</span>{% endif %}</div>
+<details style="margin-top:.8rem"><summary style="cursor:pointer;color:#e94560;font-size:.85rem">📋 Past exchanges & context</summary>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/context" style="margin-top:.5rem">
+<textarea name="context_text" placeholder="Paste past conversations, WhatsApp exports, email threads, session notes... This will be included when generating the profile." style="min-height:150px">{{ coachee_context or '' }}</textarea>
+<button type="submit">Save Context</button>
+</form>
+</details>
+</div>
 
 {% if coachee.contract_text %}
 <div class="section"><h3>📜 Contract</h3><div class="contract">{{ coachee.contract_text }}</div></div>
 {% endif %}
+
+<div class="section">
+<h3>⚙️ Settings</h3>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/edit">
+<div class="row">
+<div><label style="color:#a0a0b0;font-size:.85rem">Safe Word</label><input type="text" name="safe_word" value="{{ coachee.safe_word }}"></div>
+<div><label style="color:#a0a0b0;font-size:.85rem">Timezone</label><select name="timezone" id="tz-select" style="width:100%;padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem"></select></div>
+</div>
+<div class="row" style="margin-top:.5rem">
+<div><label style="color:#a0a0b0;font-size:.85rem">Task Unveil Time</label><input type="time" name="task_unveil_time" id="unveil" value="{{ coachee.task_unveil_time }}"></div>
+<div><label style="color:#a0a0b0;font-size:.85rem">Task Freeze Time</label><input type="time" name="task_freeze_time" id="freeze" value="{{ coachee.task_freeze_time }}"></div>
+</div>
+<div id="tz-preview" style="color:#888;font-size:.8rem;margin-top:.4rem"></div>
+<div class="row" style="margin-top:.5rem">
+<div>
+<label style="color:#a0a0b0;font-size:.85rem">Avatar</label>
+<select name="avatar" style="width:100%;padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:1.2rem">
+{% for a in ['🐕','🐩','🐕‍🦺','🦮','🐶','🐾','🐺','🐴','🦄','🎠','🏇','🫎','🧹','👗','🎀','💅','👠','🪞','🌸','🦋'] %}
+<option value="{{ a }}"{% if coachee.avatar==a %} selected{% endif %}>{{ a }}</option>
+{% endfor %}
+</select>
+</div>
+<div>
+<label style="color:#a0a0b0;font-size:.85rem">Accent Color</label>
+<input type="color" name="color_scheme" value="{{ coachee.color_scheme or '#e94560' }}" style="width:100%;height:36px;border:none;background:none;cursor:pointer">
+</div>
+<div>
+<label style="color:#a0a0b0;font-size:.85rem">Telegram Chat ID</label>
+<input type="text" name="telegram_chat_id" value="{{ coachee.telegram_chat_id or '' }}" placeholder="e.g. 123456789">
+</div>
+</div>
+<label style="color:#a0a0b0;font-size:.85rem;margin-top:.5rem">Contract</label>
+<textarea name="contract">{{ coachee.contract_text or '' }}</textarea>
+<button type="submit">Save Settings</button>
+</form>
+</div>
 
 <div class="section">
 <h3>✅ Give Acknowledgement</h3>
@@ -61,9 +108,19 @@ button{padding:.5rem 1rem;background:#e94560;color:#fff;border:none;border-radiu
 <h3>📋 Recent Tasks</h3>
 {% for t in tasks %}
 <div class="entry">
-<span class="badge {{ t.status }}">{{ t.status }}</span> <strong>{{ t.title }}</strong> ({{ t.category }})
+<span class="badge {{ t.status }}">{{ t.status }}</span>{% if t.grade %} <strong style="color:#e94560">{{ t.grade }}</strong>{% endif %} <strong>{{ t.title }}</strong> ({{ t.category }})
 {% if t.due_date %} · Due: {{ t.due_date }}{% endif %}
 {% if t.response %}<br><em style="color:#aaa">Response: {{ t.response }}</em>{% endif %}
+{% if t.attachment %}<br><a href="/task/{{ t.id }}/attachment" target="_blank">📎 View attachment</a>{% endif %}
+{% if t.coach_comment %}<br><span style="color:#e94560">Coach:</span> <em style="color:#ccc">{{ t.coach_comment }}</em>{% endif %}
+{% if t.status == 'completed' %}
+<form method="post" action="/coach/task/{{ t.id }}/review" style="margin-top:.3rem;display:flex;gap:.3rem;flex-wrap:wrap;align-items:end">
+<input type="hidden" name="coachee_id" value="{{ coachee.id }}">
+<select name="grade" style="width:60px"><option value="">—</option>{% for g in ['A','B','C','D','E','F'] %}<option{% if t.grade==g %} selected{% endif %}>{{ g }}</option>{% endfor %}</select>
+<input type="text" name="coach_comment" placeholder="Comment..." value="{{ t.coach_comment or '' }}" style="flex:1">
+<button type="submit" style="margin:0">Save</button>
+</form>
+{% endif %}
 <div class="time">{{ t.created_at }}</div>
 </div>
 {% else %}<p style="color:#888">No tasks yet.</p>{% endfor %}
@@ -120,4 +177,84 @@ button{padding:.5rem 1rem;background:#e94560;color:#fff;border:none;border-radiu
 </div>
 {% else %}<p style="color:#888">No notes yet.</p>{% endfor %}
 </div>
+<script>
+const coachTz='{{ coach_tz }}';
+const coacheeTz='{{ coachee.timezone or "Europe/London" }}';
+const sel=document.getElementById('tz-select');
+const preview=document.getElementById('tz-preview');
+const unveil=document.getElementById('unveil');
+const freeze=document.getElementById('freeze');
+Intl.supportedValuesOf('timeZone').forEach(tz=>{const o=document.createElement('option');o.value=tz;o.textContent=tz.replace(/_/g,' ');sel.appendChild(o)});
+sel.value=coacheeTz;
+function getOffsetDiff(tz1,tz2){const n=new Date();return new Date(n.toLocaleString('en-US',{timeZone:tz2}))-new Date(n.toLocaleString('en-US',{timeZone:tz1}))}
+function convertTime(timeStr,fromTz,toTz){
+  if(!timeStr)return'--:--';
+  const [h,m]=timeStr.split(':').map(Number);
+  const d=new Date();d.setHours(h,m,0,0);
+  const shifted=new Date(d.getTime()+getOffsetDiff(fromTz,toTz));
+  return shifted.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+function update(){
+  const ctz=sel.value||coacheeTz;
+  const now=new Date();
+  const coachNow=now.toLocaleTimeString('en-GB',{timeZone:coachTz,hour:'2-digit',minute:'2-digit'});
+  const coacheeNow=now.toLocaleTimeString('en-GB',{timeZone:ctz,hour:'2-digit',minute:'2-digit'});
+  let info=`🕐 Now — You: ${coachNow} · Coachee: ${coacheeNow}`;
+  if(unveil.value) info+=` · Unveil ${unveil.value} coachee = ${convertTime(unveil.value,ctz,coachTz)} you`;
+  if(freeze.value) info+=` · Freeze ${freeze.value} coachee = ${convertTime(freeze.value,ctz,coachTz)} you`;
+  preview.innerHTML=info;
+}
+sel.addEventListener('change',update);
+unveil.addEventListener('change',update);
+freeze.addEventListener('change',update);
+update();setInterval(update,60000);
+
+const GKEY={{ gemini_key|tojson }};
+const CID={{ coachee.id }};
+async function genProfile(){
+  const btn=document.getElementById('gen-btn');
+  const div=document.getElementById('profile-text');
+  btn.disabled=true;btn.textContent='⏳ Generating...';
+  console.log('Using key:',GKEY.slice(0,10)+'...'+GKEY.slice(-4));
+  div.textContent='Using key: '+GKEY.slice(0,10)+'...'+GKEY.slice(-4)+' — calling Gemini...';
+  try{
+    const pr=await fetch(`/coach/coachee/${CID}/profile-prompt`);
+    const {prompt}=await pr.json();
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GKEY}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+    });
+    const d=await r.json();
+    const text=d.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(!text){div.textContent='Gemini error: '+(d.error?.message||JSON.stringify(d));return}
+    div.textContent=text;
+    await fetch(`/coach/coachee/${CID}/profile`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+  }catch(e){div.textContent='Error: '+e}
+  btn.disabled=false;btn.textContent='🔄 Generate';
+}
+
+const TG_TOKEN={{ tg_token|tojson }};
+const TG_CHAT={{ (coachee.telegram_chat_id or '')|tojson }};
+function tgSend(msg){
+  if(!TG_TOKEN||!TG_CHAT)return;
+  fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:TG_CHAT,text:msg,parse_mode:'HTML'})
+  }).catch(()=>{});
+}
+// hook into review forms
+document.querySelectorAll('form[action*="/review"]').forEach(f=>{
+  f.addEventListener('submit',()=>{
+    const g=f.querySelector('[name=grade]').value;
+    const c=f.querySelector('[name=coach_comment]').value;
+    if(g) tgSend(`📋 Task graded: <b>${g}</b>${c?' — '+c:''}`);
+  });
+});
+// hook into ack form
+document.querySelector('form[action*="/ack/"]')?.addEventListener('submit',function(){
+  const t=this.querySelector('[name=ack_type]').value;
+  const d=this.querySelector('[name=description]').value;
+  tgSend(`${t==='positive'?'👍':'👎'} ${d}`);
+});
+</script>
 </body></html>

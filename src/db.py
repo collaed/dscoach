@@ -23,7 +23,8 @@ def init_db():
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(100) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
-        name VARCHAR(200) NOT NULL
+        name VARCHAR(200) NOT NULL,
+        timezone VARCHAR(64) DEFAULT 'Europe/London'
     )""")
     c.execute("""CREATE TABLE IF NOT EXISTS coachee (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,13 +37,26 @@ def init_db():
         status ENUM('active','paused','stopped') DEFAULT 'active',
         task_unveil_time TIME DEFAULT '08:00:00',
         task_freeze_time TIME DEFAULT '22:00:00',
+        timezone VARCHAR(64) DEFAULT 'Europe/London',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (coach_id) REFERENCES coach(id)
     )""")
     # migrate existing tables
-    for col, dfn in [("task_unveil_time", "TIME DEFAULT '08:00:00'"), ("task_freeze_time", "TIME DEFAULT '22:00:00'")]:
+    for col, dfn in [("task_unveil_time", "TIME DEFAULT '08:00:00'"), ("task_freeze_time", "TIME DEFAULT '22:00:00'"),
+                     ("timezone", "VARCHAR(64) DEFAULT 'Europe/London'"), ("context_text", "MEDIUMTEXT"),
+                     ("strikes", "INT DEFAULT 0"), ("avatar", "VARCHAR(50) DEFAULT '🐕'"),
+                     ("color_scheme", "VARCHAR(20) DEFAULT '#e94560'"),
+                     ("telegram_chat_id", "VARCHAR(100)")]:
         try:
             c.execute(f"ALTER TABLE coachee ADD COLUMN {col} {dfn}")
+        except Exception:
+            pass
+    for col, dfn in [("timezone", "VARCHAR(64) DEFAULT 'Europe/London'"),
+                     ("logo", "MEDIUMBLOB NULL"), ("accent_color", "VARCHAR(20) DEFAULT '#e94560'"),
+                     ("bg_color", "VARCHAR(20) DEFAULT '#1a1a2e'"), ("card_color", "VARCHAR(20) DEFAULT '#16213e'"),
+                     ("telegram_bot_token", "VARCHAR(200)")]:
+        try:
+            c.execute(f"ALTER TABLE coach ADD COLUMN {col} {dfn}")
         except Exception:
             pass
     c.execute("""CREATE TABLE IF NOT EXISTS task_template (
@@ -74,7 +88,9 @@ def init_db():
         FOREIGN KEY (template_id) REFERENCES task_template(id),
         FOREIGN KEY (coachee_id) REFERENCES coachee(id)
     )""")
-    for col, dfn in [("visible_after", "DATETIME NULL"), ("frozen_after", "DATETIME NULL")]:
+    for col, dfn in [("visible_after", "DATETIME NULL"), ("frozen_after", "DATETIME NULL"),
+                     ("grade", "CHAR(1) NULL"), ("coach_comment", "TEXT NULL"),
+                     ("attachment", "MEDIUMBLOB NULL")]:
         try:
             c.execute(f"ALTER TABLE task_assignment ADD COLUMN {col} {dfn}")
         except Exception:
@@ -132,6 +148,13 @@ def init_db():
         content TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (conditioning_id) REFERENCES mental_conditioning(id),
+        FOREIGN KEY (coachee_id) REFERENCES coachee(id)
+    )""")
+    c.execute("""CREATE TABLE IF NOT EXISTS psychological_profile (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        coachee_id INT NOT NULL UNIQUE,
+        profile_text TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (coachee_id) REFERENCES coachee(id)
     )""")
     conn.close()

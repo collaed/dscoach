@@ -2,38 +2,40 @@
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>My Dashboard</title>
 <style>
+:root{--accent:{{ session.get('accent','#e94560') }};--bg:{{ session.get('bg','#1a1a2e') }};--card:{{ session.get('card','#16213e') }}}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:0}
-nav{display:flex;gap:1rem;align-items:center;padding:1rem;flex-wrap:wrap;background:#16213e}
-nav .title{color:#e94560;font-size:1.3rem;font-weight:bold;margin-right:auto}
-nav a{color:#e94560;text-decoration:none;padding:.4rem .8rem;border:1px solid #e94560;border-radius:6px;font-size:.9rem}
-nav a:hover{background:#e94560;color:#fff}
-.tabs{display:flex;flex-wrap:wrap;gap:0;border-bottom:2px solid #333;background:#16213e;padding:0 1rem;position:sticky;top:0;z-index:10}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:#e0e0e0;padding:0}
+nav{display:flex;gap:1rem;align-items:center;padding:1rem;flex-wrap:wrap;background:var(--card)}
+nav .title{color:var(--accent);font-size:1.3rem;font-weight:bold;margin-right:auto}
+nav a{color:var(--accent);text-decoration:none;padding:.4rem .8rem;border:1px solid var(--accent);border-radius:6px;font-size:.9rem}
+nav a:hover{background:var(--accent);color:#fff}
+.tabs{display:flex;flex-wrap:wrap;gap:0;border-bottom:2px solid #333;background:var(--card);padding:0 1rem;position:sticky;top:0;z-index:10}
 .tab{padding:.8rem 1.2rem;cursor:pointer;color:#888;border-bottom:3px solid transparent;position:relative;font-size:.95rem;user-select:none}
 .tab:hover{color:#e0e0e0}
-.tab.active{color:#e94560;border-bottom-color:#e94560}
-.tab .badge{position:absolute;top:4px;right:2px;background:#e94560;color:#fff;font-size:.7rem;padding:1px 5px;border-radius:8px;min-width:16px;text-align:center}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab .badge{position:absolute;top:4px;right:2px;background:var(--accent);color:#fff;font-size:.7rem;padding:1px 5px;border-radius:8px;min-width:16px;text-align:center}
 .panel{display:none;padding:1rem;max-width:800px}
 .panel.active{display:block}
-.alert{background:#e94560;color:#fff;padding:.8rem;border-radius:8px;margin:1rem;text-align:center}
+.alert{background:var(--accent);color:#fff;padding:.8rem;border-radius:8px;margin:1rem;text-align:center}
 .alert.paused{background:#f5a623;color:#000}
-h3{color:#e94560;margin:1rem 0 .5rem}
-.section{background:#16213e;padding:1rem;border-radius:10px;margin-bottom:1rem}
+h3{color:var(--accent);margin:1rem 0 .5rem}
+.section{background:var(--card);padding:1rem;border-radius:10px;margin-bottom:1rem}
 textarea{width:100%;padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;min-height:100px;resize:vertical;font-size:.9rem}
 select,input[type=text]{padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
-button{padding:.5rem 1rem;background:#e94560;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.9rem;margin-top:.4rem}
+button{padding:.5rem 1rem;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.9rem;margin-top:.4rem}
 button.secondary{background:#333}
-.entry{border-bottom:1px solid #1a1a2e;padding:.5rem 0;font-size:.9rem}
+.entry{border-bottom:1px solid var(--bg);padding:.5rem 0;font-size:.9rem}
 .entry:last-child{border:none}
 .time{color:#888;font-size:.8rem}
-.type{color:#e94560;font-weight:bold;font-size:.8rem;text-transform:uppercase}
+.type{color:var(--accent);font-weight:bold;font-size:.8rem;text-transform:uppercase}
 .badge-inline{display:inline-block;padding:.1rem .4rem;border-radius:3px;font-size:.75rem}
 .badge-inline.positive{background:#2d6a4f;color:#fff}
-.badge-inline.negative{background:#e94560;color:#fff}
+.badge-inline.negative{background:var(--accent);color:#fff}
 .contract{white-space:pre-wrap;font-size:.85rem;color:#aaa;padding:.5rem;background:#0f3460;border-radius:6px;max-height:60vh;overflow-y:auto}
 </style></head><body>
 <nav>
-<span class="title">🌟 {{ coachee.name }}</span>
+{% if session.get('coach_id') %}<img src="/coach/logo" style="max-height:32px;border-radius:4px" onerror="this.style.display='none'">{% endif %}
+<span class="title">{{ session.get('avatar','🌟') }} {{ coachee.name }}</span>
 <a href="/me/history">📖 History</a>
 <a href="/logout">Logout</a>
 </nav>
@@ -73,6 +75,19 @@ button.secondary{background:#333}
 <span class="badge-inline {{ a.ack_type }}">{{ a.ack_type }}</span> {{ a.description }}
 {% if a.notes %}<br><em style="color:#aaa">{{ a.notes }}</em>{% endif %}
 <div class="time">{{ a.created_at }}</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+{% if graded_tasks %}
+<div class="section">
+<h3>📋 Recent Grades & Feedback</h3>
+{% for t in graded_tasks %}
+<div class="entry">
+<strong style="color:#e94560">{{ t.grade }}</strong> — {{ t.title }}
+{% if t.coach_comment %}<br><em style="color:#ccc">{{ t.coach_comment }}</em>{% endif %}
+<div class="time">{{ t.responded_at }}</div>
 </div>
 {% endfor %}
 </div>
@@ -143,8 +158,13 @@ Close with your sign-off..."></textarea>
 {% if t.due_date %} · Due: {{ t.due_date }}{% endif %}
 {% if t.frozen_after %}<br><span style="color:#f5a623;font-size:.8rem">⏰ Freezes at {{ t.frozen_after }}</span>{% endif %}
 {% if t.task_desc %}<div style="color:#aaa;font-size:.85rem">{{ t.task_desc }}</div>{% endif %}
-<form method="post" action="/me/task/{{ t.id }}" style="margin-top:.3rem">
+<form method="post" action="/me/task/{{ t.id }}" style="margin-top:.3rem" enctype="multipart/form-data">
 <textarea name="response" required placeholder="Report on this task..."></textarea>
+<div style="margin-top:.3rem">
+<label style="color:#a0a0b0;font-size:.8rem">📎 Attach photo (optional, auto-resized)</label>
+<input type="file" accept="image/*" onchange="resizeImg(this)" style="font-size:.85rem">
+<input type="hidden" name="attachment_data" class="att-data">
+</div>
 <button type="submit">Mark Complete</button>
 </form>
 </div>
@@ -238,6 +258,8 @@ Close with your sign-off..."></textarea>
 </div>
 </div>
 
+</div>
+
 <script>
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -247,5 +269,23 @@ document.querySelectorAll('.tab').forEach(tab => {
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
     });
 });
+function resizeImg(input){
+  if(!input.files[0])return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const img=new Image();
+    img.onload=function(){
+      const MAX_W=1920,MAX_H=1080;
+      let w=img.width,h=img.height;
+      if(w>MAX_W){h*=MAX_W/w;w=MAX_W}
+      if(h>MAX_H){w*=MAX_H/h;h=MAX_H}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      input.closest('form').querySelector('.att-data').value=c.toDataURL('image/jpeg',0.85);
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
 </script>
 </body></html>

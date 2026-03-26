@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Analyze Text</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+.card{background:#16213e;padding:2rem;border-radius:12px;max-width:800px;margin:0 auto}
+h2{color:#e94560;margin-bottom:.5rem}
+p.sub{color:#888;font-size:.85rem;margin-bottom:1.5rem}
+textarea{width:100%;padding:.7rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem;min-height:250px;resize:vertical}
+button{margin-top:.8rem;padding:.8rem 1.5rem;background:#e94560;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+.result{margin-top:1.5rem;white-space:pre-wrap;line-height:1.6;font-size:.95rem;padding:1rem;background:#0f3460;border-radius:8px}
+</style></head><body>
+<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
+<div class="card">
+<h2>🔍 Analyze Text</h2>
+<p class="sub">Paste any text — conversation logs, messages, session notes — and get a psychological analysis. Standalone, not linked to any coachee.</p>
+<textarea id="input" placeholder="Paste conversation, messages, journal entries..."></textarea>
+<button id="btn" onclick="analyze()">Analyze</button>
+<div id="result" class="result" style="display:none"></div>
+</div>
+<script>
+const KEY={{ gemini_key|tojson }};
+async function analyze(){
+  const text=document.getElementById('input').value.trim();
+  if(!text)return;
+  const btn=document.getElementById('btn');
+  const res=document.getElementById('result');
+  btn.disabled=true;btn.textContent='Analyzing...';
+  res.textContent='Using key: '+KEY.slice(0,10)+'...'+KEY.slice(-4)+' — calling Gemini...';
+  res.style.display='block';
+  const prompt=`You are a coaching psychology assistant. Analyze the following text — it could be a conversation, messages, journal entries, or session notes. Provide a psychological profile of the person(s) involved: emotional patterns, communication style, attachment tendencies, areas of strength, areas of concern, and any recommendations for a coach working with them. Max 400 words. Be empathetic but honest.\n\nTEXT:\n${text.slice(0,15000)}`;
+  try{
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${KEY}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+    });
+    const d=await r.json();
+    const text=d.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(!text){res.textContent='Gemini error: '+(d.error?.message||JSON.stringify(d));res.style.display='block';return}
+    res.textContent=text;
+    res.style.display='block';
+  }catch(e){res.textContent='Error: '+e;res.style.display='block'}
+  btn.disabled=false;btn.textContent='Analyze';
+}
+</script>
+</body></html>

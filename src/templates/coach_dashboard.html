@@ -24,6 +24,8 @@ h2{color:#e94560;margin-bottom:1rem}
 <span class="title">🏠 Coach Dashboard</span>
 <a href="/coach/tasks">📋 Tasks</a>
 <a href="/coach/conditioning">🧠 Conditioning</a>
+<a href="/coach/analyze">🔍 Analyze Text</a>
+<a href="/coach/branding">🎨 Branding</a>
 <a href="/coach/coachee/add">➕ Add Coachee</a>
 <a href="/logout">Logout</a>
 </nav>
@@ -33,11 +35,14 @@ h2{color:#e94560;margin-bottom:1rem}
 {% for cc in coachees %}
 <a href="/coach/coachee/{{ cc.id }}" style="text-decoration:none;color:inherit">
 <div class="card {{ cc.status }}">
-<h3>{{ cc.name }}</h3>
+<h3>{{ cc.avatar or '🐕' }} {{ cc.name }}</h3>
 <div class="meta">
 <span class="badge {% if cc.status=='active' %}ok{% elif cc.status=='paused' %}warn{% else %}danger{% endif %}">{{ cc.status }}</span>
 <span class="badge {% if cc.pending_tasks > 0 %}warn{% else %}ok{% endif %}">{{ cc.pending_tasks }} pending</span>
-<span class="badge {% if cc.checkins_today > 0 %}ok{% else %}warn{% endif %}">{{ cc.checkins_today }} check-ins today</span>
+<span class="badge ok">{{ cc.completed_tasks }}/{{ cc.total_tasks }} done</span>
+<span class="badge {% if cc.avg_grade in ['A','B'] %}ok{% elif cc.avg_grade in ['C','D'] %}warn{% else %}danger{% endif %}">avg {{ cc.avg_grade }}</span>
+{% if cc.strikes %}<span class="badge danger">{{ cc.strikes }} ⚡</span>{% endif %}
+<span class="badge {% if cc.checkins_today > 0 %}ok{% else %}warn{% endif %}">{{ cc.checkins_today }} check-ins</span>
 </div>
 </div>
 </a>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Branding & Settings</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+.card{background:#16213e;padding:2rem;border-radius:12px;max-width:600px;margin:0 auto}
+h2{color:#e94560;margin-bottom:1.5rem}
+label{display:block;margin-bottom:.3rem;color:#a0a0b0;font-size:.9rem;margin-top:.8rem}
+input[type=text],input[type=password]{width:100%;padding:.7rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:1rem}
+input[type=color]{width:100%;height:40px;border:none;background:none;cursor:pointer}
+.row{display:flex;gap:1rem}
+.row>div{flex:1}
+button{margin-top:1.2rem;width:100%;padding:.8rem;background:#e94560;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer}
+.preview{margin-top:1rem;padding:1rem;border-radius:8px;text-align:center}
+.hint{color:#666;font-size:.8rem}
+img.logo-preview{max-width:200px;max-height:80px;margin-top:.5rem;border-radius:6px}
+</style></head><body>
+<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
+<div class="card">
+<h2>🎨 Branding & Settings</h2>
+<form method="post">
+<label>Logo (PNG/JPG, will be resized)</label>
+<input type="file" accept="image/*" onchange="resizeLogo(this)" style="font-size:.85rem">
+<input type="hidden" name="logo_data" id="logo-data">
+{% if coach.has_logo %}<br><img src="/coach/logo" class="logo-preview">{% endif %}
+<div class="row">
+<div>
+<label>Accent Color</label>
+<input type="color" name="accent_color" id="c-accent" value="{{ coach.accent_color or '#e94560' }}">
+</div>
+<div>
+<label>Background Color</label>
+<input type="color" name="bg_color" id="c-bg" value="{{ coach.bg_color or '#1a1a2e' }}">
+</div>
+<div>
+<label>Card Color</label>
+<input type="color" name="card_color" id="c-card" value="{{ coach.card_color or '#16213e' }}">
+</div>
+</div>
+<div class="preview" id="preview">
+<strong>Preview</strong><br>This is how cards will look.
+</div>
+<label>Telegram Bot Token</label>
+<input type="text" name="telegram_bot_token" value="{{ coach.telegram_bot_token or '' }}" placeholder="123456:ABC-DEF...">
+<div class="hint">Create a bot via <a href="https://t.me/BotFather" target="_blank">@BotFather</a>, paste the token here. Set each coachee's Chat ID in their settings.</div>
+<button type="submit">Save Branding</button>
+</form>
+</div>
+<script>
+function updatePreview(){
+  const p=document.getElementById('preview');
+  p.style.background=document.getElementById('c-card').value;
+  p.style.color='#e0e0e0';
+  p.querySelector('strong').style.color=document.getElementById('c-accent').value;
+  document.body.style.background=document.getElementById('c-bg').value;
+}
+document.querySelectorAll('input[type=color]').forEach(i=>i.addEventListener('input',updatePreview));
+updatePreview();
+function resizeLogo(input){
+  if(!input.files[0])return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const img=new Image();
+    img.onload=function(){
+      let w=img.width,h=img.height;
+      const MAX=300;
+      if(w>MAX){h*=MAX/w;w=MAX}
+      if(h>MAX){w*=MAX/h;h=MAX}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      document.getElementById('logo-data').value=c.toDataURL('image/png');
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+</script>
+</body></html>

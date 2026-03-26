@@ -18,7 +18,14 @@ button{width:100%;padding:.8rem;background:#e94560;color:#fff;border:none;border
 <label>Display Name</label><input type="text" name="name" required>
 <label>Username</label><input type="text" name="username" required>
 <label>Password</label><input type="password" name="password" required>
+<label>Your Timezone</label>
+<select name="timezone" id="tz-select" style="width:100%;padding:.7rem;margin-bottom:1rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:1rem"></select>
 <button type="submit">Create Coach Account</button>
 </form>
 </div>
+<script>
+const sel=document.getElementById('tz-select');
+Intl.supportedValuesOf('timeZone').forEach(tz=>{const o=document.createElement('option');o.value=tz;o.textContent=tz.replace(/_/g,' ');sel.appendChild(o)});
+try{sel.value=Intl.DateTimeFormat().resolvedOptions().timeZone}catch(e){}
+</script>
 </body></html>
