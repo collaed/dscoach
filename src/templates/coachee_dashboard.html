@@ -1,42 +1,14 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>My Dashboard</title>
-<style>
-:root{--accent:{{ session.get('accent','#e94560') }};--bg:{{ session.get('bg','#1a1a2e') }};--card:{{ session.get('card','#16213e') }}}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:var(--bg);color:#e0e0e0;padding:0}
-nav{display:flex;gap:1rem;align-items:center;padding:1rem;flex-wrap:wrap;background:var(--card)}
-nav .title{color:var(--accent);font-size:1.3rem;font-weight:bold;margin-right:auto}
-nav a{color:var(--accent);text-decoration:none;padding:.4rem .8rem;border:1px solid var(--accent);border-radius:6px;font-size:.9rem}
-nav a:hover{background:var(--accent);color:#fff}
-.tabs{display:flex;flex-wrap:wrap;gap:0;border-bottom:2px solid #333;background:var(--card);padding:0 1rem;position:sticky;top:0;z-index:10}
-.tab{padding:.8rem 1.2rem;cursor:pointer;color:#888;border-bottom:3px solid transparent;position:relative;font-size:.95rem;user-select:none}
-.tab:hover{color:#e0e0e0}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.tab .badge{position:absolute;top:4px;right:2px;background:var(--accent);color:#fff;font-size:.7rem;padding:1px 5px;border-radius:8px;min-width:16px;text-align:center}
-.panel{display:none;padding:1rem;max-width:800px}
-.panel.active{display:block}
-.alert{background:var(--accent);color:#fff;padding:.8rem;border-radius:8px;margin:1rem;text-align:center}
-.alert.paused{background:#f5a623;color:#000}
-h3{color:var(--accent);margin:1rem 0 .5rem}
-.section{background:var(--card);padding:1rem;border-radius:10px;margin-bottom:1rem}
-textarea{width:100%;padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;min-height:100px;resize:vertical;font-size:.9rem}
-select,input[type=text]{padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
-button{padding:.5rem 1rem;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.9rem;margin-top:.4rem}
-button.secondary{background:#333}
-.entry{border-bottom:1px solid var(--bg);padding:.5rem 0;font-size:.9rem}
-.entry:last-child{border:none}
-.time{color:#888;font-size:.8rem}
-.type{color:var(--accent);font-weight:bold;font-size:.8rem;text-transform:uppercase}
-.badge-inline{display:inline-block;padding:.1rem .4rem;border-radius:3px;font-size:.75rem}
-.badge-inline.positive{background:#2d6a4f;color:#fff}
-.badge-inline.negative{background:var(--accent);color:#fff}
-.contract{white-space:pre-wrap;font-size:.85rem;color:#aaa;padding:.5rem;background:#0f3460;border-radius:6px;max-height:60vh;overflow-y:auto}
-</style></head><body>
+<link rel="stylesheet" href="/static/style.css">
+<style>:root{--accent:{{ session.get('accent','#e94560') }};--bg:{{ session.get('bg','#1a1a2e') }};--card:{{ session.get('card','#16213e') }}}</style>
+</head><body>
 <nav>
-{% if session.get('coach_id') %}<img src="/coach/logo" style="max-height:32px;border-radius:4px" onerror="this.style.display='none'">{% endif %}
-<span class="title">{{ session.get('avatar','🌟') }} {{ coachee.name }}</span>
-<a href="/me/history">📖 History</a>
+{% if session.get('coach_id') %}<img src="/coach/logo" style="max-height:28px;border-radius:4px" onerror="this.style.display='none'">{% endif %}
+<span class="title">{{ session.get('avatar','🌟') }} {{ coachee.name }}{% if coachee.current_streak %} 🔥{{ coachee.current_streak }}{% endif %}</span>
+<a href="/me/history">📖</a>
+<a href="/me/export">📥</a>
 <a href="/logout">Logout</a>
 </nav>
 
@@ -48,13 +20,16 @@ button.secondary{background:#333}
 
 <div class="tabs">
 <div class="tab active" data-tab="rules">📜 Rules</div>
-<div class="tab" data-tab="morning">🌅 Morning{% if badges.morning %}<span class="badge">{{ badges.morning }}</span>{% endif %}</div>
-<div class="tab" data-tab="evening">🌙 Evening{% if badges.evening %}<span class="badge">{{ badges.evening }}</span>{% endif %}</div>
-<div class="tab" data-tab="tasks">📋 Tasks{% if badges.tasks %}<span class="badge">{{ badges.tasks }}</span>{% endif %}</div>
-<div class="tab" data-tab="conditioning">🧠 Mind{% if badges.conditioning %}<span class="badge">{{ badges.conditioning }}</span>{% endif %}</div>
-<div class="tab" data-tab="tracking">📊 Tracking</div>
-<div class="tab" data-tab="notes">💬 Notes{% if badges.notes %}<span class="badge">{{ badges.notes }}</span>{% endif %}</div>
+{% if feat.checkins %}<div class="tab" data-tab="morning">🌅 Morning{% if badges.morning %}<span class="badge">{{ badges.morning }}</span>{% endif %}</div>
+<div class="tab" data-tab="evening">🌙 Evening{% if badges.evening %}<span class="badge">{{ badges.evening }}</span>{% endif %}</div>{% endif %}
+{% if feat.tasks %}<div class="tab" data-tab="tasks">📋 Tasks{% if badges.tasks %}<span class="badge">{{ badges.tasks }}</span>{% endif %}</div>{% endif %}
+{% if feat.conditioning %}<div class="tab" data-tab="conditioning">🧠 Mind{% if badges.conditioning %}<span class="badge">{{ badges.conditioning }}</span>{% endif %}</div>{% endif %}
+{% if feat.tracking %}<div class="tab" data-tab="tracking">📊 Tracking</div>{% endif %}
+{% if feat.notes %}<div class="tab" data-tab="notes">💬 Notes{% if badges.notes %}<span class="badge">{{ badges.notes }}</span>{% endif %}</div>{% endif %}
 <div class="tab" data-tab="boundaries">⚠️ Boundaries</div>
+{% if feat.goals %}<div class="tab" data-tab="goals">🎯 Goals</div>{% endif %}
+{% if feat.journal %}<div class="tab" data-tab="journal">📓 Journal</div>{% endif %}
+{% if feat.photos %}<div class="tab" data-tab="photos">📸 Photos</div>{% endif %}
 </div>
 
 <!-- RULES TAB -->
@@ -165,7 +140,13 @@ Close with your sign-off..."></textarea>
 <input type="file" accept="image/*" onchange="resizeImg(this)" style="font-size:.85rem">
 <input type="hidden" name="attachment_data" class="att-data">
 </div>
+<div style="margin-top:.3rem">
+<label style="color:#a0a0b0;font-size:.8rem">🪞 How did this make you feel? (optional)</label>
+<div style="display:flex;gap:.3rem;margin:.2rem 0">{% for i in range(1,6) %}<label style="cursor:pointer;margin:0"><input type="radio" name="reflection_rating" value="{{ i }}" style="width:auto"> {{ '😣😕😐🙂😊'[i-1] }}</label>{% endfor %}</div>
+<input type="text" name="reflection_text" placeholder="Any thoughts..." style="font-size:.85rem">
+</div>
 <button type="submit">Mark Complete</button>
+<button type="submit" name="status" value="partial" class="secondary" style="margin-left:.3rem">Partial</button>
 </form>
 </div>
 {% endfor %}
@@ -250,12 +231,89 @@ Close with your sign-off..."></textarea>
 <div class="panel" id="tab-boundaries">
 <div class="section">
 <h3>⚠️ Safe Word & Pause</h3>
-<p style="color:#888;font-size:.85rem;margin-bottom:1rem">Your safe word is: <strong style="color:#e94560">{{ coachee.safe_word }}</strong></p>
+<p style="color:#888;font-size:.85rem;margin-bottom:1rem">Your safe word is: <strong style="color:var(--accent)">{{ coachee.safe_word }}</strong></p>
 <form method="post" action="/me/pause" style="display:flex;gap:.5rem;flex-wrap:wrap">
 <button type="submit" name="word" value="pause" class="secondary">⏸️ I need to pause</button>
 <button type="submit" name="word" value="RED" onclick="return confirm('This will STOP the dynamic entirely. Are you sure?')">🛑 {{ coachee.safe_word }}</button>
 </form>
 </div>
+</div>
+
+<!-- GOALS TAB -->
+<div class="panel" id="tab-goals">
+<div class="section">
+<h3>🎯 Propose a Goal</h3>
+<form method="post" action="/me/goal">
+<input type="text" name="title" placeholder="Goal title..." required>
+<textarea name="description" placeholder="Describe your goal..." style="margin-top:.3rem;min-height:60px"></textarea>
+<button type="submit">Propose Goal</button>
+</form>
+</div>
+{% if goals %}
+<div class="section">
+<h3>Your Goals</h3>
+{% for g in goals %}
+<div class="entry">
+<span class="badge-inline {% if g.status in ('active','completed') %}positive{% else %}negative{% endif %}">{{ g.status }}</span>
+<strong>{{ g.title }}</strong>
+{% if g.description %}<br><span style="color:#aaa;font-size:.85rem">{{ g.description }}</span>{% endif %}
+{% if g.coach_notes %}<br><em style="color:var(--accent)">Coach: {{ g.coach_notes }}</em>{% endif %}
+</div>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+
+<!-- JOURNAL TAB -->
+<div class="panel" id="tab-journal">
+<div class="section">
+<h3>📓 Journal</h3>
+<form method="post" action="/me/journal">
+<textarea name="content" placeholder="Write freely..." required></textarea>
+<div class="check" style="margin-top:.3rem">
+<input type="checkbox" name="visible_to_coach" id="vis_coach" value="1">
+<label for="vis_coach" style="margin:0;color:#a0a0b0;font-size:.85rem">Share with coach</label>
+</div>
+<button type="submit">Save Entry</button>
+</form>
+</div>
+{% if journals %}
+<div class="section">
+<h3>Recent Entries</h3>
+{% for j in journals %}
+<div class="entry">
+<div style="white-space:pre-wrap">{{ j.content }}</div>
+<div class="time">{{ j.created_at }}{% if j.visible_to_coach %} · 👁️ shared{% endif %}</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+
+<!-- PHOTOS TAB -->
+<div class="panel" id="tab-photos">
+<div class="section">
+<h3>📸 Progress Photo</h3>
+<input type="file" accept="image/*" onchange="resizePhoto(this)" style="font-size:.85rem">
+<form method="post" action="/me/progress-photo" id="photo-form" style="display:none;margin-top:.3rem">
+<input type="hidden" name="photo_data" id="photo-data">
+<input type="text" name="caption" placeholder="Caption (optional)">
+<button type="submit">Upload Photo</button>
+</form>
+</div>
+{% if photos %}
+<div class="section">
+<h3>Your Photos</h3>
+<div style="display:flex;flex-wrap:wrap;gap:.5rem">
+{% for p in photos %}
+<div style="text-align:center">
+<img src="/progress-photo/{{ p.id }}" style="width:100px;height:100px;object-fit:cover;border-radius:6px">
+<div class="time">{{ p.caption or '' }}<br>{{ p.created_at }}</div>
+</div>
+{% endfor %}
+</div>
+</div>
+{% endif %}
 </div>
 
 </div>
@@ -282,6 +340,24 @@ function resizeImg(input){
       const c=document.createElement('canvas');c.width=w;c.height=h;
       c.getContext('2d').drawImage(img,0,0,w,h);
       input.closest('form').querySelector('.att-data').value=c.toDataURL('image/jpeg',0.85);
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function resizePhoto(input){
+  if(!input.files[0])return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const img=new Image();
+    img.onload=function(){
+      let w=img.width,h=img.height;
+      if(w>1920){h*=1920/w;w=1920}
+      if(h>1080){w*=1080/h;h=1080}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      document.getElementById('photo-data').value=c.toDataURL('image/jpeg',0.85);
+      document.getElementById('photo-form').style.display='block';
     };
     img.src=e.target.result;
   };

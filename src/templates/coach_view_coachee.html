@@ -1,37 +1,34 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ coachee.name }} - Coach View</title>
+<link rel="stylesheet" href="/static/style.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
-a{color:#e94560;text-decoration:none}
-h2{color:#e94560;margin-bottom:.5rem}
-h3{color:#e94560;margin:1.5rem 0 .5rem}
 .status{display:inline-block;padding:.2rem .6rem;border-radius:4px;font-size:.85rem;margin-left:.5rem}
-.status.active{background:#2d6a4f;color:#fff}
-.status.paused{background:#f5a623;color:#000}
-.status.stopped{background:#e94560;color:#fff}
-.section{background:#16213e;padding:1.2rem;border-radius:10px;margin-bottom:1rem}
-.entry{border-bottom:1px solid #1a1a2e;padding:.6rem 0;font-size:.9rem}
-.entry:last-child{border:none}
-.entry .time{color:#888;font-size:.8rem}
-.entry .type{color:#e94560;font-weight:bold;font-size:.8rem;text-transform:uppercase}
-.badge{display:inline-block;padding:.1rem .4rem;border-radius:3px;font-size:.75rem}
-.badge.positive{background:#2d6a4f;color:#fff}
-.badge.negative{background:#e94560;color:#fff}
-.badge.completed{background:#2d6a4f;color:#fff}
-.badge.pending{background:#f5a623;color:#000}
-.badge.missed{background:#e94560;color:#fff}
-form{margin-top:.8rem}
-textarea{width:100%;padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;min-height:60px;resize:vertical;font-size:.9rem}
-select,input[type=text],input[type=date],input[type=time]{padding:.5rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
-button{padding:.5rem 1rem;background:#e94560;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.9rem;margin-top:.4rem}
-.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:end}
-.contract{white-space:pre-wrap;font-size:.85rem;color:#aaa;max-height:200px;overflow-y:auto;padding:.5rem;background:#0f3460;border-radius:6px}
+.status.active{background:var(--ok);color:#fff}
+.status.paused{background:var(--warn);color:#000}
+.status.stopped{background:var(--danger);color:#fff}
+.badge.positive,.badge.completed{background:var(--ok);color:#fff}
+.badge.negative,.badge.missed{background:var(--danger);color:#fff}
+.badge.pending,.badge.partial{background:var(--warn);color:#000}
+.badge.ok{background:var(--ok);color:#fff}
+.badge.warn{background:var(--warn);color:#000}
+.badge.danger{background:var(--danger);color:#fff}
 </style></head><body>
-<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
-<h2>{{ coachee.avatar or '🐕' }} {{ coachee.name }} <span class="status {{ coachee.status }}">{{ coachee.status }}</span></h2>
-<p style="color:#888;font-size:.85rem">Safe word: {{ coachee.safe_word }} · Joined: {{ coachee.created_at }}</p>
+<div class="page">
+<p class="mb-1"><a href="/coach">← Dashboard</a></p>
+<h2>{{ coachee.avatar or '🐕' }} {{ coachee.name }} <span class="status {{ coachee.status }}">{{ coachee.status }}</span>{% if coachee.current_streak %} <span style="font-size:.9rem">🔥{{ coachee.current_streak }}</span>{% endif %}</h2>
+<p style="color:#888;font-size:.85rem">Safe word: {{ coachee.safe_word }} · Joined: {{ coachee.created_at }}
+· <a href="/coach/coachee/{{ coachee.id }}/summary">📊 Weekly</a>
+· <a href="/coach/coachee/{{ coachee.id }}/heatmap">📅 Heatmap</a>
+· <a href="/coach/coachee/{{ coachee.id }}/categories">📊 Categories</a>
+· <a href="/coach/coachee/{{ coachee.id }}/contracts">📜 Contract history</a>
+</p>
+<details style="margin-bottom:.8rem"><summary style="cursor:pointer;color:#888;font-size:.8rem">🔑 Reset password</summary>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/reset-password" style="display:flex;gap:.3rem;margin-top:.3rem">
+<input type="password" name="new_password" placeholder="New password" required style="padding:.3rem;font-size:.85rem;flex:1">
+<button type="submit" style="margin:0;padding:.3rem .6rem;font-size:.85rem" onclick="return confirm('Reset password?')">Reset</button>
+</form>
+</details>
 
 <div class="section">
 <h3>🪞 Psychological Profile <button onclick="genProfile()" id="gen-btn" style="font-size:.8rem;padding:.3rem .8rem;vertical-align:middle">🔄 Generate</button></h3>
@@ -80,6 +77,15 @@ button{padding:.5rem 1rem;background:#e94560;color:#fff;border:none;border-radiu
 </div>
 <label style="color:#a0a0b0;font-size:.85rem;margin-top:.5rem">Contract</label>
 <textarea name="contract">{{ coachee.contract_text or '' }}</textarea>
+<details style="margin-top:.5rem"><summary style="cursor:pointer;color:#e94560;font-size:.85rem">⚙️ Feature overrides for this coachee</summary>
+<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.3rem">
+{% for key, label in all_features %}
+<label style="display:flex;align-items:center;gap:.3rem;font-size:.8rem;background:#0f3460;padding:.3rem .5rem;border-radius:4px">
+<input type="checkbox" name="coachee_features" value="{{ key }}" style="width:auto"{% if coachee_features.get(key, True) %} checked{% endif %}>{{ label }}
+</label>
+{% endfor %}
+</div>
+</details>
 <button type="submit">Save Settings</button>
 </form>
 </div>
@@ -100,7 +106,21 @@ button{padding:.5rem 1rem;background:#e94560;color:#fff;border:none;border-radiu
 <h3>📝 Add Note</h3>
 <form method="post" action="/coach/note/{{ coachee.id }}">
 <textarea name="content" placeholder="Write a note..." required></textarea>
+<div class="row" style="margin-top:.3rem">
+<div><label style="color:#a0a0b0;font-size:.8rem">Schedule delivery (optional)</label><input type="datetime-local" name="scheduled_at" style="font-size:.85rem"></div>
+</div>
 <button type="submit">Send Note</button>
+</form>
+</div>
+
+<div class="section">
+<h3>🎙️ Voice Note</h3>
+<button onclick="toggleRec()" id="rec-btn" style="margin:0">🎤 Record</button>
+<span id="rec-status" style="color:#888;font-size:.85rem"></span>
+<form method="post" action="/coach/voice/{{ coachee.id }}" id="voice-form" style="display:none">
+<input type="hidden" name="audio_data" id="voice-data">
+<input type="hidden" name="duration" id="voice-dur">
+<button type="submit" style="margin-top:.3rem">Send Voice Note</button>
 </form>
 </div>
 
@@ -111,8 +131,9 @@ button{padding:.5rem 1rem;background:#e94560;color:#fff;border:none;border-radiu
 <span class="badge {{ t.status }}">{{ t.status }}</span>{% if t.grade %} <strong style="color:#e94560">{{ t.grade }}</strong>{% endif %} <strong>{{ t.title }}</strong> ({{ t.category }})
 {% if t.due_date %} · Due: {{ t.due_date }}{% endif %}
 {% if t.response %}<br><em style="color:#aaa">Response: {{ t.response }}</em>{% endif %}
-{% if t.attachment %}<br><a href="/task/{{ t.id }}/attachment" target="_blank">📎 View attachment</a>{% endif %}
+{% if t.attachment_path %}<br><a href="/task/{{ t.id }}/attachment" target="_blank">📎 View attachment</a>{% endif %}
 {% if t.coach_comment %}<br><span style="color:#e94560">Coach:</span> <em style="color:#ccc">{{ t.coach_comment }}</em>{% endif %}
+{% if t.reflection_rating %}<br><span style="color:#888;font-size:.8rem">🪞 {{ '😣😕😐🙂😊'[t.reflection_rating-1] }}{% if t.reflection_text %} — {{ t.reflection_text }}{% endif %}</span>{% endif %}
 {% if t.status == 'completed' %}
 <form method="post" action="/coach/task/{{ t.id }}/review" style="margin-top:.3rem;display:flex;gap:.3rem;flex-wrap:wrap;align-items:end">
 <input type="hidden" name="coachee_id" value="{{ coachee.id }}">
@@ -172,11 +193,70 @@ button{padding:.5rem 1rem;background:#e94560;color:#fff;border:none;border-radiu
 <h3>💬 Notes</h3>
 {% for n in notes %}
 <div class="entry">
-<span class="type">{{ n.author_role }}</span> {{ n.content }}
-<div class="time">{{ n.created_at }}</div>
+<span class="type">{{ n.author_role }}</span>{% if n.pinned %} 📌{% endif %}{% if n.scheduled_at and not n.read_at %} ⏰{% endif %} {{ n.content }}
+<div class="time">{{ n.created_at }}
+{% if n.author_role=='coach' %}{% if n.read_at %}<span style="color:#2d6a4f"> ✓ read {{ n.read_at }}</span>{% else %}<span style="color:#888"> · unread</span>{% endif %}{% endif %}
+<form method="post" action="/coach/note/{{ n.id }}/pin" style="display:inline"><button type="submit" style="background:none;border:none;color:#888;cursor:pointer;font-size:.75rem;padding:0;margin:0">{% if n.pinned %}unpin{% else %}📌 pin{% endif %}</button></form>
+</div>
 </div>
 {% else %}<p style="color:#888">No notes yet.</p>{% endfor %}
 </div>
+
+{% if voice_notes %}
+<div class="section">
+<h3>🎙️ Voice Notes</h3>
+{% for v in voice_notes %}
+<div class="entry">
+<span class="type">{{ v.author_role }}</span> <audio controls src="/voice/{{ v.id }}" style="height:28px;vertical-align:middle"></audio>
+{% if v.duration_sec %}<span class="meta">{{ v.duration_sec }}s</span>{% endif %}
+<div class="time">{{ v.created_at }}</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<div class="section">
+<h3>🎯 Goals</h3>
+{% for g in goals %}
+<div class="entry">
+<span class="badge {{ 'ok' if g.status in ('active','completed') else 'warn' if g.status=='proposed' else 'danger' }}">{{ g.status }}</span>
+<strong>{{ g.title }}</strong>
+{% if g.description %}<br><span class="meta">{{ g.description }}</span>{% endif %}
+{% if g.coach_notes %}<br><em style="color:#e94560">{{ g.coach_notes }}</em>{% endif %}
+<form method="post" action="/coach/goal/{{ g.id }}" style="display:inline-flex;gap:.2rem;margin-top:.2rem">
+<select name="status" style="font-size:.8rem;padding:.2rem">
+{% for s in ['proposed','approved','active','completed','rejected'] %}<option{% if g.status==s %} selected{% endif %}>{{ s }}</option>{% endfor %}
+</select>
+<input type="text" name="coach_notes" placeholder="Notes..." value="{{ g.coach_notes or '' }}" style="font-size:.8rem;padding:.2rem;width:120px">
+<button type="submit" style="font-size:.8rem;padding:.2rem .5rem;margin:0">Update</button>
+</form>
+</div>
+{% else %}<p style="color:#888">No goals proposed yet.</p>{% endfor %}
+</div>
+
+{% if journals %}
+<div class="section">
+<h3>📓 Journal (shared entries)</h3>
+{% for j in journals %}
+<div class="entry">
+<div style="white-space:pre-wrap">{{ j.content }}</div>
+<div class="time">{{ j.created_at }}</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if photos %}
+<div class="section">
+<h3>📸 Progress Photos</h3>
+<div style="display:flex;flex-wrap:wrap;gap:.5rem">
+{% for p in photos %}
+<a href="/progress-photo/{{ p.id }}" target="_blank"><img src="/progress-photo/{{ p.id }}" style="width:100px;height:100px;object-fit:cover;border-radius:6px" title="{{ p.caption or '' }} — {{ p.created_at }}"></a>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+
 <script>
 const coachTz='{{ coach_tz }}';
 const coacheeTz='{{ coachee.timezone or "Europe/London" }}';
@@ -209,24 +289,25 @@ unveil.addEventListener('change',update);
 freeze.addEventListener('change',update);
 update();setInterval(update,60000);
 
-const GKEY={{ gemini_key|tojson }};
+const LKEY={{ llm_key|tojson }};
 const CID={{ coachee.id }};
+async function callLLM(prompt){
+  const r=await fetch('https://api.mistral.ai/v1/chat/completions',{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LKEY},
+    body:JSON.stringify({model:'mistral-small-latest',messages:[{role:'user',content:prompt}],max_tokens:1024})
+  });
+  const d=await r.json();
+  return d.choices?.[0]?.message?.content || d.error?.message || JSON.stringify(d);
+}
 async function genProfile(){
   const btn=document.getElementById('gen-btn');
   const div=document.getElementById('profile-text');
   btn.disabled=true;btn.textContent='⏳ Generating...';
-  console.log('Using key:',GKEY.slice(0,10)+'...'+GKEY.slice(-4));
-  div.textContent='Using key: '+GKEY.slice(0,10)+'...'+GKEY.slice(-4)+' — calling Gemini...';
+  div.textContent='Calling Mistral...';
   try{
     const pr=await fetch(`/coach/coachee/${CID}/profile-prompt`);
     const {prompt}=await pr.json();
-    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GKEY}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
-    });
-    const d=await r.json();
-    const text=d.candidates?.[0]?.content?.parts?.[0]?.text;
-    if(!text){div.textContent='Gemini error: '+(d.error?.message||JSON.stringify(d));return}
+    const text=await callLLM(prompt);
     div.textContent=text;
     await fetch(`/coach/coachee/${CID}/profile`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
   }catch(e){div.textContent='Error: '+e}
@@ -256,5 +337,30 @@ document.querySelector('form[action*="/ack/"]')?.addEventListener('submit',funct
   const d=this.querySelector('[name=description]').value;
   tgSend(`${t==='positive'?'👍':'👎'} ${d}`);
 });
+let mediaRec=null,audioChunks=[],recStart=0;
+function toggleRec(){
+  const btn=document.getElementById('rec-btn'),st=document.getElementById('rec-status');
+  if(mediaRec&&mediaRec.state==='recording'){
+    mediaRec.stop();btn.textContent='🎤 Record';st.textContent='Processing...';return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    audioChunks=[];mediaRec=new MediaRecorder(stream);recStart=Date.now();
+    mediaRec.ondataavailable=e=>audioChunks.push(e.data);
+    mediaRec.onstop=()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      const blob=new Blob(audioChunks,{type:'audio/webm'});
+      const reader=new FileReader();
+      reader.onload=()=>{
+        document.getElementById('voice-data').value=reader.result;
+        document.getElementById('voice-dur').value=Math.round((Date.now()-recStart)/1000);
+        document.getElementById('voice-form').style.display='block';
+        st.textContent='Ready to send';
+      };
+      reader.readAsDataURL(blob);
+    };
+    mediaRec.start();btn.textContent='⏹️ Stop';st.textContent='Recording...';
+  });
+}
 </script>
+</div>
 </body></html>

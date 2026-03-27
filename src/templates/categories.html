@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Category Breakdown</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+h2{color:#e94560;margin-bottom:1rem}
+.card{background:#16213e;padding:1.2rem;border-radius:10px;margin-bottom:.8rem;max-width:500px}
+.card h3{text-transform:capitalize;margin-bottom:.5rem}
+.bar-bg{background:#0f3460;border-radius:4px;height:20px;overflow:hidden;margin:.3rem 0}
+.bar{height:100%;border-radius:4px}
+.stats{display:flex;gap:1rem;font-size:.85rem;color:#888}
+.stats span{display:flex;align-items:center;gap:.3rem}
+</style></head><body>
+<p style="margin-bottom:1rem"><a href="/coach/coachee/{{ coachee.id if coachee else '' }}">← Back</a></p>
+<h2>📊 Category Breakdown — {{ coachee.name if coachee else '' }}</h2>
+{% for cat in cats %}
+<div class="card">
+<h3>{{ cat.category }}</h3>
+<div class="bar-bg"><div class="bar" style="width:{{ (cat.completed / cat.total * 100) if cat.total else 0 }}%;background:#2d6a4f"></div></div>
+<div class="stats">
+<span>{{ cat.completed }}/{{ cat.total }} done</span>
+<span>{{ cat.missed }} missed</span>
+<span>avg {{ cat.avg_grade }}</span>
+</div>
+</div>
+{% else %}<p style="color:#888">No task data yet.</p>{% endfor %}
+</body></html>

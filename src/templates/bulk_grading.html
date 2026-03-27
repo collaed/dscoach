@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bulk Grading</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+h2{color:#e94560;margin-bottom:1rem}
+.section{background:#16213e;padding:1rem;border-radius:10px;margin-bottom:.8rem}
+.entry{padding:.8rem 0;border-bottom:1px solid #1a1a2e}
+.entry:last-child{border:none}
+.meta{color:#888;font-size:.8rem}
+.name{color:#e94560;font-weight:bold}
+.response{color:#aaa;font-size:.9rem;white-space:pre-wrap;margin:.3rem 0}
+select,input[type=text]{padding:.4rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
+button{padding:.7rem 2rem;background:#e94560;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:1rem;margin-top:1rem}
+.row{display:flex;gap:.5rem;align-items:center;margin-top:.3rem;flex-wrap:wrap}
+</style></head><body>
+<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
+<h2>📝 Bulk Grading ({{ tasks|length }} pending)</h2>
+{% if tasks %}
+<form method="post">
+<div class="section">
+{% for t in tasks %}
+<div class="entry">
+<span class="name">{{ t.coachee_name }}</span> · <strong>{{ t.title }}</strong> <span class="meta">{{ t.category }} · {{ t.responded_at }}</span>
+{% if t.has_attachment %} <a href="/task/{{ t.id }}/attachment" target="_blank">📎</a>{% endif %}
+<div class="response">{{ t.response }}</div>
+<div class="row">
+<select name="grade_{{ t.id }}"><option value="">—</option>{% for g in ['A','B','C','D','E','F'] %}<option>{{ g }}</option>{% endfor %}</select>
+<input type="text" name="comment_{{ t.id }}" placeholder="Comment..." style="flex:1">
+</div>
+</div>
+{% endfor %}
+</div>
+<button type="submit">Save All Grades</button>
+</form>
+{% else %}
+<p style="color:#888">All caught up — no tasks to grade! 🎉</p>
+{% endif %}
+</body></html>

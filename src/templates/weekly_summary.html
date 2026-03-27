@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weekly Summary</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+h2{color:#e94560;margin-bottom:1rem}
+.card{background:#16213e;padding:1.5rem;border-radius:12px;max-width:500px}
+.stat{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid #1a1a2e;font-size:.95rem}
+.stat:last-child{border:none}
+.stat .label{color:#a0a0b0}
+.stat .value{font-weight:bold}
+.good{color:#2d6a4f}
+.warn{color:#f5a623}
+.bad{color:#e94560}
+</style></head><body>
+<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
+<h2>📊 Weekly Summary — {{ coachee.name }}</h2>
+<p style="color:#888;margin-bottom:1rem">{{ s.week_start }} to {{ s.week_end }}</p>
+<div class="card">
+<div class="stat"><span class="label">Tasks assigned</span><span class="value">{{ s.total }}</span></div>
+<div class="stat"><span class="label">Completed</span><span class="value good">{{ s.completed }}</span></div>
+<div class="stat"><span class="label">Missed</span><span class="value {% if s.missed %}bad{% else %}good{% endif %}">{{ s.missed }}</span></div>
+<div class="stat"><span class="label">Average grade</span><span class="value">{{ s.avg_grade }}</span></div>
+<div class="stat"><span class="label">Check-ins</span><span class="value">{{ s.checkins }}</span></div>
+<div class="stat"><span class="label">Current streak</span><span class="value {% if s.current_streak > 3 %}good{% endif %}">🔥 {{ s.current_streak }} days</span></div>
+<div class="stat"><span class="label">Best streak</span><span class="value">{{ s.best_streak }} days</span></div>
+<div class="stat"><span class="label">Total strikes</span><span class="value {% if s.strikes %}bad{% else %}good{% endif %}">{{ s.strikes }} ⚡</span></div>
+</div>
+</body></html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Compliance Heatmap</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+h2{color:#e94560;margin-bottom:1rem}
+.grid{display:flex;flex-wrap:wrap;gap:3px;max-width:700px}
+.day{width:18px;height:18px;border-radius:3px;position:relative}
+.day:hover::after{content:attr(title);position:absolute;bottom:22px;left:0;background:#000;color:#fff;padding:2px 6px;border-radius:4px;font-size:.75rem;white-space:nowrap;z-index:1}
+.legend{display:flex;gap:1rem;margin:1rem 0;font-size:.85rem;color:#888}
+.legend span{display:inline-flex;align-items:center;gap:.3rem}
+.legend .box{width:14px;height:14px;border-radius:2px;display:inline-block}
+</style></head><body>
+<p style="margin-bottom:1rem"><a href="/coach/coachee/{{ cid }}">← Back</a></p>
+<h2>📅 Compliance Heatmap — {{ coachee.name }}</h2>
+<p style="color:#888;font-size:.85rem;margin-bottom:1rem">Last 90 days</p>
+<div class="legend">
+<span><span class="box" style="background:#2d6a4f"></span> All done</span>
+<span><span class="box" style="background:#f5a623"></span> Partial</span>
+<span><span class="box" style="background:#e94560"></span> Missed</span>
+<span><span class="box" style="background:#222"></span> No tasks</span>
+</div>
+<div class="grid" id="heatmap"></div>
+<script>
+const days={{ days|safe }};
+const grid=document.getElementById('heatmap');
+const now=new Date();
+for(let i=89;i>=0;i--){
+  const d=new Date(now);d.setDate(d.getDate()-i);
+  const key=d.toISOString().slice(0,10);
+  const el=document.createElement('div');
+  el.className='day';
+  const info=days[key];
+  if(!info){el.style.background='#222'}
+  else if(info.completed===info.total){el.style.background='#2d6a4f'}
+  else if(info.missed>0){el.style.background='#e94560'}
+  else{el.style.background='#f5a623'}
+  el.title=key+(info?` — ${info.completed}/${info.total} done`:'');
+  grid.appendChild(el);
+}
+</script>
+</body></html>

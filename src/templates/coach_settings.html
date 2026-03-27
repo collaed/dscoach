@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Settings</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+.card{background:#16213e;padding:1.5rem;border-radius:12px;max-width:600px;margin:0 auto 1rem}
+h2{color:#e94560;margin-bottom:1rem}
+h3{color:#e94560;margin-bottom:.8rem}
+label{display:block;margin-bottom:.3rem;color:#a0a0b0;font-size:.9rem;margin-top:.6rem}
+input[type=text],input[type=password]{width:100%;padding:.7rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:1rem}
+button{margin-top:.8rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer;width:100%}
+.feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.5rem}
+.feature-item{display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:#0f3460;border-radius:6px;font-size:.9rem}
+.feature-item input{width:auto}
+</style></head><body>
+<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
+
+<div class="card">
+<h3>✏️ Display Name</h3>
+<form method="post"><input type="hidden" name="action" value="name">
+<input type="text" name="name" value="{{ coach.name }}" required>
+<button type="submit">Update Name</button>
+</form>
+</div>
+
+<div class="card">
+<h3>🔑 Change Password</h3>
+<form method="post"><input type="hidden" name="action" value="password">
+<label>Current Password</label><input type="password" name="old_password" required>
+<label>New Password</label><input type="password" name="new_password" required>
+<button type="submit">Change Password</button>
+</form>
+</div>
+
+<div class="card">
+<h3>⚙️ Feature Toggles</h3>
+<p style="color:#888;font-size:.85rem;margin-bottom:.5rem">Enable or disable features for all your coachees. You can further customize per coachee in their settings.</p>
+<form method="post"><input type="hidden" name="action" value="features">
+<div class="feature-grid">
+{% for key, label in features %}
+<label class="feature-item">
+<input type="checkbox" name="features" value="{{ key }}"{% if coach_features.get(key, True) %} checked{% endif %}>
+{{ label }}
+</label>
+{% endfor %}
+</div>
+<button type="submit">Save Features</button>
+</form>
+</div>
+
+</body></html>

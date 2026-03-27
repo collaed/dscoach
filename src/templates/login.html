@@ -1,25 +1,28 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Coaching System - Login</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh;display:flex;align-items:center;justify-content:center}
-.card{background:#16213e;padding:2rem;border-radius:12px;width:100%;max-width:400px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
-h1{color:#e94560;margin-bottom:1.5rem;text-align:center}
-label{display:block;margin-bottom:.3rem;color:#a0a0b0;font-size:.9rem}
-input[type=text],input[type=password]{width:100%;padding:.7rem;margin-bottom:1rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:1rem}
-button{width:100%;padding:.8rem;background:#e94560;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer}
-button:hover{background:#c73650}
-.error{color:#e94560;text-align:center;margin-bottom:1rem}
-a{color:#e94560;text-decoration:none}
+<link rel="stylesheet" href="/static/style.css">
+<style>body{min-height:100vh;display:flex;align-items:center;justify-content:center}
+.login-card{background:var(--card);padding:2rem;border-radius:12px;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.login-card h1{text-align:center;margin-bottom:1.5rem}
+.error{color:var(--danger);text-align:center;margin-bottom:1rem}
 </style></head><body>
-<div class="card">
+<div class="login-card">
 <h1>🔐 Coaching System</h1>
 {% if error %}<p class="error">{{ error }}</p>{% endif %}
 <form method="post">
 <label>Username</label><input type="text" name="username" required>
 <label>Password</label><input type="password" name="password" required>
-<button type="submit">Sign In</button>
+<button style="width:100%">Sign In</button>
 </form>
+<p class="text-center mt-1 small">
+<a href="#" onclick="forgotPw();return false">Forgot password?</a> · <a href="/features">Features →</a>
+</p>
 </div>
+<script>
+function forgotPw(){
+  const u=document.querySelector('[name=username]').value||'';
+  window.location='mailto:papillon.severin@gmail.com?subject=Password%20Reset%20Request&body=Username:%20'+encodeURIComponent(u);
+}
+</script>
 </body></html>

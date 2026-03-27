@@ -16,18 +16,39 @@ button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border
 .entry{border-bottom:1px solid #1a1a2e;padding:.5rem 0;font-size:.9rem}
 .entry:last-child{border:none}
 .meta{color:#888;font-size:.8rem}
-.reserve-tag{background:#f5a623;color:#000;padding:.1rem .4rem;border-radius:3px;font-size:.75rem}
+.tag{padding:.1rem .4rem;border-radius:3px;font-size:.75rem;display:inline-block}
+.tag.reserve{background:#f5a623;color:#000}
+.tag.recur{background:#2d6a4f;color:#fff}
+.tag.library{background:#6a2d6a;color:#fff}
 .check{display:flex;align-items:center;gap:.5rem;margin-top:.6rem}
 .check input{width:auto}
 .hint{color:#666;font-size:.8rem}
 #assign-section{transition:opacity .2s}
+.lib-item{padding:.6rem;border:1px solid #333;border-radius:6px;margin-bottom:.4rem;cursor:pointer}
+.lib-item:hover{border-color:#e94560}
+.lib-item.selected{border-color:#e94560;background:#0f3460}
+.lib-item .usage{color:#888;font-size:.8rem}
+.tabs{display:flex;gap:0;margin-bottom:1rem}
+.tab{padding:.6rem 1.2rem;cursor:pointer;color:#888;border-bottom:2px solid transparent;font-size:.95rem}
+.tab.active{color:#e94560;border-bottom-color:#e94560}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
 </style></head><body>
 <p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
 <h2>📋 Task Management</h2>
 
+<div class="tabs">
+<div class="tab active" onclick="switchTab('create')">✏️ Create New</div>
+<div class="tab" onclick="switchTab('library')">📚 From Library</div>
+<div class="tab" onclick="switchTab('existing')">📄 All Templates</div>
+</div>
+
+<!-- CREATE TAB -->
+<div class="tab-panel active" id="tab-create">
 <div class="section">
 <h3>Create & Assign Task</h3>
 <form method="post">
+<input type="hidden" name="action" value="create">
 <label>Title</label><input type="text" name="title" required>
 <label>Description</label><textarea name="description"></textarea>
 <label>Category</label>
@@ -37,6 +58,12 @@ button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border
 <option value="emotional">Emotional</option>
 <option value="admin">Admin</option>
 </select>
+<label>Difficulty</label>
+<select name="difficulty">
+<option value="easy">Easy</option>
+<option value="medium" selected>Medium</option>
+<option value="hard">Hard</option>
+</select>
 <label>Recurrence</label>
 <select name="recurrence">
 <option value="once">One-time</option>
@@ -45,28 +72,137 @@ button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border
 </select>
 <div class="check">
 <input type="checkbox" name="is_reserve" id="is_reserve" value="1" onchange="document.getElementById('assign-section').style.opacity=this.checked?'0.3':'1'">
-<label for="is_reserve" style="margin:0;color:#f5a623">🏦 Reserve task (auto-assigned if no manual task sent by unveil time)</label>
+<label for="is_reserve" style="margin:0;color:#f5a623">🏦 Reserve task</label>
+</div>
+<div style="display:flex;gap:1rem;margin-top:.6rem">
+<div style="flex:1">
+<label>Auto-recur every N days (0 = none)</label>
+<input type="number" name="recur_days" value="0" min="0">
+</div>
+<div class="check" style="margin-top:1.4rem">
+<input type="checkbox" name="recur_approx" id="recur_approx" value="1">
+<label for="recur_approx" style="margin:0;color:#a0a0b0">≈ ±25%</label>
+</div>
+</div>
+<div class="check">
+<input type="checkbox" name="in_library" id="in_library" value="1" checked>
+<label for="in_library" style="margin:0;color:#6a2d6a">📚 Save in library</label>
 </div>
 <div id="assign-section">
 <label>Due Date (optional)</label><input type="date" name="due_date">
-<label>Assign to (hold Ctrl/Cmd to select multiple)</label>
+<label>Assign to</label>
 <select name="coachee_ids" multiple>
 {% for cc in coachees %}<option value="{{ cc.id }}">{{ cc.name }}</option>{% endfor %}
 </select>
-<div class="hint">Not needed for reserve tasks — they auto-assign.</div>
 </div>
 <button type="submit">Create Task</button>
 </form>
 </div>
+</div>
 
+<!-- LIBRARY TAB -->
+<div class="tab-panel" id="tab-library">
 <div class="section">
-<h3>Existing Templates</h3>
+<h3>📚 Assign from Library</h3>
+<label>Search</label>
+<input type="text" id="lib-search" placeholder="Type to search tasks..." oninput="filterLibrary()">
+<div id="lib-results" style="margin-top:.8rem"></div>
+<form method="post" id="lib-form" style="display:none;margin-top:.8rem;padding-top:.8rem;border-top:1px solid #333">
+<input type="hidden" name="action" value="assign_library">
+<input type="hidden" name="template_id" id="lib-tmpl-id">
+<div id="lib-usage-info"></div>
+<label>Due Date (optional)</label><input type="date" name="due_date">
+<label>Assign to</label>
+<select name="coachee_ids" multiple id="lib-coachees" onchange="showUsage()">
+{% for cc in coachees %}<option value="{{ cc.id }}">{{ cc.name }}</option>{% endfor %}
+</select>
+<button type="submit">Assign Task</button>
+</form>
+</div>
+</div>
+
+<!-- EXISTING TAB -->
+<div class="tab-panel" id="tab-existing">
+<div class="section">
+<h3>All Templates</h3>
 {% for t in templates %}
 <div class="entry">
-<strong>{{ t.title }}</strong> · {{ t.category }} · {{ t.recurrence }}
-{% if t.is_reserve %}<span class="reserve-tag">reserve</span>{% endif %}
+<strong>{{ t.title }}</strong> · {{ t.category }} · {{ t.difficulty or 'medium' }}
+{% if t.is_reserve %}<span class="tag reserve">reserve</span>{% endif %}
+{% if t.recur_days %}<span class="tag recur">↻ {{ t.recur_days }}d{% if t.recur_approx %}≈{% endif %}</span>{% endif %}
+{% if t.in_library %}<span class="tag library">📚</span>{% endif %}
 {% if t.description %}<br><span class="meta">{{ t.description }}</span>{% endif %}
+<details style="margin-top:.3rem"><summary style="cursor:pointer;color:#888;font-size:.8rem">Edit / Delete</summary>
+<form method="post" action="/coach/template/{{ t.id }}/edit" style="margin-top:.3rem">
+<input type="text" name="title" value="{{ t.title }}" required style="font-size:.85rem">
+<textarea name="description" style="font-size:.85rem;min-height:40px;margin-top:.2rem">{{ t.description or '' }}</textarea>
+<div style="display:flex;gap:.3rem;margin-top:.2rem;flex-wrap:wrap">
+<select name="category" style="font-size:.8rem">{% for c in ['mental','physical','emotional','admin'] %}<option{% if t.category==c %} selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+<select name="difficulty" style="font-size:.8rem">{% for d in ['easy','medium','hard'] %}<option{% if (t.difficulty or 'medium')==d %} selected{% endif %}>{{ d }}</option>{% endfor %}</select>
+<input type="number" name="recur_days" value="{{ t.recur_days or 0 }}" min="0" style="width:60px;font-size:.8rem" placeholder="days">
+<label style="font-size:.8rem;margin:0;display:flex;align-items:center;gap:.2rem"><input type="checkbox" name="recur_approx" value="1"{% if t.recur_approx %} checked{% endif %} style="width:auto">≈</label>
+<label style="font-size:.8rem;margin:0;display:flex;align-items:center;gap:.2rem"><input type="checkbox" name="in_library" value="1"{% if t.in_library %} checked{% endif %} style="width:auto">📚</label>
+<button type="submit" style="font-size:.8rem;padding:.2rem .6rem;margin:0">Save</button>
+</div>
+</form>
+<form method="post" action="/coach/template/{{ t.id }}/delete" style="margin-top:.3rem" onsubmit="return confirm('Delete this template?')">
+<button type="submit" style="font-size:.8rem;padding:.2rem .6rem;margin:0;background:#333">🗑️ Delete</button>
+</form>
+</details>
 </div>
 {% else %}<p style="color:#888">No tasks created yet.</p>{% endfor %}
 </div>
+</div>
+
+<script>
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['create','library','existing'][i]===name));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='library'&&!window._libLoaded)loadLibrary();
+}
+
+let libData=[];
+async function loadLibrary(){
+  window._libLoaded=true;
+  const r=await fetch('/coach/library-search');
+  libData=await r.json();
+  filterLibrary();
+}
+
+function filterLibrary(){
+  const q=document.getElementById('lib-search').value.toLowerCase();
+  const div=document.getElementById('lib-results');
+  const matches=q?libData.filter(t=>(t.title+' '+t.description+' '+t.category).toLowerCase().includes(q)):libData;
+  div.innerHTML=matches.length?matches.map(t=>
+    `<div class="lib-item" onclick="selectLib(${t.id})">
+      <strong>${t.title}</strong> <span class="meta">${t.category}</span>
+      ${t.description?'<br><span class="meta">'+t.description+'</span>':''}
+    </div>`
+  ).join(''):'<p style="color:#888">'+(q?'No matches':'Type to search or browse all')+'</p>';
+}
+
+let selectedLib=null;
+function selectLib(id){
+  selectedLib=libData.find(t=>t.id===id);
+  document.querySelectorAll('.lib-item').forEach(el=>el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  document.getElementById('lib-tmpl-id').value=id;
+  document.getElementById('lib-form').style.display='block';
+  showUsage();
+}
+
+function showUsage(){
+  if(!selectedLib)return;
+  const sel=document.getElementById('lib-coachees');
+  const info=document.getElementById('lib-usage-info');
+  const lines=[];
+  for(const opt of sel.selectedOptions){
+    const u=selectedLib.usage[opt.value];
+    if(u&&u.times>0) lines.push(`<span style="color:#f5a623">${opt.text}: used ${u.times}× — last on ${u.last}</span>`);
+    else lines.push(`<span style="color:#2d6a4f">${opt.text}: never used</span>`);
+  }
+  info.innerHTML=lines.length?'<div style="font-size:.85rem;margin-bottom:.5rem">'+lines.join('<br>')+'</div>':'';
+}
+</script>
 </body></html>

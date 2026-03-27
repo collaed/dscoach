@@ -22,27 +22,26 @@ button:disabled{opacity:.5;cursor:wait}
 <div id="result" class="result" style="display:none"></div>
 </div>
 <script>
-const KEY={{ gemini_key|tojson }};
+const KEY={{ llm_key|tojson }};
 async function analyze(){
-  const text=document.getElementById('input').value.trim();
-  if(!text)return;
+  const input=document.getElementById('input').value.trim();
+  if(!input)return;
   const btn=document.getElementById('btn');
   const res=document.getElementById('result');
   btn.disabled=true;btn.textContent='Analyzing...';
-  res.textContent='Using key: '+KEY.slice(0,10)+'...'+KEY.slice(-4)+' — calling Gemini...';
+  res.textContent='Calling Mistral...';
   res.style.display='block';
-  const prompt=`You are a coaching psychology assistant. Analyze the following text — it could be a conversation, messages, journal entries, or session notes. Provide a psychological profile of the person(s) involved: emotional patterns, communication style, attachment tendencies, areas of strength, areas of concern, and any recommendations for a coach working with them. Max 400 words. Be empathetic but honest.\n\nTEXT:\n${text.slice(0,15000)}`;
+  const prompt=`You are a coaching psychology assistant. Analyze the following text — it could be a conversation, messages, journal entries, or session notes. Provide a psychological profile of the person(s) involved: emotional patterns, communication style, attachment tendencies, areas of strength, areas of concern, and any recommendations for a coach working with them. Max 400 words. Be empathetic but honest.\n\nTEXT:\n${input.slice(0,15000)}`;
   try{
-    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${KEY}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+    const r=await fetch('https://api.mistral.ai/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
+      body:JSON.stringify({model:'mistral-small-latest',messages:[{role:'user',content:prompt}],max_tokens:1024})
     });
     const d=await r.json();
-    const text=d.candidates?.[0]?.content?.parts?.[0]?.text;
-    if(!text){res.textContent='Gemini error: '+(d.error?.message||JSON.stringify(d));res.style.display='block';return}
+    const text=d.choices?.[0]?.message?.content;
+    if(!text){res.textContent='Error: '+(d.error?.message||JSON.stringify(d));return}
     res.textContent=text;
-    res.style.display='block';
-  }catch(e){res.textContent='Error: '+e;res.style.display='block'}
+  }catch(e){res.textContent='Error: '+e}
   btn.disabled=false;btn.textContent='Analyze';
 }
 </script>

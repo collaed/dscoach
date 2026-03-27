@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Audit Log</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
+a{color:#e94560;text-decoration:none}
+h2{color:#e94560;margin-bottom:1rem}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{text-align:left;color:#e94560;padding:.5rem;border-bottom:2px solid #333}
+td{padding:.4rem .5rem;border-bottom:1px solid #222}
+.ip{color:#888;font-family:monospace;font-size:.8rem}
+</style></head><body>
+<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
+<h2>🔒 Audit Log</h2>
+<table>
+<tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>IP</th><th>User Agent</th></tr>
+{% for l in logs %}
+<tr>
+<td>{{ l.created_at }}</td>
+<td>{{ l.user_id }}</td>
+<td>{{ l.role }}</td>
+<td>{{ l.action }}</td>
+<td class="ip">{{ l.ip }}</td>
+<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#888;font-size:.75rem">{{ l.user_agent }}</td>
+</tr>
+{% else %}<tr><td colspan="6" style="color:#888">No activity logged yet.</td></tr>{% endfor %}
+</table>
+</body></html>

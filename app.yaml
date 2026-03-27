@@ -8,6 +8,9 @@ locality:
 capabilities:
   database:
     engine: mysql
+volumes:
+- name: attachments
+  mount: /data/attachments
 debug: true
 scaling:
   mode: single_concurrency

@@ -1,6 +1,6 @@
 [package]
 name = "eddycollart/coaching-system"
-version = "0.13.0"
+version = "0.21.0"
 description = "1-to-many coaching relationship management system"
 readme = "README.md"
 

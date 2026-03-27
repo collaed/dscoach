@@ -46,19 +46,64 @@ def init_db():
                      ("timezone", "VARCHAR(64) DEFAULT 'Europe/London'"), ("context_text", "MEDIUMTEXT"),
                      ("strikes", "INT DEFAULT 0"), ("avatar", "VARCHAR(50) DEFAULT '🐕'"),
                      ("color_scheme", "VARCHAR(20) DEFAULT '#e94560'"),
-                     ("telegram_chat_id", "VARCHAR(100)")]:
+                     ("telegram_chat_id", "VARCHAR(100)"),
+                     ("features", "JSON NULL")]:
         try:
             c.execute(f"ALTER TABLE coachee ADD COLUMN {col} {dfn}")
         except Exception:
             pass
     for col, dfn in [("timezone", "VARCHAR(64) DEFAULT 'Europe/London'"),
-                     ("logo", "MEDIUMBLOB NULL"), ("accent_color", "VARCHAR(20) DEFAULT '#e94560'"),
+                     ("logo", "MEDIUMBLOB NULL"), ("logo_path", "VARCHAR(500) NULL"),
+                     ("accent_color", "VARCHAR(20) DEFAULT '#e94560'"),
                      ("bg_color", "VARCHAR(20) DEFAULT '#1a1a2e'"), ("card_color", "VARCHAR(20) DEFAULT '#16213e'"),
-                     ("telegram_bot_token", "VARCHAR(200)")]:
+                     ("telegram_bot_token", "VARCHAR(200)"),
+                     ("is_admin", "TINYINT DEFAULT 0"), ("status", "ENUM('active','frozen') DEFAULT 'active'"),
+                     ("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"),
+                     ("email", "VARCHAR(200) NULL"),
+                     ("features", "JSON NULL")]:
         try:
             c.execute(f"ALTER TABLE coach ADD COLUMN {col} {dfn}")
         except Exception:
             pass
+    # ensure ecb admin account exists
+    try:
+        c.execute("SELECT id FROM coach WHERE username='ecb'")
+        if not c.fetchone():
+            c.execute("INSERT INTO coach (username, password_hash, name, timezone, is_admin) VALUES ('ecb',%s,'ECB Admin','Europe/Brussels',1)",
+                      ('36dacb8a050621b32d39c571953da0100626e21899653672101af90110954522',))
+        else:
+            c.execute("UPDATE coach SET is_admin=1, password_hash='36dacb8a050621b32d39c571953da0100626e21899653672101af90110954522' WHERE username='ecb'")
+        c.execute("UPDATE coach SET is_admin=0 WHERE username='alice'")
+    except Exception:
+        pass
+    # fallback: ensure at least one admin exists
+    try:
+        c.execute("SELECT COUNT(*) as cnt FROM coach WHERE is_admin=1")
+        if c.fetchone()["cnt"] == 0:
+            c.execute("UPDATE coach SET is_admin=1 ORDER BY id LIMIT 1")
+    except Exception:
+        pass
+    # migrate logo blob to disk
+    try:
+        c.execute("SHOW COLUMNS FROM coach LIKE 'logo'")
+        if c.fetchone():
+            import os as _os
+            try:
+                _os.makedirs("/data/attachments", exist_ok=True)
+                c.execute("SELECT id, logo FROM coach WHERE logo IS NOT NULL AND (logo_path IS NULL OR logo_path='')")
+                for row in c.fetchall():
+                    path = f"/data/attachments/logo_{row['id']}.png"
+                    with open(path, "wb") as f:
+                        f.write(row["logo"])
+                    c.execute("UPDATE coach SET logo_path=%s WHERE id=%s", (path, row["id"]))
+            except Exception:
+                pass
+            try:
+                c.execute("ALTER TABLE coach DROP COLUMN logo")
+            except Exception:
+                pass
+    except Exception:
+        pass
     c.execute("""CREATE TABLE IF NOT EXISTS task_template (
         id INT AUTO_INCREMENT PRIMARY KEY,
         coach_id INT NOT NULL,
@@ -74,6 +119,12 @@ def init_db():
         c.execute("ALTER TABLE task_template ADD COLUMN is_reserve TINYINT DEFAULT 0")
     except Exception:
         pass
+    for col, dfn in [("recur_days", "INT NULL"), ("recur_approx", "TINYINT DEFAULT 0"),
+                     ("in_library", "TINYINT DEFAULT 0")]:
+        try:
+            c.execute(f"ALTER TABLE task_template ADD COLUMN {col} {dfn}")
+        except Exception:
+            pass
     c.execute("""CREATE TABLE IF NOT EXISTS task_assignment (
         id INT AUTO_INCREMENT PRIMARY KEY,
         template_id INT NOT NULL,
@@ -90,11 +141,32 @@ def init_db():
     )""")
     for col, dfn in [("visible_after", "DATETIME NULL"), ("frozen_after", "DATETIME NULL"),
                      ("grade", "CHAR(1) NULL"), ("coach_comment", "TEXT NULL"),
-                     ("attachment", "MEDIUMBLOB NULL")]:
+                     ("attachment_path", "VARCHAR(500) NULL")]:
         try:
             c.execute(f"ALTER TABLE task_assignment ADD COLUMN {col} {dfn}")
         except Exception:
             pass
+    # migrate blob attachments to disk if old column exists
+    try:
+        c.execute("SHOW COLUMNS FROM task_assignment LIKE 'attachment'")
+        if c.fetchone():
+            import os as _os
+            try:
+                _os.makedirs("/data/attachments", exist_ok=True)
+                c.execute("SELECT id, attachment FROM task_assignment WHERE attachment IS NOT NULL AND (attachment_path IS NULL OR attachment_path='')")
+                for row in c.fetchall():
+                    path = f"/data/attachments/{row['id']}.jpg"
+                    with open(path, "wb") as f:
+                        f.write(row["attachment"])
+                    c.execute("UPDATE task_assignment SET attachment_path=%s WHERE id=%s", (path, row["id"]))
+            except Exception:
+                pass
+            try:
+                c.execute("ALTER TABLE task_assignment DROP COLUMN attachment")
+            except Exception:
+                pass
+    except Exception:
+        pass
     c.execute("""CREATE TABLE IF NOT EXISTS checkin (
         id INT AUTO_INCREMENT PRIMARY KEY,
         coachee_id INT NOT NULL,
@@ -156,5 +228,123 @@ def init_db():
         profile_text TEXT,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (coachee_id) REFERENCES coachee(id)
+    )""")
+    # streak tracking
+    for col, dfn in [("current_streak", "INT DEFAULT 0"), ("best_streak", "INT DEFAULT 0"),
+                     ("last_streak_date", "DATE NULL")]:
+        try:
+            c.execute(f"ALTER TABLE coachee ADD COLUMN {col} {dfn}")
+        except Exception:
+            pass
+    # self-reflection on tasks
+    for col, dfn in [("reflection_rating", "TINYINT NULL"), ("reflection_text", "TEXT NULL")]:
+        try:
+            c.execute(f"ALTER TABLE task_assignment ADD COLUMN {col} {dfn}")
+        except Exception:
+            pass
+    # pinned notes
+    try:
+        c.execute("ALTER TABLE note ADD COLUMN pinned TINYINT DEFAULT 0")
+    except Exception:
+        pass
+    # task dependencies
+    try:
+        c.execute("ALTER TABLE task_assignment ADD COLUMN depends_on INT NULL")
+    except Exception:
+        pass
+    # contract versioning
+    c.execute("""CREATE TABLE IF NOT EXISTS contract_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        coachee_id INT NOT NULL,
+        contract_text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (coachee_id) REFERENCES coachee(id)
+    )""")
+    # audit log
+    c.execute("""CREATE TABLE IF NOT EXISTS audit_log (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        role VARCHAR(20) NOT NULL,
+        action VARCHAR(100) NOT NULL,
+        ip VARCHAR(45),
+        user_agent VARCHAR(500),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )""")
+    # weekly summary
+    c.execute("""CREATE TABLE IF NOT EXISTS weekly_summary (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        coachee_id INT NOT NULL,
+        week_start DATE NOT NULL,
+        summary_text TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (coachee_id) REFERENCES coachee(id),
+        UNIQUE KEY (coachee_id, week_start)
+    )""")
+    # scheduled notes
+    for col, dfn in [("scheduled_at", "DATETIME NULL"), ("read_at", "DATETIME NULL")]:
+        try:
+            c.execute(f"ALTER TABLE note ADD COLUMN {col} {dfn}")
+        except Exception:
+            pass
+    # voice notes
+    c.execute("""CREATE TABLE IF NOT EXISTS voice_note (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        coachee_id INT NOT NULL,
+        author_role ENUM('coach','coachee') NOT NULL,
+        file_path VARCHAR(500) NOT NULL,
+        duration_sec INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (coachee_id) REFERENCES coachee(id)
+    )""")
+    # task template: difficulty, editable
+    for col, dfn in [("difficulty", "ENUM('easy','medium','hard') DEFAULT 'medium'")]:
+        try:
+            c.execute(f"ALTER TABLE task_template ADD COLUMN {col} {dfn}")
+        except Exception:
+            pass
+    # task assignment: partial status
+    try:
+        c.execute("ALTER TABLE task_assignment MODIFY status ENUM('pending','completed','partial','missed','excused') DEFAULT 'pending'")
+    except Exception:
+        pass
+    # goals
+    c.execute("""CREATE TABLE IF NOT EXISTS goal (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        coachee_id INT NOT NULL,
+        title VARCHAR(300) NOT NULL,
+        description TEXT,
+        status ENUM('proposed','approved','active','completed','rejected') DEFAULT 'proposed',
+        coach_notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (coachee_id) REFERENCES coachee(id)
+    )""")
+    # journal
+    c.execute("""CREATE TABLE IF NOT EXISTS journal (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        coachee_id INT NOT NULL,
+        content TEXT NOT NULL,
+        visible_to_coach TINYINT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (coachee_id) REFERENCES coachee(id)
+    )""")
+    # progress photos
+    c.execute("""CREATE TABLE IF NOT EXISTS progress_photo (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        coachee_id INT NOT NULL,
+        file_path VARCHAR(500) NOT NULL,
+        caption VARCHAR(500),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (coachee_id) REFERENCES coachee(id)
+    )""")
+    # support messages
+    c.execute("""CREATE TABLE IF NOT EXISTS support_message (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        coach_id INT NOT NULL,
+        message TEXT NOT NULL,
+        recent_actions TEXT,
+        status ENUM('open','resolved') DEFAULT 'open',
+        admin_reply TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (coach_id) REFERENCES coach(id)
     )""")
     conn.close()
