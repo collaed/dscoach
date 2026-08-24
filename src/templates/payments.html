@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Payments — {{ coachee.name }}</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.pay-status{display:inline-flex;align-items:center;gap:.3rem;padding:.3rem .7rem;border-radius:20px;font-size:.82rem;font-weight:600}
+.pay-status.green{background:rgba(16,185,129,0.15);color:#10b981}
+.pay-status.yellow{background:rgba(245,158,11,0.15);color:#f59e0b}
+.pay-status.orange{background:rgba(249,115,22,0.15);color:#f97316}
+.pay-status.red{background:rgba(239,68,68,0.15);color:#ef4444}
+.pay-status.none{background:rgba(107,107,128,0.15);color:#6b6b80}
+</style>
+</head><body class="font-{{ font_pref }}">
+<nav>
+<span class="title">DSCoaching</span>
+<a href="/coach/coachee/{{ coachee.id }}">← {{ coachee.name }}</a>
+<a href="/coach">Dashboard</a>
+</nav>
+{{ flash_block }}
+<div class="page">
+<h2>💳 Payments — {{ coachee.name }}</h2>
+
+<div style="display:flex;gap:.8rem;align-items:center;margin-bottom:1rem">
+<span class="pay-status {{ compliance.status }}">
+{% if compliance.status == 'green' %}✓ Up to date
+{% elif compliance.status == 'yellow' %}⚠ 1 period late
+{% elif compliance.status == 'orange' %}⚠ {{ compliance.periods_late }} periods late
+{% elif compliance.status == 'red' %}✗ {{ compliance.periods_late }}+ periods overdue
+{% else %}No plan set{% endif %}
+</span>
+{% if plan %}<span style="color:var(--muted);font-size:.85rem">Plan: {{ plan.amount }} {{ plan.currency }} / {{ plan.frequency }} (since {{ plan.start_date }})</span>{% endif %}
+</div>
+
+<div class="section">
+<h3>Payment Plan</h3>
+<form method="post">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="setup_plan">
+<div class="row">
+<div>
+<label>Frequency</label>
+<select name="frequency" required>
+<option value="daily"{% if plan and plan.frequency == 'daily' %} selected{% endif %}>Daily</option>
+<option value="weekly"{% if plan and plan.frequency == 'weekly' %} selected{% endif %}>Weekly</option>
+<option value="monthly"{% if plan and plan.frequency == 'monthly' %} selected{% endif %}>Monthly</option>
+<option value="adhoc"{% if plan and plan.frequency == 'adhoc' %} selected{% endif %}>Ad-hoc</option>
+</select>
+</div>
+<div>
+<label>Amount</label>
+<input type="text" name="plan_amount" value="{{ plan.amount if plan else '' }}" required placeholder="50.00">
+</div>
+<div>
+<label>Currency</label>
+<input type="text" name="currency" value="{{ plan.currency if plan else 'EUR' }}" style="width:80px" placeholder="EUR">
+</div>
+<div>
+<label>Start Date</label>
+<input type="date" name="start_date" value="{{ plan.start_date if plan else '' }}" required>
+</div>
+</div>
+<div style="display:flex;gap:.5rem;margin-top:.5rem">
+<button type="submit">Save Plan</button>
+{% if plan and plan.active %}
+<form method="post" style="margin:0"><input type="hidden" name="action" value="deactivate_plan"><button type="submit" class="secondary" style="margin:0">Deactivate Plan</button></form>
+    {{ csrf_field() }}
+{% endif %}
+</div>
+</form>
+</div>
+
+<div class="section">
+<h3>Confirm Payment</h3>
+<form method="post">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="confirm_payment">
+<div class="row">
+<div>
+<label>Amount</label>
+<input type="text" name="amount" value="{{ plan.amount if plan else '' }}" required placeholder="50.00">
+</div>
+<div>
+<label>Currency</label>
+<input type="text" name="currency" value="{{ plan.currency if plan else 'EUR' }}" style="width:80px">
+</div>
+<div>
+<label>Period Start</label>
+<input type="date" name="period_start">
+</div>
+<div>
+<label>Period End</label>
+<input type="date" name="period_end">
+</div>
+</div>
+<label>Notes (optional)</label>
+<input type="text" name="notes" placeholder="e.g. Bank transfer ref #1234">
+<button type="submit">Confirm Payment Received</button>
+</form>
+</div>
+
+<div class="section">
+<h3>Payment History</h3>
+{% if payments %}
+<table>
+<tr><th>Date</th><th>Amount</th><th>Period</th><th>Notes</th></tr>
+{% for p in payments %}
+<tr>
+<td>{{ p.confirmed_at }}</td>
+<td>{{ p.amount }} {{ p.currency }}</td>
+<td>{% if p.period_start %}{{ p.period_start }}{% endif %}{% if p.period_end %} → {{ p.period_end }}{% endif %}</td>
+<td style="color:var(--muted);font-size:.82rem">{{ p.notes or '' }}</td>
+</tr>
+{% endfor %}
+</table>
+{% else %}
+<p style="color:var(--muted)">No payments recorded yet.</p>
+{% endif %}
+</div>
+</div>
+</body></html>

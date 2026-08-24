@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manage Rituals</title>
+<link rel="stylesheet" href="/static/style.css">
+</head><body class="font-{{ font_pref }}">
+<nav>
+<span class="title">DSCoaching</span>
+<a href="/coach">← Dashboard</a>
+</nav>
+{{ flash_block }}
+<div class="page">
+<h2>🕯️ Rituals & Protocols</h2>
+
+<div class="section">
+<h3>Create Ritual</h3>
+<form method="post">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="create">
+<label>Name</label>
+<input type="text" name="name" required placeholder="e.g. Morning greeting, Evening report...">
+<label>Description (optional)</label>
+<textarea name="description" placeholder="What the coachee should do..." style="min-height:60px"></textarea>
+<div class="row">
+<div>
+<label>Schedule</label>
+<select name="schedule">
+<option value="daily">Daily</option>
+<option value="weekdays">Weekdays (Mon-Fri)</option>
+<option value="weekends">Weekends</option>
+<option value="custom">Custom days</option>
+</select>
+</div>
+<div>
+<label>Assign to</label>
+<select name="coachee_id">
+<option value="">All coachees</option>
+{% for cc in coachees %}<option value="{{ cc.id }}">{{ cc.name }}</option>{% endfor %}
+</select>
+</div>
+</div>
+<label>Custom days (comma-separated: mon,tue,wed,thu,fri,sat,sun)</label>
+<input type="text" name="schedule_days" placeholder="mon,wed,fri">
+<button type="submit">Create Ritual</button>
+</form>
+</div>
+
+<div class="section">
+<h3>Active Rituals</h3>
+{% for r in rituals %}
+<div class="entry" style="display:flex;align-items:center;justify-content:space-between">
+<div>
+<strong>{{ r.name }}</strong>
+<span class="badge {% if r.active %}ok{% else %}warn{% endif %}">{{ 'active' if r.active else 'inactive' }}</span>
+{% if r.coachee_name %}<span class="badge info">{{ r.coachee_name }}</span>{% else %}<span class="badge info">all</span>{% endif %}
+<span style="font-size:0.78rem;color:var(--muted)">· {{ r.schedule }}{% if r.schedule_days %} ({{ r.schedule_days }}){% endif %}</span>
+{% if r.description %}<br><span style="font-size:0.82rem;color:var(--text-secondary)">{{ r.description }}</span>{% endif %}
+</div>
+<form method="post" style="margin:0">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="delete">
+<input type="hidden" name="ritual_id" value="{{ r.id }}">
+<button type="submit" class="small secondary" style="margin:0" onclick="return confirm('Delete this ritual?')">🗑️</button>
+</form>
+</div>
+{% else %}
+<p style="color:var(--muted)">No rituals created yet.</p>
+{% endfor %}
+</div>
+</div>
+</body></html>

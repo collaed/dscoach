@@ -2,62 +2,131 @@
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Coach Dashboard</title>
 <link rel="stylesheet" href="/static/style.css">
-<style>.fbtn{padding:.3rem .8rem;border-radius:6px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-size:.8rem;transition:all .15s}.fbtn:hover{background:var(--accent);color:#fff}</style>
-</head><body>
+<style>
+:root{--accent:{{ session.get('accent','#e94560') }};--bg:{{ session.get('bg','#0f0f1a') }};--card:{{ session.get('card','#1c1c2e') }}}
+.stat-row { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.stat-pill {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.stat-pill .num { color: var(--text); font-weight: 700; }
+</style>
+</head><body class="font-{{ font_pref }}">
 <nav>
-<span class="title">🏠 Coach Dashboard</span>
-<a href="/coach/tasks">📋 Tasks</a>
-<a href="/coach/grading">📝 Grade{% if ungraded_total %} <span style="background:#e94560;color:#fff;padding:0 5px;border-radius:8px;font-size:.75rem">{{ ungraded_total }}</span>{% endif %}</a>
-<a href="/coach/conditioning">🧠 Mind</a>
-<a href="/coach/analyze">🔍 Analyze</a>
-<a href="/coach/branding">🎨 Brand</a>
-<a href="/coach/settings">⚙️</a>
-<a href="/coach/support">🆘</a>
-<a href="/coach/audit">🔒 Audit</a>
-{% if session.get('is_admin') %}<a href="/admin">👑 Admin</a>{% endif %}
-<a href="/coach/coachee/add">➕ Add</a>
-<a href="/logout">Logout</a>
+<span class="title">DSCoaching</span>
+<div class="menu-bar">
+<div class="menu-group">
+<button onclick="toggleMenu(this)">📋 {{ t('nav.tasks') }}</button>
+<div class="menu-dropdown">
+<a href="/coach/tasks">📋 {{ t('nav.manage_tasks') }}</a>
+<a href="/coach/grading">📝 {{ t('nav.grade_submissions') }}{% if ungraded_total %}<span class="badge-count">{{ ungraded_total }}</span>{% endif %}</a>
+<a href="/coach/conditioning">🧠 {{ t('nav.conditioning') }}</a>
+<a href="/coach/rituals">🕯️ {{ t('nav.rituals') }}</a>
+<a href="/coach/automations">⚡ {{ t('nav.automations') }}</a>
+<a href="/coach/week-plan">📅 {{ t('nav.week_plan') }}</a>
+<a href="/coach/onboarding">🎓 {{ t('nav.onboarding') }}</a>
+</div>
+</div>
+<div class="menu-group">
+<button onclick="toggleMenu(this)">🔍 {{ t('nav.insights') }}</button>
+<div class="menu-dropdown">
+<a href="/coach/analyze">🔍 {{ t('nav.analyze_text') }}</a>
+<a href="/coach/audit">🔒 {{ t('nav.audit_log') }}</a>
+</div>
+</div>
+<div class="menu-group">
+<button onclick="toggleMenu(this)">⚙️ {{ t('nav.settings') }}</button>
+<div class="menu-dropdown">
+<a href="/coach/settings">⚙️ {{ t('nav.account') }}</a>
+<a href="/coach/branding">🎨 {{ t('nav.branding') }}</a>
+<a href="/coach/photo-validation-settings">📷 {{ t('photo_validation.title') }}</a>
+<a href="/coach/support">🆘 {{ t('nav.support') }}</a>
+{% if session.get('is_admin') %}<div class="sep"></div><a href="/admin">👑 {{ t('nav.admin_panel') }}</a>{% endif %}
+</div>
+</div>
+<a href="/coach/help">❓ {{ t('nav.help') }}</a>
+<a href="/lang/{% if lang == 'fr' %}en{% else %}fr{% endif %}" style="font-size:.8rem;padding:.3rem .5rem">{% if lang == 'fr' %}EN{% else %}FR{% endif %}</a>
+<a href="/coach/coachee/add">{{ t('nav.add_coachee') }}</a>
+<a href="/logout" style="color:var(--muted);border-color:var(--border)">{{ t('nav.logout') }}</a>
+</div>
 </nav>
+{{ flash_block }}
 <div class="page">
-<h2>Your Coachees</h2>
-<div style="margin-bottom:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem">
+<h2 style="margin:0">Coachees</h2>
+<div style="display:flex;gap:0.4rem;flex-wrap:wrap">
 <button class="fbtn" onclick="filterCards('all')">All</button>
-<button class="fbtn" onclick="filterCards('ungraded')" style="border-color:#f5a623;color:#f5a623">Needs grading</button>
+<button class="fbtn" onclick="filterCards('ungraded')">Needs grading</button>
 <button class="fbtn" onclick="filterCards('nocheckin')">No check-in</button>
 <button class="fbtn" onclick="filterCards('strikes')">Has strikes</button>
 </div>
-{% if not coachees %}<p style="color:#888">No coachees yet. Add one to get started.</p>{% endif %}
+</div>
+
+{% if not coachees %}
+<div class="section" style="text-align:center;padding:3rem 1rem">
+<p style="font-size:1.1rem;color:var(--text);margin-bottom:0.5rem">No coachees yet</p>
+<p style="color:var(--muted);margin-bottom:1rem">Add your first coachee to get started.</p>
+<a href="/coach/coachee/add" class="btn">+ Add Coachee</a>
+</div>
+{% endif %}
+
 <div class="grid">
 {% for cc in coachees %}
 <div class="coachee-card" data-ungraded="{{ cc.ungraded }}" data-checkins="{{ cc.checkins_today }}" data-strikes="{{ cc.strikes }}">
 <div class="card {{ cc.status }}">
-<a href="/coach/coachee/{{ cc.id }}" style="text-decoration:none;color:inherit">
-<h3>{{ cc.avatar or '🐕' }} {{ cc.name }}{% if cc.current_streak %} <span style="font-size:.8rem">🔥{{ cc.current_streak }}</span>{% endif %}</h3>
-<div class="meta">
+<a href="/coach/coachee/{{ cc.id }}" style="text-decoration:none;color:inherit;display:block">
+<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem">
+<span style="font-size:1.4rem">{{ cc.avatar or '🐕' }}</span>
+<div>
+<h3 style="margin:0;font-size:0.95rem">{{ cc.name }}{% if cc.current_streak %} <span style="font-size:0.8rem;color:var(--warn)">🔥{{ cc.current_streak }}</span>{% endif %}</h3>
 <span class="badge {% if cc.status=='active' %}ok{% elif cc.status=='paused' %}warn{% else %}danger{% endif %}">{{ cc.status }}</span>
+</div>
+</div>
+<div class="meta" style="display:flex;flex-wrap:wrap;gap:0.3rem">
 <span class="badge {% if cc.pending_tasks > 0 %}warn{% else %}ok{% endif %}">{{ cc.pending_tasks }} pending</span>
 <span class="badge ok">{{ cc.completed_tasks }}/{{ cc.total_tasks }} done</span>
 <span class="badge {% if cc.avg_grade in ['A','B'] %}ok{% elif cc.avg_grade in ['C','D'] %}warn{% else %}danger{% endif %}">avg {{ cc.avg_grade }}</span>
 {% if cc.ungraded %}<span class="badge warn">{{ cc.ungraded }} ungraded</span>{% endif %}
-{% if cc.strikes %}<span class="badge danger">{{ cc.strikes }} ⚡</span>{% endif %}
-<span class="badge {% if cc.checkins_today > 0 %}ok{% else %}warn{% endif %}">{{ cc.checkins_today }} check-ins</span>
+{% if cc.strikes %}<span class="badge danger">{{ cc.strikes }} strikes</span>{% endif %}
+<span class="badge {% if cc.checkins_today > 0 %}ok{% else %}info{% endif %}">{{ cc.checkins_today }} check-ins</span>
+<span class="badge {% if cc.engagement >= 70 %}ok{% elif cc.engagement >= 40 %}warn{% else %}danger{% endif %}">{{ cc.engagement }}% engaged</span>
+{% if cc.days_inactive >= 3 %}<span class="badge danger">{{ cc.days_inactive }}d inactive</span>{% endif %}
+{% if cc.payment.status != 'none' %}
+<span class="badge {% if cc.payment.status == 'green' %}ok{% elif cc.payment.status == 'yellow' %}warn{% elif cc.payment.status == 'orange' %}warn{% else %}danger{% endif %}" style="{% if cc.payment.status == 'orange' %}background:rgba(249,115,22,0.15);color:#f97316{% endif %}">💳 {{ cc.payment.status }}{% if cc.payment.periods_late > 0 %} ({{ cc.payment.periods_late }} late){% endif %}</span>
+{% endif %}
 </div>
 </a>
 <div class="quick" onclick="event.stopPropagation()">
 <form method="post" action="/coach/quick-note/{{ cc.id }}">
-<input type="text" name="content" placeholder="Quick note..." required style="width:120px">
+    {{ csrf_field() }}
+<input type="text" name="content" placeholder="Quick note..." required>
 <button type="submit">💬</button>
 </form>
 <form method="post" action="/coach/quick-ack/{{ cc.id }}">
+    {{ csrf_field() }}
 <select name="ack_type"><option value="positive">👍</option><option value="negative">👎</option></select>
-<input type="text" name="description" placeholder="Ack..." required style="width:90px">
-<button type="submit">✅</button>
+<input type="text" name="description" placeholder="Ack..." required style="width:80px">
+<button type="submit">✓</button>
 </form>
-<a href="/coach/coachee/{{ cc.id }}/summary" style="font-size:.8rem;padding:.25rem .5rem;border:1px solid #333;border-radius:4px;color:#888">📊</a>
+<a href="/coach/coachee/{{ cc.id }}/summary" style="font-size:0.78rem;padding:0.3rem 0.55rem;border:1px solid var(--border-strong);border-radius:4px;color:var(--muted);display:inline-flex;align-items:center">📊</a>
+{% if cc.days_inactive >= 3 %}<form method="post" action="/coach/nudge/{{ cc.id }}"><button type="submit" class="small" style="margin:0;background:var(--warn)">👋 Nudge</button></form>{% endif %}
+    {{ csrf_field() }}
+{% if cc.payment.status not in ['none','green'] %}<form method="post" action="/coach/coachee/{{ cc.id }}/quick-pay"><button type="submit" class="small" style="margin:0;background:#10b981">💳 Confirm</button></form>{% endif %}
+    {{ csrf_field() }}
+{% if cc.payment.status != 'none' %}<a href="/coach/coachee/{{ cc.id }}/payments" style="font-size:0.78rem;padding:0.3rem 0.55rem;border:1px solid var(--border-strong);border-radius:4px;color:var(--muted);display:inline-flex;align-items:center">💳</a>{% endif %}
 </div>
 </div>
 </div>
 {% endfor %}
+</div>
+
 </div>
 <script>
 function filterCards(type){
@@ -69,6 +138,12 @@ function filterCards(type){
     c.style.display=show?'':'none';
   });
 }
+function toggleMenu(btn){
+  const grp=btn.parentElement;
+  const wasOpen=grp.classList.contains('open');
+  document.querySelectorAll('.menu-group').forEach(g=>g.classList.remove('open'));
+  if(!wasOpen)grp.classList.add('open');
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.menu-group'))document.querySelectorAll('.menu-group').forEach(g=>g.classList.remove('open'))});
 </script>
-</div>
 </body></html>

@@ -1,38 +1,32 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Support</title>
+<link rel="stylesheet" href="/static/style.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
-a{color:#e94560;text-decoration:none}
-.card{background:#16213e;padding:1.5rem;border-radius:12px;max-width:600px;margin:0 auto}
-h2{color:#e94560;margin-bottom:1rem}
-textarea{width:100%;padding:.7rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem;min-height:100px;resize:vertical}
-button{margin-top:.8rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer}
-.msg{background:#0f3460;padding:1rem;border-radius:8px;margin-top:1rem;font-size:.9rem}
-.msg .time{color:#888;font-size:.8rem}
-.msg .reply{margin-top:.5rem;padding:.5rem;background:#16213e;border-radius:6px;border-left:3px solid #2d6a4f}
-.badge{display:inline-block;padding:.1rem .4rem;border-radius:3px;font-size:.75rem}
-.badge.open{background:#f5a623;color:#000}
-.badge.resolved{background:#2d6a4f;color:#fff}
-</style></head><body>
-<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
-<div class="card">
-<h2>🆘 Support</h2>
-<p style="color:#888;font-size:.85rem;margin-bottom:1rem">Send a message to the administrator. Your last 10 actions will be automatically included for context.</p>
+.badge.open{background:var(--warn-subtle);color:var(--warn)}
+.badge.resolved{background:var(--ok-subtle);color:var(--ok)}
+.msg-reply{margin-top:.5rem;padding:.5rem;background:var(--input);border-radius:var(--radius-sm);border-left:3px solid var(--ok)}
+</style></head><body class="font-{{ font_pref }}">
+<nav><span class="title">DSCoaching</span><a href="/coach">&larr; Dashboard</a></nav>
+<div class="page">
+<div class="section" style="max-width:600px;margin:0 auto">
+<h2>Support</h2>
+<p class="muted" style="margin-bottom:1rem">Send a message to the administrator. Your last 10 actions will be automatically included for context.</p>
 <form method="post">
+    {{ csrf_field() }}
 <textarea name="message" placeholder="Describe your issue or question..." required></textarea>
 <button type="submit">Send Message</button>
 </form>
 </div>
 {% for m in messages %}
-<div class="msg" style="max-width:600px;margin:1rem auto">
+<div class="section" style="max-width:600px;margin:1rem auto">
 <span class="badge {{ m.status }}">{{ m.status }}</span>
-<div class="time">{{ m.created_at }}</div>
+<div class="muted">{{ m.created_at }}</div>
 <div style="margin-top:.3rem">{{ m.message }}</div>
 {% if m.admin_reply %}
-<div class="reply"><strong style="color:#2d6a4f">Admin:</strong> {{ m.admin_reply }}</div>
+<div class="msg-reply"><strong style="color:var(--ok)">Admin:</strong> {{ m.admin_reply }}</div>
 {% endif %}
 </div>
 {% endfor %}
+</div>
 </body></html>

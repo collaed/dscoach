@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ work.title or 'Untitled' }} — Creative Writing</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem">
+<h2 style="margin:0">{{ work.title or 'Untitled' }}</h2>
+<a href="/me/writing" class="btn btn-secondary" style="font-size:0.84rem">← Collection</a>
+</div>
+
+<div class="section">
+<div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:0.82rem;color:var(--muted);margin-bottom:1rem">
+<span>📅 {{ work.created_at }}</span>
+<span>📝 {{ work.work_type|capitalize }}</span>
+{% if work.tags %}<span>🏷️ {{ work.tags }}</span>{% endif %}
+{% if work.selected_for_final %}<span style="color:var(--accent)">⭐ Selected for final collection</span>{% endif %}
+</div>
+
+{% if constraint %}
+<div style="background:var(--input);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.6rem;margin-bottom:1rem">
+<strong style="text-transform:capitalize;color:var(--accent)">{{ constraint.constraint_type }}:</strong> {{ constraint.constraint_value }}
+</div>
+{% endif %}
+
+<div style="white-space:pre-wrap;font-family:Georgia,serif;font-size:1rem;line-height:1.7;color:var(--text)">{{ work.content }}</div>
+</div>
+
+{% if work.coach_notes %}
+<div class="section">
+<h3>Coach Notes</h3>
+<p style="font-style:italic;color:var(--ok)">{{ work.coach_notes }}</p>
+</div>
+{% endif %}
+</div>
+</body>
+</html>

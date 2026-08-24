@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week Plan</title>
+<link rel="stylesheet" href="/static/style.css">
+</head><body class="font-{{ font_pref }}">
+<nav>
+<span class="title">DSCoaching</span>
+<a href="/coach">← Dashboard</a>
+</nav>
+{{ flash_block }}
+<div class="page">
+<h2>📅 Week Plan</h2>
+<p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">Map task templates to days of the week. The system auto-assigns them each day when the coachee loads their dashboard.</p>
+
+<div class="section">
+<h3>Add Plan Entry</h3>
+<form method="post">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="add">
+<div class="row">
+<div>
+<label>Day of Week</label>
+<select name="day_of_week" required>
+<option value="0">Monday</option>
+<option value="1">Tuesday</option>
+<option value="2">Wednesday</option>
+<option value="3">Thursday</option>
+<option value="4">Friday</option>
+<option value="5">Saturday</option>
+<option value="6">Sunday</option>
+</select>
+</div>
+<div>
+<label>Task Template</label>
+<select name="template_id" required>
+{% for t in templates %}<option value="{{ t.id }}">{{ t.title }}</option>{% endfor %}
+</select>
+</div>
+<div>
+<label>For (optional)</label>
+<select name="coachee_id">
+<option value="">All coachees</option>
+{% for cc in coachees %}<option value="{{ cc.id }}">{{ cc.name }}</option>{% endfor %}
+</select>
+</div>
+</div>
+<button type="submit">Add to Plan</button>
+</form>
+</div>
+
+<div class="section">
+<h3>Current Plan</h3>
+{% set days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] %}
+{% for day_num in range(7) %}
+{% set day_entries = plan|selectattr('day_of_week','equalto',day_num)|list %}
+{% if day_entries %}
+<div style="margin-bottom:0.8rem">
+<strong style="color:var(--accent)">{{ days[day_num] }}</strong>
+{% for entry in day_entries %}
+<div class="entry" style="display:flex;align-items:center;justify-content:space-between">
+<span>{{ entry.task_title }}{% if entry.coachee_name %} <span class="badge info">{{ entry.coachee_name }}</span>{% else %} <span class="badge info">all</span>{% endif %}</span>
+<form method="post" style="margin:0"><input type="hidden" name="action" value="delete"><input type="hidden" name="plan_id" value="{{ entry.id }}"><button type="submit" class="small secondary" style="margin:0">✕</button></form>
+    {{ csrf_field() }}
+</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endfor %}
+{% if not plan %}<p style="color:var(--muted)">No plan entries yet. Add tasks to days above.</p>{% endif %}
+</div>
+</div>
+</body></html>

@@ -1,23 +1,93 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Coaching System - Login</title>
+<title>DSCoaching — Sign In</title>
 <link rel="stylesheet" href="/static/style.css">
-<style>body{min-height:100vh;display:flex;align-items:center;justify-content:center}
-.login-card{background:var(--card);padding:2rem;border-radius:12px;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.4)}
-.login-card h1{text-align:center;margin-bottom:1.5rem}
-.error{color:var(--danger);text-align:center;margin-bottom:1rem}
-</style></head><body>
+<style>
+body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+.login-wrapper { width: 100%; max-width: 420px; padding: 1.5rem; }
+.login-card {
+  background: var(--card);
+  padding: 2.5rem 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+}
+.login-header { text-align: center; margin-bottom: 2rem; }
+.login-header .logo {
+  width: 56px; height: 56px;
+  background: var(--accent-subtle);
+  border: 1px solid rgba(233, 69, 96, 0.2);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+  margin: 0 auto 1rem;
+}
+.login-header h1 { font-size: 1.4rem; color: var(--text); margin-bottom: 0.3rem; }
+.login-header p { color: var(--muted); font-size: 0.85rem; }
+.login-card label { margin-top: 0.8rem; }
+.login-card label:first-of-type { margin-top: 0; }
+.login-card input[type=text], .login-card input[type=password] {
+  margin-top: 0.3rem;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.92rem;
+}
+.login-card button {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 0.95rem;
+  margin-top: 1.5rem;
+  font-weight: 600;
+}
+.login-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+.login-footer a {
+  color: var(--muted);
+  font-size: 0.82rem;
+  transition: color var(--transition);
+}
+.login-footer a:hover { color: var(--accent); }
+.login-footer .sep { color: var(--border-strong); margin: 0 0.5rem; }
+.error-msg {
+  background: var(--danger-subtle);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+</style>
+</head><body class="font-{{ font_pref }}">
+<div class="login-wrapper">
 <div class="login-card">
-<h1>🔐 Coaching System</h1>
-{% if error %}<p class="error">{{ error }}</p>{% endif %}
-<form method="post">
-<label>Username</label><input type="text" name="username" required>
-<label>Password</label><input type="password" name="password" required>
-<button style="width:100%">Sign In</button>
-</form>
-<p class="text-center mt-1 small">
-<a href="#" onclick="forgotPw();return false">Forgot password?</a> · <a href="/features">Features →</a>
-</p>
+  <div class="login-header">
+    <div class="logo">🔐</div>
+    <h1>DSCoaching</h1>
+    <p>Sign in to your account</p>
+  </div>
+  {% if error %}<div class="error-msg">{{ error }}</div>{% endif %}
+  <form method="post">
+    {{ csrf_field() }}
+    <label>Username</label>
+    <input type="text" name="username" required autocomplete="username" autofocus>
+    <label>Password</label>
+    <input type="password" name="password" required autocomplete="current-password">
+    <button type="submit">Sign In</button>
+  </form>
+  <div class="login-footer">
+    <a href="/register">Create account</a>
+    <span class="sep">·</span>
+    <a href="#" onclick="forgotPw();return false">Forgot password</a>
+    <span class="sep">·</span>
+    <a href="/features">Features</a>
+  </div>
+</div>
 </div>
 <script>
 function forgotPw(){

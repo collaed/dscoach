@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ code }} — Coaching System</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem}
+.error-card{background:var(--card);padding:2.5rem;border-radius:12px;text-align:center;max-width:450px;width:90%;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.error-code{font-size:4rem;font-weight:700;color:var(--accent);margin-bottom:.5rem}
+.error-msg{color:var(--text);font-size:1.1rem;margin-bottom:1.5rem}
+.back-link{color:var(--accent);text-decoration:none;padding:.5rem 1rem;border:1px solid var(--accent);border-radius:6px;transition:all .15s}
+.back-link:hover{background:var(--accent);color:#fff}
+</style></head><body class="font-{{ font_pref }}">
+<div class="error-card">
+<div class="error-code">{{ code }}</div>
+<p class="error-msg">{{ msg }}</p>
+<a class="back-link" href="javascript:history.back()">Go Back</a>
+<span style="margin:0 .5rem;color:var(--muted)">or</span>
+<a class="back-link" href="/">Home</a>
+</div>
+</body></html>

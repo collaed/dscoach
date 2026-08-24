@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Register as Coach</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>body{min-height:100vh;display:flex;align-items:center;justify-content:center}
+.reg-card{background:var(--card);padding:2rem;border-radius:12px;width:100%;max-width:450px;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.reg-card h1{text-align:center;margin-bottom:.5rem}
+.reg-card p.sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:1.5rem}
+.error{color:var(--danger);text-align:center;margin-bottom:1rem}
+</style></head><body class="font-{{ font_pref }}">
+<div class="reg-card">
+<h1>🚀 Become a Coach</h1>
+<p class="sub">Create your free coaching account</p>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<form method="post">
+    {{ csrf_field() }}
+<label>Display Name</label><input type="text" name="name" required placeholder="How your coachees will see you">
+<label>Username</label><input type="text" name="username" required placeholder="For login">
+<label>Password</label><input type="password" name="password" required minlength="6" placeholder="At least 6 characters">
+<label>Confirm Password</label><input type="password" name="password2" required placeholder="Type it again">
+<label>Your Timezone</label>
+<select name="timezone" id="tz-select"></select>
+<button style="width:100%;margin-top:1rem">Create Account</button>
+</form>
+<p class="text-center mt-1 small">
+Already have an account? <a href="/login">Sign in →</a>
+</p>
+</div>
+<script>
+const sel=document.getElementById('tz-select');
+Intl.supportedValuesOf('timeZone').forEach(tz=>{const o=document.createElement('option');o.value=tz;o.textContent=tz.replace(/_/g,' ');sel.appendChild(o)});
+try{sel.value=Intl.DateTimeFormat().resolvedOptions().timeZone}catch(e){}
+document.querySelector('form').onsubmit=function(){if(this.password.value!==this.password2.value){alert('Passwords do not match');return false}};
+</script>
+</body></html>

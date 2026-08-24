@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Automations</title>
+<link rel="stylesheet" href="/static/style.css">
+</head><body class="font-{{ font_pref }}">
+<nav>
+<span class="title">DSCoaching</span>
+<a href="/coach">← Dashboard</a>
+</nav>
+{{ flash_block }}
+<div class="page">
+<h2>⚡ Automation Rules</h2>
+<p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">Rules execute automatically when triggers fire. Use <code style="background:var(--input);padding:0.1rem 0.3rem;border-radius:3px">{{"{{name}}"}}</code>, <code style="background:var(--input);padding:0.1rem 0.3rem;border-radius:3px">{{"{{streak}}"}}</code>, <code style="background:var(--input);padding:0.1rem 0.3rem;border-radius:3px">{{"{{level}}"}}</code>, <code style="background:var(--input);padding:0.1rem 0.3rem;border-radius:3px">{{"{{grade_avg}}"}}</code>, <code style="background:var(--input);padding:0.1rem 0.3rem;border-radius:3px">{{"{{days_active}}"}}</code>, <code style="background:var(--input);padding:0.1rem 0.3rem;border-radius:3px">{{"{{strikes}}"}}</code>, <code style="background:var(--input);padding:0.1rem 0.3rem;border-radius:3px">{{"{{date}}"}}</code>, <code style="background:var(--input);padding:0.1rem 0.3rem;border-radius:3px">{{"{{day_of_week}}"}}</code> in templates.</p>
+
+<div class="section">
+<h3>Create Rule</h3>
+<form method="post">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="create">
+<label>Rule Name</label>
+<input type="text" name="name" required placeholder="e.g. Encourage on streak milestone">
+<div class="row">
+<div>
+<label>Trigger</label>
+<select name="trigger" required>
+<option value="task_completed">Task Completed</option>
+<option value="task_missed">Task Missed</option>
+<option value="checkin_submitted">Check-in Submitted</option>
+<option value="streak_milestone">Streak Milestone</option>
+</select>
+</div>
+<div>
+<label>Action Type</label>
+<select name="action_type" required>
+<option value="send_note">Send Note</option>
+<option value="award_badge">Award Badge</option>
+<option value="assign_task">Assign Task (template ID)</option>
+</select>
+</div>
+</div>
+<details style="margin-top:0.5rem">
+<summary>Condition (optional — leave blank to always fire)</summary>
+<div class="row" style="margin-top:0.4rem">
+<div>
+<label>Field</label>
+<select name="condition_field">
+<option value="">No condition</option>
+<option value="streak">streak</option>
+<option value="strikes">strikes</option>
+<option value="days_active">days_active</option>
+<option value="best_streak">best_streak</option>
+</select>
+</div>
+<div>
+<label>Operator</label>
+<select name="condition_op">
+<option value=">=">>=</option>
+<option value="<="><=</option>
+<option value=">">&gt;</option>
+<option value="<">&lt;</option>
+<option value="==">==</option>
+<option value="!=">!=</option>
+</select>
+</div>
+<div>
+<label>Value</label>
+<input type="text" name="condition_value" placeholder="e.g. 7">
+</div>
+</div>
+</details>
+<label>Action Template (text for notes/badges, or task template ID for assign_task)</label>
+<textarea name="action_template" required placeholder="Well done {{name}}! {{streak}} days strong. Keep it up." style="min-height:70px"></textarea>
+<button type="submit">Create Rule</button>
+</form>
+</div>
+
+<div class="section">
+<h3>Active Rules</h3>
+{% for r in rules %}
+<div class="entry" style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem">
+<div style="flex:1">
+<strong>{{ r.name }}</strong>
+<span class="badge {% if r.active %}ok{% else %}warn{% endif %}">{{ 'active' if r.active else 'paused' }}</span>
+<span class="badge info">{{ r.trigger }}</span>
+<span class="badge info">{{ r.action_type }}</span>
+{% if r.condition_field %}
+<br><span style="font-size:0.78rem;color:var(--muted)">IF {{ r.condition_field }} {{ r.condition_op }} {{ r.condition_value }}</span>
+{% endif %}
+<br><span style="font-size:0.82rem;color:var(--text-secondary);font-style:italic">{{ r.action_template[:100] }}{% if r.action_template|length > 100 %}...{% endif %}</span>
+</div>
+<div style="display:flex;gap:0.3rem">
+<form method="post" style="margin:0">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="toggle">
+<input type="hidden" name="rule_id" value="{{ r.id }}">
+<button type="submit" class="small secondary" style="margin:0">{{ '⏸' if r.active else '▶' }}</button>
+</form>
+<form method="post" style="margin:0">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="delete">
+<input type="hidden" name="rule_id" value="{{ r.id }}">
+<button type="submit" class="small secondary" style="margin:0" onclick="return confirm('Delete?')">🗑️</button>
+</form>
+</div>
+</div>
+{% else %}
+<p style="color:var(--muted)">No automation rules yet. Create one above to reduce manual work.</p>
+{% endfor %}
+</div>
+
+<div class="section">
+<h3>📖 Template Variables Reference</h3>
+<table>
+<tr><th>Variable</th><th>Description</th><th>Example</th></tr>
+<tr><td><code>{{"{{name}}"}}</code></td><td>Coachee's display name</td><td>Severin</td></tr>
+<tr><td><code>{{"{{streak}}"}}</code></td><td>Current streak (days)</td><td>12</td></tr>
+<tr><td><code>{{"{{best_streak}}"}}</code></td><td>All-time best streak</td><td>30</td></tr>
+<tr><td><code>{{"{{level}}"}}</code></td><td>Training level name</td><td>Disciplined</td></tr>
+<tr><td><code>{{"{{grade_avg}}"}}</code></td><td>Recent grade average</td><td>B</td></tr>
+<tr><td><code>{{"{{days_active}}"}}</code></td><td>Days since account creation</td><td>45</td></tr>
+<tr><td><code>{{"{{strikes}}"}}</code></td><td>Total accumulated strikes</td><td>3</td></tr>
+<tr><td><code>{{"{{date}}"}}</code></td><td>Today's date (ISO)</td><td>2026-07-22</td></tr>
+<tr><td><code>{{"{{day_of_week}}"}}</code></td><td>Day name</td><td>Tuesday</td></tr>
+<tr><td><code>{{"{{avatar}}"}}</code></td><td>Coachee's emoji avatar</td><td>🐕</td></tr>
+</table>
+</div>
+</div>
+</body></html>

@@ -1,56 +1,43 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Manage Tasks</title>
+<link rel="stylesheet" href="/static/style.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
-a{color:#e94560;text-decoration:none}
-h2{color:#e94560;margin-bottom:1rem}
-h3{color:#e94560;margin:1.5rem 0 .5rem}
-.section{background:#16213e;padding:1.2rem;border-radius:10px;margin-bottom:1rem;max-width:700px}
-label{display:block;margin-bottom:.3rem;color:#a0a0b0;font-size:.9rem;margin-top:.6rem}
-input,textarea,select{width:100%;padding:.6rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
-textarea{min-height:80px;resize:vertical}
-select[multiple]{min-height:80px}
-button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.95rem}
-.entry{border-bottom:1px solid #1a1a2e;padding:.5rem 0;font-size:.9rem}
-.entry:last-child{border:none}
-.meta{color:#888;font-size:.8rem}
-.tag{padding:.1rem .4rem;border-radius:3px;font-size:.75rem;display:inline-block}
-.tag.reserve{background:#f5a623;color:#000}
-.tag.recur{background:#2d6a4f;color:#fff}
-.tag.library{background:#6a2d6a;color:#fff}
 .check{display:flex;align-items:center;gap:.5rem;margin-top:.6rem}
 .check input{width:auto}
-.hint{color:#666;font-size:.8rem}
+.hint{color:var(--muted);font-size:.8rem}
 #assign-section{transition:opacity .2s}
-.lib-item{padding:.6rem;border:1px solid #333;border-radius:6px;margin-bottom:.4rem;cursor:pointer}
-.lib-item:hover{border-color:#e94560}
-.lib-item.selected{border-color:#e94560;background:#0f3460}
-.lib-item .usage{color:#888;font-size:.8rem}
-.tabs{display:flex;gap:0;margin-bottom:1rem}
-.tab{padding:.6rem 1.2rem;cursor:pointer;color:#888;border-bottom:2px solid transparent;font-size:.95rem}
-.tab.active{color:#e94560;border-bottom-color:#e94560}
-.tab-panel{display:none}
-.tab-panel.active{display:block}
-</style></head><body>
-<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
-<h2>📋 Task Management</h2>
+.lib-item{padding:.6rem;border:1px solid var(--border-strong);border-radius:var(--radius-sm);margin-bottom:.4rem;cursor:pointer}
+.lib-item:hover{border-color:var(--accent)}
+.lib-item.selected{border-color:var(--accent);background:var(--input)}
+.lib-item .usage{color:var(--muted);font-size:.8rem}
+</style></head><body class="font-{{ font_pref }}">
+<nav><span class="title">DSCoaching</span><a href="/coach">&larr; Dashboard</a></nav>
+<div class="page">
+<h2>Task Management</h2>
 
 <div class="tabs">
-<div class="tab active" onclick="switchTab('create')">✏️ Create New</div>
-<div class="tab" onclick="switchTab('library')">📚 From Library</div>
-<div class="tab" onclick="switchTab('existing')">📄 All Templates</div>
+<div class="tab active" onclick="switchTab('create')">Create New</div>
+<div class="tab" onclick="switchTab('library')">From Library</div>
+<div class="tab" onclick="switchTab('existing')">All Templates</div>
 </div>
 
 <!-- CREATE TAB -->
 <div class="tab-panel active" id="tab-create">
-<div class="section">
+<div class="section" style="max-width:700px">
 <h3>Create & Assign Task</h3>
+<div id="inspiration" style="background:var(--input);border-radius:var(--radius-sm);padding:.8rem;margin-bottom:1rem;font-size:.85rem;min-height:60px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+<span style="color:var(--accent);font-weight:bold">Inspiration</span>
+<button type="button" onclick="loadInspo()" class="small secondary" style="margin:0">Refresh</button>
+</div>
+<div id="inspo-list" class="muted">Loading...</div>
+</div>
 <form method="post">
+    {{ csrf_field() }}
 <input type="hidden" name="action" value="create">
-<label>Title</label><input type="text" name="title" required>
-<label>Description</label><textarea name="description"></textarea>
+<label>Title</label><input type="text" name="title" required id="task-title">
+<label>Description <span class="muted small">(supports {{name}}, {{streak}}, {{level}}, {{grade_avg}}, {{day_of_week}})</span></label><textarea name="description" id="task-desc" placeholder="e.g. Good morning {{name}}. Today, on {{day_of_week}}, you will..."></textarea>
 <label>Category</label>
 <select name="category">
 <option value="mental">Mental</option>
@@ -72,25 +59,39 @@ button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border
 </select>
 <div class="check">
 <input type="checkbox" name="is_reserve" id="is_reserve" value="1" onchange="document.getElementById('assign-section').style.opacity=this.checked?'0.3':'1'">
-<label for="is_reserve" style="margin:0;color:#f5a623">🏦 Reserve task</label>
+<label for="is_reserve" style="margin:0;color:var(--warn)">Reserve task</label>
 </div>
-<div style="display:flex;gap:1rem;margin-top:.6rem">
-<div style="flex:1">
+<div class="row" style="margin-top:.6rem">
+<div>
 <label>Auto-recur every N days (0 = none)</label>
 <input type="number" name="recur_days" value="0" min="0">
 </div>
 <div class="check" style="margin-top:1.4rem">
 <input type="checkbox" name="recur_approx" id="recur_approx" value="1">
-<label for="recur_approx" style="margin:0;color:#a0a0b0">≈ ±25%</label>
+<label for="recur_approx" style="margin:0">±25%</label>
 </div>
 </div>
 <div class="check">
 <input type="checkbox" name="in_library" id="in_library" value="1" checked>
-<label for="in_library" style="margin:0;color:#6a2d6a">📚 Save in library</label>
+<label for="in_library" style="margin:0">Save in library</label>
 </div>
+<div class="check">
+<input type="checkbox" name="auto_grade" id="auto_grade" value="1">
+<label for="auto_grade" style="margin:0;color:var(--ok)">Auto-grade on submission</label>
+</div>
+<div class="check">
+<input type="checkbox" name="photo_validate" id="photo_validate" value="1">
+<label for="photo_validate" style="margin:0;color:var(--accent)">📷 AI photo validation</label>
+</div>
+<label>Tags <span class="muted small">(comma-separated, e.g. morning,mindset,discipline)</span></label>
+<input type="text" name="tags" placeholder="morning, mindset, discipline">
 <div id="assign-section">
 <label>Due Date (optional)</label><input type="date" name="due_date">
 <label>Assign to</label>
+<div style="display:flex;gap:0.3rem;align-items:center;margin-bottom:0.3rem">
+<button type="button" onclick="document.querySelectorAll('[name=coachee_ids] option').forEach(o=>o.selected=true)" class="small secondary" style="margin:0">Select All</button>
+<button type="button" onclick="document.querySelectorAll('[name=coachee_ids] option').forEach(o=>o.selected=false)" class="small secondary" style="margin:0">Clear</button>
+</div>
 <select name="coachee_ids" multiple>
 {% for cc in coachees %}<option value="{{ cc.id }}">{{ cc.name }}</option>{% endfor %}
 </select>
@@ -102,12 +103,13 @@ button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border
 
 <!-- LIBRARY TAB -->
 <div class="tab-panel" id="tab-library">
-<div class="section">
-<h3>📚 Assign from Library</h3>
+<div class="section" style="max-width:700px">
+<h3>Assign from Library</h3>
 <label>Search</label>
 <input type="text" id="lib-search" placeholder="Type to search tasks..." oninput="filterLibrary()">
 <div id="lib-results" style="margin-top:.8rem"></div>
-<form method="post" id="lib-form" style="display:none;margin-top:.8rem;padding-top:.8rem;border-top:1px solid #333">
+<form method="post" id="lib-form" style="display:none;margin-top:.8rem;padding-top:.8rem;border-top:1px solid var(--border)">
+    {{ csrf_field() }}
 <input type="hidden" name="action" value="assign_library">
 <input type="hidden" name="template_id" id="lib-tmpl-id">
 <div id="lib-usage-info"></div>
@@ -123,38 +125,108 @@ button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border
 
 <!-- EXISTING TAB -->
 <div class="tab-panel" id="tab-existing">
-<div class="section">
+<div class="section" style="max-width:700px">
 <h3>All Templates</h3>
+<div style="display:flex;gap:.5rem;margin-bottom:.8rem;flex-wrap:wrap">
+<input type="text" id="tmpl-search" placeholder="Search by title, tag, category..." oninput="filterTemplates()" style="flex:1;min-width:200px;font-size:.85rem">
+<select id="tmpl-cat-filter" onchange="filterTemplates()" style="width:auto;font-size:.85rem">
+<option value="">All categories</option>
+<option value="mental">Mental</option>
+<option value="physical">Physical</option>
+<option value="emotional">Emotional</option>
+<option value="admin">Admin</option>
+</select>
+<select id="tmpl-tag-filter" onchange="filterTemplates()" style="width:auto;font-size:.85rem">
+<option value="">All tags</option>
+{% set all_tags = [] %}{% for t in templates %}{% if t.tags %}{% for tag in t.tags.split(',') %}{% if tag.strip() not in all_tags %}{% if all_tags.append(tag.strip()) %}{% endif %}{% endif %}{% endfor %}{% endif %}{% endfor %}
+{% for tag in all_tags|sort %}<option value="{{ tag }}">{{ tag }}</option>{% endfor %}
+</select>
+</div>
 {% for t in templates %}
-<div class="entry">
+<div class="entry tmpl-entry" data-title="{{ t.title|lower }}" data-cat="{{ t.category }}" data-tags="{{ (t.tags or '')|lower }}">
 <strong>{{ t.title }}</strong> · {{ t.category }} · {{ t.difficulty or 'medium' }}
 {% if t.is_reserve %}<span class="tag reserve">reserve</span>{% endif %}
-{% if t.recur_days %}<span class="tag recur">↻ {{ t.recur_days }}d{% if t.recur_approx %}≈{% endif %}</span>{% endif %}
-{% if t.in_library %}<span class="tag library">📚</span>{% endif %}
-{% if t.description %}<br><span class="meta">{{ t.description }}</span>{% endif %}
-<details style="margin-top:.3rem"><summary style="cursor:pointer;color:#888;font-size:.8rem">Edit / Delete</summary>
+{% if t.recur_days %}<span class="tag recur">{{ t.recur_days }}d{% if t.recur_approx %}±{% endif %}</span>{% endif %}
+{% if t.in_library %}<span class="tag library">lib</span>{% endif %}
+{% if t.auto_grade %}<span class="tag" style="background:var(--ok-subtle);color:var(--ok)">auto</span>{% endif %}
+{% if t.photo_validate %}<span class="tag" style="background:rgba(233,69,96,0.1);color:var(--accent)">📷 validate</span>{% endif %}
+{% if t.tags %}{% for tag in t.tags.split(',') %}<span class="tag" style="background:rgba(59,130,246,0.1);color:#60a5fa">{{ tag.strip() }}</span> {% endfor %}{% endif %}
+{% if t.description %}<br><span class="muted">{{ t.description }}</span>{% endif %}
+<details style="margin-top:.3rem"><summary>Edit / Delete</summary>
 <form method="post" action="/coach/template/{{ t.id }}/edit" style="margin-top:.3rem">
+    {{ csrf_field() }}
 <input type="text" name="title" value="{{ t.title }}" required style="font-size:.85rem">
 <textarea name="description" style="font-size:.85rem;min-height:40px;margin-top:.2rem">{{ t.description or '' }}</textarea>
+<input type="text" name="tags" value="{{ t.tags or '' }}" placeholder="Tags (comma-separated)" style="font-size:.85rem;margin-top:.2rem">
 <div style="display:flex;gap:.3rem;margin-top:.2rem;flex-wrap:wrap">
-<select name="category" style="font-size:.8rem">{% for c in ['mental','physical','emotional','admin'] %}<option{% if t.category==c %} selected{% endif %}>{{ c }}</option>{% endfor %}</select>
-<select name="difficulty" style="font-size:.8rem">{% for d in ['easy','medium','hard'] %}<option{% if (t.difficulty or 'medium')==d %} selected{% endif %}>{{ d }}</option>{% endfor %}</select>
+<select name="category" style="font-size:.8rem;width:auto">{% for c in ['mental','physical','emotional','admin'] %}<option{% if t.category==c %} selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+<select name="difficulty" style="font-size:.8rem;width:auto">{% for d in ['easy','medium','hard'] %}<option{% if (t.difficulty or 'medium')==d %} selected{% endif %}>{{ d }}</option>{% endfor %}</select>
 <input type="number" name="recur_days" value="{{ t.recur_days or 0 }}" min="0" style="width:60px;font-size:.8rem" placeholder="days">
-<label style="font-size:.8rem;margin:0;display:flex;align-items:center;gap:.2rem"><input type="checkbox" name="recur_approx" value="1"{% if t.recur_approx %} checked{% endif %} style="width:auto">≈</label>
-<label style="font-size:.8rem;margin:0;display:flex;align-items:center;gap:.2rem"><input type="checkbox" name="in_library" value="1"{% if t.in_library %} checked{% endif %} style="width:auto">📚</label>
-<button type="submit" style="font-size:.8rem;padding:.2rem .6rem;margin:0">Save</button>
+<label style="font-size:.8rem;margin:0;display:flex;align-items:center;gap:.2rem"><input type="checkbox" name="recur_approx" value="1"{% if t.recur_approx %} checked{% endif %} style="width:auto">±</label>
+<label style="font-size:.8rem;margin:0;display:flex;align-items:center;gap:.2rem"><input type="checkbox" name="in_library" value="1"{% if t.in_library %} checked{% endif %} style="width:auto">lib</label>
+<label style="font-size:.8rem;margin:0;display:flex;align-items:center;gap:.2rem"><input type="checkbox" name="auto_grade" value="1"{% if t.auto_grade %} checked{% endif %} style="width:auto">auto</label>
+<label style="font-size:.8rem;margin:0;display:flex;align-items:center;gap:.2rem"><input type="checkbox" name="photo_validate" value="1"{% if t.photo_validate %} checked{% endif %} style="width:auto">📷</label>
+<button type="submit" class="small">Save</button>
 </div>
 </form>
 <form method="post" action="/coach/template/{{ t.id }}/delete" style="margin-top:.3rem" onsubmit="return confirm('Delete this template?')">
-<button type="submit" style="font-size:.8rem;padding:.2rem .6rem;margin:0;background:#333">🗑️ Delete</button>
+    {{ csrf_field() }}
+<button type="submit" class="small secondary">Delete</button>
 </form>
 </details>
 </div>
-{% else %}<p style="color:#888">No tasks created yet.</p>{% endfor %}
+{% else %}<p class="muted">No tasks created yet.</p>{% endfor %}
 </div>
 </div>
 
+</div>
 <script>
+const sources=[
+  {name:'ZenQuotes',url:'https://zenquotes.io/api/random',parse:d=>d[0]?.q+' — '+d[0]?.a},
+  {name:'Stoic',url:'https://stoic.tekloon.net/stoic-quote',parse:d=>d.data?.quote+' — '+d.data?.author},
+  {name:'Affirmation',url:'https://www.affirmations.dev/',parse:d=>d.affirmation},
+  {name:'Quote',url:'https://type.fit/api/quotes',parse:d=>{const q=d[Math.floor(Math.random()*d.length)];return q.text+(q.author?' — '+q.author:'')}},
+  {name:'Advice',url:'https://api.adviceslip.com/advice',parse:d=>d.slip?.advice},
+];
+async function fetchOne(src){
+  try{const r=await fetch(src.url);const d=await r.json();return{source:src.name,text:src.parse(d)};}
+  catch(e){return null;}
+}
+async function loadInspo(){
+  const el=document.getElementById('inspo-list');
+  el.innerHTML='<span class="muted">Fetching inspiration...</span>';
+  const results=await Promise.allSettled(sources.map(fetchOne));
+  const quotes=results.map(r=>r.value).filter(Boolean).slice(0,5);
+  if(!quotes.length){el.innerHTML='<span class="muted">Could not fetch quotes. Try refreshing.</span>';return;}
+  el.innerHTML=quotes.map(q=>
+    `<div style="padding:.3rem 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="useInspo(this)" title="Click to use as description">
+      <span style="color:var(--accent);font-size:.7rem">${q.source}</span><br>${q.text}
+    </div>`
+  ).join('');
+}
+function useInspo(el){
+  const text=el.textContent.replace(/^[A-Za-z]+\n/,'').trim();
+  const desc=document.getElementById('task-desc');
+  desc.value=desc.value?desc.value+'\n\n'+text:text;
+  desc.focus();
+}
+loadInspo();
+
+function filterTemplates(){
+  const q=document.getElementById('tmpl-search').value.toLowerCase();
+  const cat=document.getElementById('tmpl-cat-filter').value;
+  const tag=document.getElementById('tmpl-tag-filter').value.toLowerCase();
+  document.querySelectorAll('.tmpl-entry').forEach(el=>{
+    const title=el.dataset.title;
+    const elCat=el.dataset.cat;
+    const elTags=el.dataset.tags;
+    const matchQ=!q||title.includes(q)||elTags.includes(q);
+    const matchCat=!cat||elCat===cat;
+    const matchTag=!tag||elTags.includes(tag);
+    el.style.display=(matchQ&&matchCat&&matchTag)?'':'none';
+  });
+}
+
 function switchTab(name){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['create','library','existing'][i]===name));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
@@ -176,10 +248,10 @@ function filterLibrary(){
   const matches=q?libData.filter(t=>(t.title+' '+t.description+' '+t.category).toLowerCase().includes(q)):libData;
   div.innerHTML=matches.length?matches.map(t=>
     `<div class="lib-item" onclick="selectLib(${t.id})">
-      <strong>${t.title}</strong> <span class="meta">${t.category}</span>
-      ${t.description?'<br><span class="meta">'+t.description+'</span>':''}
+      <strong>${t.title}</strong> <span class="muted">${t.category}</span>
+      ${t.description?'<br><span class="muted">'+t.description+'</span>':''}
     </div>`
-  ).join(''):'<p style="color:#888">'+(q?'No matches':'Type to search or browse all')+'</p>';
+  ).join(''):'<p class="muted">'+(q?'No matches':'Type to search or browse all')+'</p>';
 }
 
 let selectedLib=null;
@@ -199,8 +271,8 @@ function showUsage(){
   const lines=[];
   for(const opt of sel.selectedOptions){
     const u=selectedLib.usage[opt.value];
-    if(u&&u.times>0) lines.push(`<span style="color:#f5a623">${opt.text}: used ${u.times}× — last on ${u.last}</span>`);
-    else lines.push(`<span style="color:#2d6a4f">${opt.text}: never used</span>`);
+    if(u&&u.times>0) lines.push(`<span style="color:var(--warn)">${opt.text}: used ${u.times}x — last on ${u.last}</span>`);
+    else lines.push(`<span style="color:var(--ok)">${opt.text}: never used</span>`);
   }
   info.innerHTML=lines.length?'<div style="font-size:.85rem;margin-bottom:.5rem">'+lines.join('<br>')+'</div>':'';
 }

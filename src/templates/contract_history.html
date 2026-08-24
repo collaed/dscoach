@@ -1,21 +1,16 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Contract History</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
-a{color:#e94560;text-decoration:none}
-h2{color:#e94560;margin-bottom:1rem}
-.version{background:#16213e;padding:1rem;border-radius:10px;margin-bottom:.8rem}
-.version .time{color:#888;font-size:.8rem;margin-bottom:.5rem}
-.version pre{white-space:pre-wrap;font-size:.85rem;color:#aaa}
-</style></head><body>
-<p style="margin-bottom:1rem"><a href="/coach/coachee/{{ coachee.id if coachee else '' }}">← Back</a></p>
-<h2>📜 Contract History — {{ coachee.name if coachee else 'Unknown' }}</h2>
+<link rel="stylesheet" href="/static/style.css">
+</head><body class="font-{{ font_pref }}">
+<nav><span class="title">DSCoaching</span><a href="/coach/coachee/{{ coachee.id if coachee else '' }}">&larr; Back</a></nav>
+<div class="page">
+<h2>Contract History — {{ coachee.name if coachee else 'Unknown' }}</h2>
 {% for h in history %}
-<div class="version">
-<div class="time">{{ h.created_at }}</div>
-<pre>{{ h.contract_text }}</pre>
+<div class="section">
+<div class="time" style="margin-bottom:.5rem">{{ h.created_at }}</div>
+<div class="contract">{{ h.contract_text }}</div>
 </div>
-{% else %}<p style="color:#888">No previous versions. Contract history is saved when the coach modifies it.</p>{% endfor %}
+{% else %}<p class="muted">No previous versions. Contract history is saved when the coach modifies it.</p>{% endfor %}
+</div>
 </body></html>

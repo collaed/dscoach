@@ -1,26 +1,16 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Mental Conditioning</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
-a{color:#e94560;text-decoration:none}
-h2{color:#e94560;margin-bottom:1rem}
-h3{color:#e94560;margin:1.5rem 0 .5rem}
-.section{background:#16213e;padding:1.2rem;border-radius:10px;margin-bottom:1rem;max-width:700px}
-label{display:block;margin-bottom:.3rem;color:#a0a0b0;font-size:.9rem;margin-top:.6rem}
-input,textarea,select{width:100%;padding:.6rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
-textarea{min-height:100px;resize:vertical}
-button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border:none;border-radius:6px;cursor:pointer}
-.entry{border-bottom:1px solid #1a1a2e;padding:.5rem 0;font-size:.9rem}
-.meta{color:#888;font-size:.8rem}
-</style></head><body>
-<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
-<h2>🧠 Mental Conditioning</h2>
+<link rel="stylesheet" href="/static/style.css">
+</head><body class="font-{{ font_pref }}">
+<nav><span class="title">DSCoaching</span><a href="/coach">&larr; Dashboard</a></nav>
+<div class="page">
+<h2>Mental Conditioning</h2>
 
-<div class="section">
+<div class="section" style="max-width:700px">
 <h3>New Prompt</h3>
 <form method="post">
+    {{ csrf_field() }}
 <label>Date</label><input type="date" name="prompt_date" required>
 <label>Prompt</label><textarea name="prompt_text" required placeholder="Today I would like you to..."></textarea>
 <label>Target</label>
@@ -39,14 +29,15 @@ button{margin-top:1rem;padding:.7rem 1.5rem;background:#e94560;color:#fff;border
 </form>
 </div>
 
-<div class="section">
+<div class="section" style="max-width:700px">
 <h3>Past Prompts</h3>
 {% for p in prompts %}
 <div class="entry">
 <strong>{{ p.prompt_date }}</strong>
-{% if p.target == 'individual' %}<span class="meta">(for {{ p.coachee_name }})</span>{% else %}<span class="meta">(all)</span>{% endif %}
+{% if p.target == 'individual' %}<span class="muted">(for {{ p.coachee_name }})</span>{% else %}<span class="muted">(all)</span>{% endif %}
 <div>{{ p.prompt_text }}</div>
 </div>
-{% else %}<p style="color:#888">No prompts yet.</p>{% endfor %}
+{% else %}<p class="muted">No prompts yet.</p>{% endfor %}
+</div>
 </div>
 </body></html>

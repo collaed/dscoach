@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ t('help.coachee.title') }}</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.help-wrap{max-width:700px;margin:0 auto;padding:0 1rem}
+.help-section{margin-bottom:1.5rem}
+.help-section h2{color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:.4rem;margin-bottom:.6rem;font-size:1.05rem}
+.help-item{margin-bottom:.5rem;padding:.5rem .8rem;background:var(--input);border-radius:var(--radius-sm);font-size:.9rem;line-height:1.5;color:var(--text-secondary)}
+.help-intro{color:var(--text-secondary);margin-bottom:1.5rem;font-size:.95rem;line-height:1.5}
+.tab-ref{display:inline-block;padding:.15rem .5rem;background:var(--card);border-radius:4px;font-size:.8rem;color:var(--accent);margin-right:.3rem}
+</style></head><body class="font-{{ font_pref }}">
+<nav>
+<span class="title">{{ session.get('avatar','🌟') }} {{ session.get('name','') }}</span>
+<div class="menu-bar">
+<a href="/me">&larr; Dashboard</a>
+</div>
+</nav>
+<div class="page">
+<div class="help-wrap">
+<h1>{{ t('help.coachee.title') }}</h1>
+<p class="help-intro">{{ t('help.coachee.subtitle') }}</p>
+
+<div class="help-section">
+<h2>📜 {{ t('help.coachee.section.rules') }}</h2>
+<div class="help-item">{{ t('help.coachee.rules.desc') }}</div>
+</div>
+
+<div class="help-section">
+<h2>🌅🌙 {{ t('help.coachee.section.checkins') }}</h2>
+<div class="help-item">{{ t('help.coachee.checkins.desc') }}</div>
+</div>
+
+<div class="help-section">
+<h2>📋 {{ t('help.coachee.section.tasks') }}</h2>
+<div class="help-item">{{ t('help.coachee.tasks.desc') }}</div>
+<div class="help-item">{{ t('help.coachee.tasks.streak') }}</div>
+<div class="help-item">{{ t('help.coachee.tasks.grades') }}</div>
+</div>
+
+<div class="help-section">
+<h2>🧠 {{ t('help.coachee.section.conditioning') }}</h2>
+<div class="help-item">{{ t('help.coachee.conditioning.desc') }}</div>
+</div>
+
+<div class="help-section">
+<h2>📊 {{ t('help.coachee.section.tracking') }}</h2>
+<div class="help-item">{{ t('help.coachee.tracking.desc') }}</div>
+</div>
+
+<div class="help-section">
+<h2>💬 {{ t('help.coachee.section.notes') }}</h2>
+<div class="help-item">{{ t('help.coachee.notes.desc') }}</div>
+</div>
+
+<div class="help-section">
+<h2>⚠️ {{ t('help.coachee.section.boundaries') }}</h2>
+<div class="help-item">{{ t('help.coachee.boundaries.desc') }}</div>
+</div>
+
+<div class="help-section">
+<h2>🎯 {{ t('help.coachee.section.goals') }}</h2>
+<div class="help-item">{{ t('help.coachee.goals.desc') }}</div>
+</div>
+
+<div class="help-section">
+<h2>📓 {{ t('help.coachee.section.journal') }}</h2>
+<div class="help-item">{{ t('help.coachee.journal.desc') }}</div>
+</div>
+
+<div class="help-section">
+<h2>📸 {{ t('help.coachee.section.photos') }}</h2>
+<div class="help-item">{{ t('help.coachee.photos.desc') }}</div>
+</div>
+
+<div class="help-section">
+<h2>📖📥 {{ t('help.coachee.section.history') }}</h2>
+<div class="help-item">{{ t('help.coachee.history.desc') }}</div>
+</div>
+
+</div>
+</div>
+</body></html>

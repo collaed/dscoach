@@ -1,0 +1,99 @@
+{% extends "coachee_base.html" if "coachee_base.html" is defined else "" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Creative Writing — DSCoaching</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem">
+<h2 style="margin:0">✍️ My Creative Collection</h2>
+<a href="/me" class="btn btn-secondary" style="font-size:0.84rem">← Dashboard</a>
+</div>
+
+<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem">
+<div class="stat-card"><span class="stat-value">{{ total }}</span><span class="stat-label">Total Works</span></div>
+<div class="stat-card"><span class="stat-value">{{ constraints|length }}</span><span class="stat-label">Pending Constraints</span></div>
+<div class="stat-card"><span class="stat-value">{{ collections|length }}</span><span class="stat-label">Collections</span></div>
+</div>
+
+{% if constraints %}
+<div class="section">
+<h3>📌 Active Constraints</h3>
+{% for con in constraints %}
+<div class="entry" style="border-left:3px solid var(--accent);padding-left:0.8rem;margin-bottom:0.6rem">
+<strong style="text-transform:capitalize">{{ con.constraint_type }}:</strong> {{ con.constraint_value }}
+{% if con.active_date %}<span style="color:var(--muted);font-size:0.8rem"> · for {{ con.active_date }}</span>{% endif %}
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<div class="section">
+<h3>New Submission</h3>
+<form method="post" action="/me/writing/submit">
+    {{ csrf_field() }}
+<input type="text" name="title" placeholder="Title (optional)">
+<textarea name="content" placeholder="Write your poem or entry here..." required style="min-height:200px;font-family:Georgia,serif"></textarea>
+<div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-top:0.4rem">
+<select name="work_type" style="width:auto;font-size:0.84rem">
+<option value="poem">Poem</option>
+<option value="prose">Prose</option>
+<option value="reflection">Reflection</option>
+<option value="freeform">Freeform</option>
+</select>
+<input type="text" name="tags" placeholder="Tags (comma-separated)" style="flex:1;font-size:0.84rem">
+</div>
+{% if constraints %}
+<div style="margin-top:0.5rem">
+<label style="font-size:0.84rem;color:var(--muted)">Responding to constraint:</label>
+<select name="constraint_id" style="font-size:0.84rem">
+<option value="">— None —</option>
+{% for con in constraints %}
+<option value="{{ con.id }}">{{ con.constraint_type|capitalize }}: {{ con.constraint_value[:50] }}</option>
+{% endfor %}
+</select>
+</div>
+{% endif %}
+{% if collections %}
+<div style="margin-top:0.5rem">
+<label style="font-size:0.84rem;color:var(--muted)">Add to collection:</label>
+<select name="collection_id" style="font-size:0.84rem">
+<option value="">— None —</option>
+{% for col in collections %}
+<option value="{{ col.id }}">{{ col.title }}</option>
+{% endfor %}
+</select>
+</div>
+{% endif %}
+<button type="submit" style="margin-top:0.6rem">Submit Work</button>
+</form>
+</div>
+
+{% if works %}
+<div class="section">
+<h3>📚 All Works</h3>
+{% for w in works %}
+<div class="entry" style="margin-bottom:1rem;border-bottom:1px solid var(--border);padding-bottom:0.8rem">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:0.3rem">
+<strong>{{ w.title or 'Untitled' }}</strong>
+<span style="font-size:0.78rem;color:var(--muted)">{{ w.created_at }} · {{ w.work_type }}</span>
+</div>
+<div style="white-space:pre-wrap;font-family:Georgia,serif;font-size:0.9rem;margin-top:0.4rem;color:var(--text)">{{ w.content[:500] }}{% if w.content|length > 500 %}…{% endif %}</div>
+{% if w.tags %}<div style="margin-top:0.3rem;font-size:0.78rem;color:var(--accent)">🏷️ {{ w.tags }}</div>{% endif %}
+{% if w.coach_notes %}<div style="margin-top:0.3rem;font-size:0.82rem;color:var(--ok);font-style:italic">Coach: {{ w.coach_notes }}</div>{% endif %}
+{% if w.selected_for_final %}<span style="font-size:0.78rem;background:var(--accent);color:#fff;padding:0.1rem 0.4rem;border-radius:4px">⭐ Selected</span>{% endif %}
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="section">
+<p style="color:var(--muted);font-size:0.9rem">No works yet. Start writing to build your collection.</p>
+</div>
+{% endif %}
+</div>
+</body>
+</html>

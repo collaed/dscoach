@@ -1,33 +1,39 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bulk Grading</title>
+<link rel="stylesheet" href="/static/style.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
-a{color:#e94560;text-decoration:none}
-h2{color:#e94560;margin-bottom:1rem}
-.section{background:#16213e;padding:1rem;border-radius:10px;margin-bottom:.8rem}
-.entry{padding:.8rem 0;border-bottom:1px solid #1a1a2e}
-.entry:last-child{border:none}
-.meta{color:#888;font-size:.8rem}
-.name{color:#e94560;font-weight:bold}
-.response{color:#aaa;font-size:.9rem;white-space:pre-wrap;margin:.3rem 0}
-select,input[type=text]{padding:.4rem;border:1px solid #333;border-radius:6px;background:#0f3460;color:#fff;font-size:.9rem}
-button{padding:.7rem 2rem;background:#e94560;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:1rem;margin-top:1rem}
-.row{display:flex;gap:.5rem;align-items:center;margin-top:.3rem;flex-wrap:wrap}
-</style></head><body>
-<p style="margin-bottom:1rem"><a href="/coach">← Dashboard</a></p>
-<h2>📝 Bulk Grading ({{ tasks|length }} pending)</h2>
+.name{color:var(--accent);font-weight:bold}
+.response{color:var(--text-secondary);font-size:.9rem;white-space:pre-wrap;margin:.3rem 0}
+</style></head><body class="font-{{ font_pref }}">
+<nav><span class="title">DSCoaching</span><a href="/coach">&larr; Dashboard</a></nav>
+<div class="page">
+<h2>Bulk Grading ({{ tasks|length }} pending)</h2>
 {% if tasks %}
 <form method="post">
+    {{ csrf_field() }}
 <div class="section">
 {% for t in tasks %}
 <div class="entry">
-<span class="name">{{ t.coachee_name }}</span> · <strong>{{ t.title }}</strong> <span class="meta">{{ t.category }} · {{ t.responded_at }}</span>
+<span class="name">{{ t.coachee_name }}</span> · <strong>{{ t.title }}</strong> <span class="muted">{{ t.category }} · {{ t.responded_at }}</span>
 {% if t.has_attachment %} <a href="/task/{{ t.id }}/attachment" target="_blank">📎</a>{% endif %}
+{% if t.pv_result and not t.pv_override %}
+<div style="margin:.3rem 0;padding:.3rem .5rem;border-radius:4px;font-size:.8rem;display:inline-flex;align-items:center;gap:.4rem;{% if t.pv_result.status == 'validated' %}background:rgba(45,106,79,0.2);color:#2d6a4f{% elif t.pv_result.status == 'rejected' %}background:rgba(233,69,96,0.2);color:#e94560{% else %}background:rgba(255,193,7,0.2);color:#ffc107{% endif %}">
+🤖 AI: {{ t.pv_result.status }} ({{ t.pv_result.confidence }}%) — {{ t.pv_result.assessment[:80] }}
+<form method="post" action="/coach/task/{{ t.id }}/validate-photo" style="display:inline;margin:0">
+    {{ csrf_field() }}
+<button type="submit" name="decision" value="approve" class="small" style="padding:.1rem .4rem;font-size:.7rem;margin:0">✓</button>
+<button type="submit" name="decision" value="reject" class="small" style="padding:.1rem .4rem;font-size:.7rem;margin:0;background:var(--accent)">✗</button>
+</form>
+</div>
+{% elif t.pv_override %}
+<div style="margin:.3rem 0;padding:.3rem .5rem;border-radius:4px;font-size:.8rem;background:rgba(45,106,79,0.15);color:var(--muted)">
+👤 Coach: {{ t.pv_override.decision }}{% if t.pv_override.comment %} — {{ t.pv_override.comment }}{% endif %}
+</div>
+{% endif %}
 <div class="response">{{ t.response }}</div>
 <div class="row">
-<select name="grade_{{ t.id }}"><option value="">—</option>{% for g in ['A','B','C','D','E','F'] %}<option>{{ g }}</option>{% endfor %}</select>
+<select name="grade_{{ t.id }}" style="width:auto"><option value="">—</option>{% for g in ['A','B','C','D','E','F'] %}<option>{{ g }}</option>{% endfor %}</select>
 <input type="text" name="comment_{{ t.id }}" placeholder="Comment..." style="flex:1">
 </div>
 </div>
@@ -36,6 +42,7 @@ button{padding:.7rem 2rem;background:#e94560;color:#fff;border:none;border-radiu
 <button type="submit">Save All Grades</button>
 </form>
 {% else %}
-<p style="color:#888">All caught up — no tasks to grade! 🎉</p>
+<p class="muted">All caught up — no tasks to grade!</p>
 {% endif %}
+</div>
 </body></html>

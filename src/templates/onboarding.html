@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Onboarding Sequence</title>
+<link rel="stylesheet" href="/static/style.css">
+</head><body class="font-{{ font_pref }}">
+<nav>
+<span class="title">DSCoaching</span>
+<a href="/coach">← Dashboard</a>
+</nav>
+{{ flash_block }}
+<div class="page">
+<h2>🎓 Onboarding Sequence</h2>
+<p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">Define what happens during a new coachee's first 7 days. Tasks and notes are auto-delivered based on days since account creation. Use mail-merge: <code style="background:var(--input);padding:0.1rem 0.3rem;border-radius:3px">{{"{{name}}"}}</code>, <code style="background:var(--input);padding:0.1rem 0.3rem;border-radius:3px">{{"{{day_of_week}}"}}</code>, etc.</p>
+
+<div class="section">
+<h3>Add Step</h3>
+<form method="post">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="add">
+<div class="row">
+<div>
+<label>Day (0 = first login, 1 = next day, ...)</label>
+<select name="day_offset" required>
+{% for i in range(8) %}<option value="{{ i }}">Day {{ i }}{% if i == 0 %} (first login){% endif %}</option>{% endfor %}
+</select>
+</div>
+<div>
+<label>Task Template (optional)</label>
+<select name="template_id">
+<option value="">— No task —</option>
+{% for t in templates %}<option value="{{ t.id }}">{{ t.title }}</option>{% endfor %}
+</select>
+</div>
+</div>
+<label>Note to send (optional, supports mail-merge)</label>
+<textarea name="note_text" placeholder="Welcome {{name}}! Today is your first day. Here's what to expect..." style="min-height:70px"></textarea>
+<button type="submit">Add Step</button>
+</form>
+</div>
+
+<div class="section">
+<h3>Sequence</h3>
+{% for i in range(8) %}
+{% set day_steps = steps|selectattr('day_offset','equalto',i)|list %}
+{% if day_steps %}
+<div style="margin-bottom:0.8rem">
+<strong style="color:var(--accent)">Day {{ i }}{% if i == 0 %} (first login){% endif %}</strong>
+{% for s in day_steps %}
+<div class="entry" style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem">
+<div>
+{% if s.task_title %}<span class="badge info">📋 {{ s.task_title }}</span>{% endif %}
+{% if s.note_text %}<br><span style="font-size:0.82rem;color:var(--text-secondary);font-style:italic">💬 {{ s.note_text[:120] }}{% if s.note_text|length > 120 %}...{% endif %}</span>{% endif %}
+</div>
+<form method="post" style="margin:0"><input type="hidden" name="action" value="delete"><input type="hidden" name="step_id" value="{{ s.id }}"><button type="submit" class="small secondary" style="margin:0">✕</button></form>
+    {{ csrf_field() }}
+</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endfor %}
+{% if not steps %}<p style="color:var(--muted)">No onboarding steps defined yet.</p>{% endif %}
+</div>
+</div>
+</body></html>

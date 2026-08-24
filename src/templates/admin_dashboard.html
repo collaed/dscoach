@@ -1,39 +1,27 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin Dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:1rem}
-a{color:#e94560;text-decoration:none}
-nav{display:flex;gap:.6rem;align-items:center;margin-bottom:2rem;flex-wrap:wrap}
-nav .title{color:#e94560;font-size:1.3rem;font-weight:bold;margin-right:auto}
-nav a{padding:.4rem .7rem;border:1px solid #e94560;border-radius:6px;font-size:.85rem}
-nav a:hover{background:#e94560;color:#fff}
-h2{color:#e94560;margin-bottom:1rem}
-table{width:100%;border-collapse:collapse;font-size:.9rem}
-th{text-align:left;color:#e94560;padding:.6rem;border-bottom:2px solid #333}
-td{padding:.5rem .6rem;border-bottom:1px solid #222}
-.badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.78rem}
-.badge.ok{background:#2d6a4f;color:#fff}
-.badge.warn{background:#f5a623;color:#000}
-.badge.danger{background:#e94560;color:#fff}
 .badge.admin{background:#6a2d6a;color:#fff}
 .actions{display:flex;gap:.3rem;flex-wrap:wrap}
 .actions form{display:inline}
 .actions button{padding:.25rem .5rem;border:none;border-radius:4px;cursor:pointer;font-size:.8rem;color:#fff}
-.actions .freeze{background:#f5a623;color:#000}
-.actions .delete{background:#e94560}
+.actions .freeze{background:var(--warn);color:#000}
+.actions .delete{background:var(--danger)}
 .actions .reset{background:#333}
 input[type=password]{padding:.3rem;border:1px solid #333;border-radius:4px;background:#0f3460;color:#fff;font-size:.8rem;width:100px}
 .bar{background:#0f3460;border-radius:4px;height:8px;margin-top:.2rem}
 .bar-fill{height:100%;border-radius:4px;background:#e94560}
-</style></head><body>
+</style></head><body class="font-{{ font_pref }}">
 <nav>
 <span class="title">👑 Admin Dashboard</span>
-<a href="/coach">🏠 Coach View</a>
-<a href="/admin/support">🆘 Support</a>
-<a href="/admin/coach/add">➕ Add Coach</a>
-<a href="/logout">Logout</a>
+<div class="menu-bar">
+<a href="/coach" style="padding:.4rem .7rem;border:1px solid var(--accent);border-radius:var(--radius);font-size:.85rem">🏠 Coach View</a>
+<a href="/admin/support" style="padding:.4rem .7rem;border:1px solid var(--accent);border-radius:var(--radius);font-size:.85rem">🆘 Support Messages</a>
+<a href="/admin/coach/add" style="padding:.4rem .7rem;border:1px solid var(--accent);border-radius:var(--radius);font-size:.85rem">➕ Add Coach</a>
+<a href="/logout" style="padding:.4rem .7rem;border:1px solid var(--border);border-radius:var(--radius);font-size:.85rem;color:var(--muted)">Logout</a>
+</div>
 </nav>
 <h2>Coaches ({{ coaches|length }})</h2>
 <table>
@@ -55,12 +43,15 @@ input[type=password]{padding:.3rem;border:1px solid #333;border-radius:4px;backg
 <td class="actions">
 {% if not co.is_admin %}
 <form method="post" action="/admin/coach/{{ co.id }}/freeze">
+    {{ csrf_field() }}
 <button type="submit" class="freeze">{% if co.status=='active' %}❄️ Freeze{% else %}▶️ Unfreeze{% endif %}</button>
 </form>
 <form method="post" action="/admin/coach/{{ co.id }}/delete" onsubmit="return confirm('DELETE coach {{ co.name }} and ALL their data?')">
+    {{ csrf_field() }}
 <button type="submit" class="delete">🗑️</button>
 </form>
 <form method="post" action="/admin/coach/{{ co.id }}/reset-password" style="display:flex;gap:.2rem">
+    {{ csrf_field() }}
 <input type="password" name="new_password" placeholder="New pw" required>
 <button type="submit" class="reset">🔑</button>
 </form>

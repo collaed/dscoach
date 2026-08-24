@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ t('photo_validation.title') }}</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.pv-wrap{max-width:600px;margin:0 auto}
+.pv-section{margin-bottom:1.5rem;padding:1rem;background:var(--card);border-radius:var(--radius-sm)}
+.pv-section h3{margin:0 0 .8rem;font-size:1rem}
+.toggle-row{display:flex;align-items:center;gap:.8rem;margin-bottom:1rem}
+.toggle-row label{font-size:.9rem;color:var(--text-secondary)}
+.service-select{margin-top:.5rem}
+.service-select label{display:block;margin-bottom:.3rem;font-size:.85rem;color:var(--muted)}
+.info-box{background:var(--input);border-radius:var(--radius-sm);padding:.6rem .8rem;font-size:.8rem;color:var(--muted);margin-top:.8rem;line-height:1.5}
+.info-box strong{color:var(--text)}
+</style></head><body class="font-{{ font_pref }}">
+<nav><span class="title">DSCoaching</span><a href="/coach/settings">&larr; {{ t('nav.settings') }}</a></nav>
+{{ flash_block }}
+<div class="page">
+<div class="pv-wrap">
+<h2>📷 {{ t('photo_validation.title') }}</h2>
+
+<form method="post">
+    {{ csrf_field() }}
+<div class="pv-section">
+<h3>{% if lang == 'fr' %}Activation{% else %}Enable/Disable{% endif %}</h3>
+<div class="toggle-row">
+<input type="checkbox" name="photo_validation_enabled" id="pv_enabled" style="width:auto" {% if pv.get('enabled') %}checked{% endif %}>
+<label for="pv_enabled">{% if lang == 'fr' %}Activer la validation IA des photos-preuves{% else %}Enable AI photo proof validation{% endif %}</label>
+</div>
+<div class="info-box">
+{% if lang == 'fr' %}
+<strong>Comment ça fonctionne :</strong> Quand activé, les soumissions avec photo sur les tâches marquées "validation photo" seront analysées par une IA. L'IA donne un score de confiance (0-100) et une évaluation. Vous gardez toujours le dernier mot — chaque résultat IA est vérifiable et peut être annulé.
+{% else %}
+<strong>How it works:</strong> When enabled, photo submissions on tasks marked "photo validate" will be analyzed by AI. The AI provides a confidence score (0-100) and assessment. You always have final say — every AI result is reviewable and can be overridden.
+{% endif %}
+</div>
+</div>
+
+<div class="pv-section">
+<h3>{% if lang == 'fr' %}Service IA{% else %}AI Service{% endif %}</h3>
+<div class="service-select">
+<label for="pv_service">{% if lang == 'fr' %}Fournisseur{% else %}Provider{% endif %}</label>
+<select name="photo_validation_service" id="pv_service">
+<option value="cloudflare" {% if pv.get('service') == 'cloudflare' %}selected{% endif %}>Cloudflare Workers AI ({% if lang == 'fr' %}texte seul, pas de vision{% else %}text only, no vision{% endif %})</option>
+<option value="openai" {% if pv.get('service') == 'openai' %}selected{% endif %}>OpenAI GPT-4o-mini ({% if lang == 'fr' %}vision complète{% else %}full vision{% endif %})</option>
+</select>
+</div>
+<div class="service-select" style="margin-top:.8rem">
+<label for="pv_key">{% if lang == 'fr' %}Clé API (si OpenAI){% else %}API Key (if OpenAI){% endif %}</label>
+<input type="password" name="photo_validation_api_key" id="pv_key" value="{{ pv.get('api_key', '') }}" placeholder="sk-...">
+</div>
+<div class="info-box">
+{% if lang == 'fr' %}
+<strong>Cloudflare</strong> utilise votre configuration existante (CF_ACCOUNT_ID / CF_API_TOKEN). Pas de vision native — l'IA évalue la plausibilité textuelle et marque "uncertain" pour vérification manuelle.<br>
+<strong>OpenAI</strong> utilise GPT-4o-mini avec vision. Analyse réelle de l'image. Nécessite une clé API OpenAI. ~$0.01/validation.
+{% else %}
+<strong>Cloudflare</strong> uses your existing setup (CF_ACCOUNT_ID / CF_API_TOKEN). No native vision — AI assesses textual plausibility and marks "uncertain" for manual review.<br>
+<strong>OpenAI</strong> uses GPT-4o-mini with vision. Actual image analysis. Requires an OpenAI API key. ~$0.01/validation.
+{% endif %}
+</div>
+</div>
+
+<div class="pv-section">
+<h3>{% if lang == 'fr' %}Utilisation{% else %}Usage{% endif %}</h3>
+<div class="info-box">
+{% if lang == 'fr' %}
+<strong>Par tâche :</strong> Cochez "Validation photo" lors de la création d'un template de tâche.<br>
+<strong>Par coaché :</strong> Dans la vue coaché, ajustez le slider "% de tâches auto-validées" (0% = jamais, 100% = toujours).<br>
+<strong>Vérification :</strong> Chaque évaluation IA apparaît dans l'écran de notation. Vous pouvez approuver ou rejeter à tout moment.
+{% else %}
+<strong>Per task:</strong> Check "Photo validation" when creating a task template.<br>
+<strong>Per coachee:</strong> In the coachee view, adjust the "% auto-validated tasks" slider (0% = never, 100% = always).<br>
+<strong>Review:</strong> Every AI assessment shows in the grading screen. You can approve or reject at any time.
+{% endif %}
+</div>
+</div>
+
+<button type="submit" class="btn">{% if lang == 'fr' %}Enregistrer{% else %}Save Settings{% endif %}</button>
+</form>
+
+</div>
+</div>
+</body></html>
