@@ -117,9 +117,11 @@ remain available. No new web-font dependency.
   `card_color=#242424` for coaches who prefer per-brand colours over the CSS
   theme.
 - **Step 4** — Visual QA pass on: login, coach dashboard, coachee dashboard
-  tabs, task cards, grading, forms, error pages. Check contrast (WCAG AA:
-  body text `#a9a9a9` on `#1a1a1a` ≈ 6.2:1 ✓; headings `#d8d8d8` ≈ 10:1 ✓;
-  accent `#b3153a` for large text/icons only, not small body copy).
+  tabs, task cards, grading, forms, error pages. Check contrast (measured
+  WCAG relative-luminance ratios): body text `#a9a9a9` on `#1a1a1a` ≈ **7.4:1**
+  (clears AAA for normal text); headings `#d8d8d8` on `#1a1a1a` ≈ **12.2:1**
+  (clears AAA); accent `#b3153a` reserved for buttons/icons/wordmark, not small
+  body copy.
 - **Step 5** — Screenshot before/after in the PR for review.
 
 ## 5. Accessibility (non-negotiable, per coding standard)

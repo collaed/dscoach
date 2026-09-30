@@ -87,3 +87,40 @@ A task is visible to the coachee when ALL of:
 - `visible_after` IS NULL OR `visible_after` <= now
 - `frozen_after` IS NULL OR `frozen_after` > now
 - `depends_on` IS NULL OR depends_on task is completed
+
+## Planned — Probabilistic Proof (R48) & Scoring (R49)
+
+See `plan-proof-and-scoring.md` for the full plan. Summary of lifecycle impact:
+
+### Proof demand (R48)
+
+- Templates carry `proof_pct` (0–100).
+- At **assignment creation** (every path: manual, recurring, reserve,
+  week-plan, onboarding), `_roll_proof_required(template)` rolls once and
+  persists `task_assignment.proof_required`. It is **not** re-rolled on display
+  (prevents reload-until-favorable gaming).
+- When `proof_required=1`, the coachee dashboard shows a "📷 Proof required"
+  pill and `complete_task` rejects a completion with no photo.
+- **Disclosure (charter principle 4):** a task type using probabilistic proof
+  must be disclosed to the coachee in advance (task card / contract), not only
+  via the after-the-roll pill. This is a hard requirement, not optional.
+- Composes with, and is independent of, R11 photo AI-validation.
+- Behavioral benefit (intermittent verification) only applies to recurring
+  tasks; on `recurrence='once'` it is a single coin flip — the create UI should
+  not imply otherwise.
+
+### Scoring (R49)
+
+- Templates carry signed `points`.
+- On completion → append `+points` (`reason='task_completed'`) and, if a
+  required proof was attached, `+proof_bonus`.
+- On miss (`_freeze_overdue`) → append `-penalty` (`reason='task_missed'`).
+- On a later miss → **excused** transition → append a compensating `+penalty`
+  row (`reason='miss_reversed'`) so coach overrides don't leave stale penalties
+  (charter principle 5). [REQ-49.2b]
+- All entries are append-only in `score_log`; rollups (day/week Sun–Sat &
+  Mon–Sun/month/all-time/best-week) are pure aggregation, week bucketing done
+  in Python for dialect neutrality.
+- Score is a **second, independent** compliance signal alongside the existing
+  streak/strikes (magnitude vs. consistency) — deliberate, surfaced separately
+  in the UI.

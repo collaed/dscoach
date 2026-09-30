@@ -148,7 +148,50 @@ erDiagram
 
 All follow the same pattern: Integer PK, coachee_id FK, content fields, created_at. See `src/models.py` for exact definitions.
 
+## Planned schema additions — R48 / R49 (see `plan-proof-and-scoring.md`)
+
+Not yet implemented; documented here for the review of the planning batch.
+
+**`task_template`** (new columns):
+
+| Column | Type | Notes |
+|--------|------|-------|
+| proof_pct | SmallInteger | Default 0. 0–100 chance an occurrence demands photo proof (R48). |
+| points | SmallInteger | Default 0. Signed score value awarded on completion / deducted on miss (R49). |
+
+**`task_assignment`** (new column):
+
+| Column | Type | Notes |
+|--------|------|-------|
+| proof_required | SmallInteger | Default 0. Rolled once at assignment from the template's `proof_pct` and persisted (never re-rolled on display). When 1, completion without a photo is rejected (R48). |
+
+**`score_log`** (new table, append-only ledger):
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | Integer PK | Auto-increment |
+| coachee_id | Integer FK coachee.id | NOT NULL |
+| points | SmallInteger | Signed delta |
+| reason | String(40) | 'task_completed' \| 'task_missed' \| 'proof_bonus' \| 'miss_reversed' \| 'manual' \| 'checkin' \| 'reward_redeemed' |
+| task_assignment_id | Integer FK task_assignment.id | Nullable |
+| score_date | Date | Coachee-local date (not server UTC) |
+| note | String(200) | Nullable |
+| created_at | DateTime | Auto-set |
+| — | UniqueConstraint(task_assignment_id, reason) | Idempotency. NULL assignment ids do not collide (standard SQL), so multiple manual/checkin awards coexist. |
+
+Index: `ix_score_log_coachee_date` on `(coachee_id, score_date)` for rollups.
+
+Migration: Alembic `003_proof_and_scoring` (`batch_alter_table` for SQLite).
+
 ## Cascade Delete Order
+
+> ⚠️ **BUG-017 / H1 (open):** the cascade below does **not** include the 11
+> "Extended Tables" (`badge`, `ritual`, `ritual_log`, `auto_rule`, `week_plan`,
+> `onboarding_step`, `payment_plan`, `payment_log`, `creative_collection`,
+> `creative_constraint`, `creative_work`) — deleting a coach orphans their rows.
+> Recommended fix: derive the cascade from `metadata` FK graph so new tables
+> (including `score_log`) are covered automatically. See `backlog.md` H1.
+
 
 When a coach is deleted (`admin_delete_coach`), cleanup happens in this order:
 1. For each coachee: delete from checkin, tracking_log, note, acknowledgement, mental_conditioning_response, task_assignment, psychological_profile, contract_history, goal, journal, voice_note, progress_photo, weekly_summary

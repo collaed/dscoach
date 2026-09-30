@@ -81,6 +81,20 @@ AI-check 50 % of them. No conflict, no rework of R11.
   today (default `0`).
 - **REQ-48.8** When proof is required and submitted, the completion MAY still be
   passed to the existing R11 AI-validation pipeline unchanged.
+- **REQ-48.9** Disclosure (charter principle 4 — authority features are
+  consent-driven and disclosed per-dyad): if a task type uses probabilistic
+  proof, the coachee MUST be told *in advance* that this task type may randomly
+  require photo proof (and at roughly what rate), via the task card and/or
+  contract — not only via the after-the-roll "📷 Proof required" pill. This is
+  the line between a disclosed, consented dynamic mechanic (legitimate) and
+  silent surveillance (the charter's explicit failure mode).
+- **REQ-48.10** Editing a template's `proof_pct` MUST NOT retroactively change
+  `proof_required` on already-pending assignments — the roll already happened
+  and is persisted (consistent with REQ-48.3). Must be tested, not assumed.
+- **REQ-48.11 (implementation)** The roll MUST use a local `random.Random`
+  instance, not the global `random` module, so `_roll_proof_required` is a pure
+  function and tests seeding it are order-independent (avoids flaky CI from
+  cross-test global-RNG sequence coupling).
 
 ### 2.2 Feature R49 — Points & persisted daily score
 
@@ -91,6 +105,11 @@ AI-check 50 % of them. No conflict, no rework of R11.
   template's `points` (when non-zero). Marking a task `missed` MUST append a
   negative score entry equal to a configurable miss penalty (default: the
   template `points` value as a negative, or 0 if the template has no points).
+- **REQ-49.2b** If a previously-scored `missed` task is later transitioned to
+  `excused` by the coach (an existing status), the system MUST append a
+  compensating reversal row (`+penalty`, `reason='miss_reversed'`) so the coach
+  override does not leave a stale penalty on the ledger. (Charter principle 5 —
+  consequences stay coach-overridable.)
 - **REQ-49.3** All score changes MUST be recorded as **append-only** immutable
   rows (never an in-place counter), consistent with the `checkin` philosophy, so
   that any rollup can be recomputed and audited.
@@ -115,7 +134,10 @@ AI-check 50 % of them. No conflict, no rework of R11.
   month / best week) on their dashboard. The coach MUST see a per-coachee score
   history.
 - **REQ-49.9** Awarding points MUST be idempotent per (task_assignment, reason):
-  re-submitting or a double dashboard load MUST NOT double-count.
+  re-submitting or a double dashboard load MUST NOT double-count. Rows with
+  `task_assignment_id = NULL` (manual/checkin awards) MUST be able to coexist
+  (standard SQL: NULLs are not equal in a unique constraint) — this is required
+  behaviour and MUST have an explicit test.
 - **REQ-49.10** A bonus MAY be awarded when a completion satisfied a required
   proof (ties R48↔R49): configurable `proof_bonus` points, default 0.
 
@@ -179,13 +201,15 @@ The single helper that rolls the dice, called by **every** assignment path:
 # src/tasks.py
 import random
 
-def _roll_proof_required(template_row) -> int:
+_RNG = random.Random()   # module-local; tests may pass a seeded Random (REQ-48.11)
+
+def _roll_proof_required(template_row, rng=_RNG) -> int:
     pct = template_row.get("proof_pct") or 0
     if pct <= 0:
         return 0
     if pct >= 100:
         return 1
-    return 1 if random.randint(1, 100) <= pct else 0   # DES for REQ-48.1
+    return 1 if rng.randint(1, 100) <= pct else 0   # DES for REQ-48.1
 ```
 
 Every `INSERT INTO task_assignment (...)` gains a `proof_required` column set
@@ -378,9 +402,10 @@ commit; the feature is steps 1–9.
 - **Step 7 — UI:** task form inputs, coachee score widget + proof pill, coach
   score history/rollup section (§3.7).
 - **Step 8 — Tests** (§5).
-- **Step 9 — Docs:** update `data-model.md`, `task-system.md`, `roadmap.md`
-  (mark R48/R49), `backlog.md`, `onboarding.md`, `user-journeys.md`,
-  `marketing.md`. (Most already handled in this batch.)
+- **Step 9 — Docs:** update `data-model.md` (✅ planned-schema section added),
+  `task-system.md` (✅ proof/scoring section added), `roadmap.md` (✅ R48/R49
+  marked), `backlog.md` (✅), `onboarding.md` (✅), `user-journeys.md` (✅),
+  `marketing.md` (✅). Remaining doc work happens alongside implementation.
 
 ---
 
@@ -444,13 +469,17 @@ Target: all existing 81 tests still pass + ~15 new. Run `pytest`, then
 | REQ-48.6 | §3.3 | test_proof: all paths |
 | REQ-48.7 | §3.1, §3.3 | test_proof: pct 0 |
 | REQ-48.8 | §3.5, §3.8 | existing R11 tests |
+| REQ-48.9 | §3.7 (disclosure pill + advance notice) | test_proof: card shows advance notice |
+| REQ-48.10 | §3.3 | test_proof: edit pct doesn't change pending |
+| REQ-48.11 | §3.3 | test_proof: seeded local Random, order-independent |
 | REQ-49.1 | §3.1 | test_scoring: points row |
 | REQ-49.2 | §3.5 | test_scoring: complete/miss |
+| REQ-49.2b | §3.5 | test_scoring: excuse reverses penalty |
 | REQ-49.3 | §3.1, §3.5 (DES-49.3) | test_scoring: append-only |
-| REQ-49.4 | §3.5 | test_scoring: tz midnight |
+| REQ-49.4 | §3.5 | test_scoring: tz midnight + immutable under tz edit |
 | REQ-49.5a–e | §3.6 | test_scoring: rollups |
 | REQ-49.6 | §3.1, §3.6 | test_scoring: week_key |
 | REQ-49.7 | §3.6 | test_scoring runs on SQLite |
 | REQ-49.8 | §3.7 | manual/UI |
-| REQ-49.9 | §3.5 | test_scoring: no double-count |
+| REQ-49.9 | §3.5 | test_scoring: no double-count + NULL awards coexist |
 | REQ-49.10 | §3.5 | test_scoring: proof_bonus |

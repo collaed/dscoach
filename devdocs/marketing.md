@@ -94,9 +94,12 @@ Do not publish these until confirmed against code and deployment:
   tables.
 - "Private by design" — review session security, at-rest handling, and the
   hardcoded email issue (BUG-007 / H4) before claiming privacy maturity.
-- Password storage is currently sha256 hex (no salt) — do **not** market strong
-  credential security until this is upgraded (argon2id foundation is in
-  progress per the last commit).
+- Password storage uses **argon2id** (`helpers.py::_hash_password`,
+  `time_cost=3, memory_cost=65536`) with transparent rehash-on-login for any
+  legacy SHA-256 hashes; argon2-cffi is confirmed installed and exercised in the
+  running production container. Strong-credential-hygiene claims are therefore
+  honest — but still confirm no plaintext/legacy hashes remain for active
+  accounts before making the claim publicly.
 
 ## 9. Non-goals / guardrails
 
