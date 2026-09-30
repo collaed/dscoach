@@ -11,12 +11,19 @@ DEFAULT_LANG = "en"
 
 
 def get_lang():
-    """Get current language from session."""
+    """PURPOSE: Return the current UI language from the session (defaults to en).
+    CALLED BY / SCREEN: t() here, and the template helper/context processor in helpers.py — used
+    on every rendered screen (coach, coachee, admin, public).
+    WHEN: on each translation lookup / template render (per request)."""
     return session.get("lang", DEFAULT_LANG)
 
 
 def t(key, **kwargs):
-    """Translate a key to the current language. Supports {placeholder} formatting."""
+    """PURPOSE: Translate a key into the current language, with optional {placeholder} formatting;
+    falls back to English then the raw key.
+    CALLED BY / SCREEN: exposed to Jinja templates (via helpers inject_helpers) as `t(...)` — used
+    across all screens for navigation, help pages, and photo-validation labels.
+    WHEN: on template render, whenever a translated string is emitted."""
     lang = get_lang()
     table = TRANSLATIONS.get(lang, TRANSLATIONS[DEFAULT_LANG])
     text = table.get(key, TRANSLATIONS[DEFAULT_LANG].get(key, key))

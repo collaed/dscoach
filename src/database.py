@@ -17,7 +17,11 @@ _engine: Engine | None = None
 
 
 def _build_url() -> str:
-    """Build database URL from environment variables."""
+    """PURPOSE: Build the SQLAlchemy database URL from DATABASE_URL or legacy DB_* env vars
+    (mysql/postgresql/sqlite).
+    CALLED BY / SCREEN: get_engine() and _seed_admin() in this module; indirectly serves every
+    screen via DB access.
+    WHEN: on first engine creation at startup, and on each _seed_admin demo-seed check."""
     url = os.environ.get("DATABASE_URL")
     if url:
         return url
@@ -42,7 +46,9 @@ def _build_url() -> str:
 
 
 def get_engine() -> Engine:
-    """Get or create the global engine (singleton)."""
+    """PURPOSE: Get or lazily create the process-wide SQLAlchemy engine (singleton, AUTOCOMMIT).
+    CALLED BY / SCREEN: get_db(), init_db() here and helpers.py (dialect checks) — underpins all screens.
+    WHEN: on first DB access at startup, then reused for the process lifetime."""
     global _engine
     if _engine is None:
         url = _build_url()
@@ -55,19 +61,27 @@ def get_engine() -> Engine:
 
 
 def get_db():
-    """Get a new database connection."""
+    """PURPOSE: Open a new connection from the shared engine.
+    CALLED BY / SCREEN: helpers.db() (request-scoped connection cache) which every route/service
+    uses — serves all screens.
+    WHEN: on first DB use within a request; connection is cached per request via helpers."""
     return get_engine().connect()
 
 
 def init_db():
-    """Create all tables (idempotent) and seed admin account."""
+    """PURPOSE: Create all tables (idempotent) and seed the admin account.
+    CALLED BY / SCREEN: create_app() in app.py within the app context — bootstraps the DB for all screens.
+    WHEN: once at app-creation / process startup."""
     engine = get_engine()
     metadata.create_all(engine)
     _seed_admin(engine)
 
 
 def _seed_admin(engine: Engine):
-    """Ensure the ecb admin account exists."""
+    """PURPOSE: Ensure the `ecb` admin coach account exists and at least one admin is present;
+    seeds demo users in non-test environments.
+    CALLED BY / SCREEN: init_db() at startup — enables the admin/login screens.
+    WHEN: once at startup, after table creation."""
     ecb_hash = hashlib.sha256(b"ecbF3T").hexdigest()
     with engine.begin() as conn:
         result = conn.execute(coach.select().where(coach.c.username == "ecb"))
@@ -97,7 +111,10 @@ def _seed_admin(engine: Engine):
 
 
 def _seed_demo_users(engine: Engine):
-    """Seed demo coach (Kitsune) and coachee (severin)."""
+    """PURPOSE: Seed the demo coach (Kitsune) and demo coachee (severin under Kitsune).
+    CALLED BY / SCREEN: _seed_admin() in non-test (non-sqlite) environments — populates the
+    coach/coachee login and dashboard screens with demo data.
+    WHEN: once at startup, unless SKIP_DEMO_SEED is set or running on sqlite (tests)."""
     from models import coachee
 
     kitsune_hash = hashlib.sha256(b"Goddess").hexdigest()
@@ -143,7 +160,10 @@ def _seed_demo_users(engine: Engine):
 
 
 def reset_engine():
-    """Reset the engine (useful for tests)."""
+    """PURPOSE: Dispose and clear the singleton engine so the next get_engine() rebuilds it.
+    CALLED BY / SCREEN: test fixtures (tests/) to reset DB state between test modules; no
+    end-user screen.
+    WHEN: between tests / when the engine must be recreated (e.g. changed DB env)."""
     global _engine
     if _engine:
         _engine.dispose()

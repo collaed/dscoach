@@ -19,27 +19,40 @@ _exempt_views: set = set()
 
 
 def csrf_exempt(fn):
-    """Decorator to exempt a route from CSRF checking."""
+    """PURPOSE: Decorator that registers a view function name as exempt from CSRF validation.
+    CALLED BY / SCREEN: applied to route handlers that must skip CSRF (e.g. API/webhook endpoints);
+    consulted by _validate_csrf(). No screen of its own.
+    WHEN: at import time (decoration), on module load / app startup."""
     _exempt_views.add(fn.__name__)
     return fn
 
 
 def _generate_token() -> str:
-    """Generate or retrieve the session CSRF token."""
+    """PURPOSE: Return the per-session CSRF token, creating one if absent.
+    CALLED BY / SCREEN: _csrf_field(), _validate_csrf(), and the `csrf_token` context processor
+    (init_csrf) — used on every screen that renders a form.
+    WHEN: on template render (via csrf_field/csrf_token) and during before_request validation."""
     if "_csrf_token" not in session:
         session["_csrf_token"] = secrets.token_hex(32)
     return session["_csrf_token"]
 
 
 def _csrf_field() -> str:
-    """Return an HTML hidden input with the CSRF token."""
+    """PURPOSE: Return a hidden HTML input carrying the session CSRF token.
+    CALLED BY / SCREEN: exposed to Jinja as `{{ csrf_field() }}` (registered by init_csrf) and
+    embedded in every <form method="post"> across all screens.
+    WHEN: on template render, whenever a form is emitted."""
     from markupsafe import Markup
     token = _generate_token()
     return Markup(f'<input type="hidden" name="_csrf_token" value="{token}">')
 
 
 def _validate_csrf():
-    """Validate CSRF token on state-changing requests."""
+    """PURPOSE: Validate the CSRF token on state-changing requests (POST/PUT/DELETE/PATCH),
+    aborting 403 on mismatch; skips testing mode, exempt views, and the first token-less POST.
+    CALLED BY / SCREEN: registered as a before_request hook by init_csrf() — guards every
+    form-submitting screen (login, coach, coachee, admin).
+    WHEN: before every request, prior to the view function running."""
     if request.method not in ("POST", "PUT", "DELETE", "PATCH"):
         return
 
@@ -69,6 +82,9 @@ def _validate_csrf():
 
 
 def init_csrf(app):
-    """Register CSRF protection on the Flask app."""
+    """PURPOSE: Wire CSRF protection into the app — register _validate_csrf as before_request and
+    expose csrf_field/csrf_token to templates.
+    CALLED BY / SCREEN: create_app() in app.py — protects all screens.
+    WHEN: once at app-creation / startup."""
     app.before_request(_validate_csrf)
     app.context_processor(lambda: {"csrf_field": _csrf_field, "csrf_token": _generate_token})

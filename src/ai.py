@@ -23,7 +23,11 @@ LLM_KEY = MISTRAL_KEY
 
 
 def _hetzner_ai_complete(prompt, max_tokens=1024, system_prompt=None):
-    """Call Hetzner Inference API (OpenAI-compatible). Returns response text or error string."""
+    """PURPOSE: Call the Hetzner Inference API (OpenAI-compatible chat/completions); return the
+    completion text or an "[AI ...]" error string.
+    CALLED BY / SCREEN: ai_complete() (backend dispatch + fallback) — backs coach AI features
+    (AI profile, text analyzer on /coach screens).
+    WHEN: on submit of an AI-triggering coach action, when the hetzner backend is selected/fallback."""
     if not HETZNER_API_KEY:
         return "[AI not configured: HETZNER_API_KEY required]"
     import urllib.error
@@ -66,7 +70,10 @@ def _hetzner_ai_complete(prompt, max_tokens=1024, system_prompt=None):
 
 
 def _cf_ai_complete(prompt, max_tokens=1024):
-    """Call Cloudflare Workers AI REST API. Returns response text or error string."""
+    """PURPOSE: Call Cloudflare Workers AI REST API; return the completion text or "[AI ...]" error.
+    CALLED BY / SCREEN: ai_complete() fallback; routes_coach.py AI features (AI profile at
+    /coach/coachee/<id>, weekly summary, text analyzer) and photo_validation._validate_with_cloudflare.
+    WHEN: on submit of a coach AI action, when the cloudflare backend is selected/fallback."""
     if not CF_ACCOUNT_ID or not CF_API_TOKEN:
         return "[AI not configured: CF_ACCOUNT_ID and CF_API_TOKEN required]"
     import urllib.error
@@ -94,10 +101,11 @@ def _cf_ai_complete(prompt, max_tokens=1024):
 
 
 def ai_complete(prompt, max_tokens=1024, system_prompt=None):
-    """Unified AI completion: dispatches to configured backend.
-
-    Falls back to the other backend on failure.
-    """
+    """PURPOSE: Unified AI completion — dispatch to the configured backend (hetzner/cloudflare)
+    and fall back to the other on failure.
+    CALLED BY / SCREEN: coach AI-feature helpers/routes in routes_coach.py (AI psychological
+    profile, weekly summary, text analyzer) on /coach screens.
+    WHEN: on submit of a coach AI action (button/form triggering an LLM call)."""
     if AI_BACKEND == "hetzner":
         result = _hetzner_ai_complete(prompt, max_tokens=max_tokens, system_prompt=system_prompt)
         if result.startswith("[AI") and CF_ACCOUNT_ID and CF_API_TOKEN:
@@ -113,7 +121,11 @@ def ai_complete(prompt, max_tokens=1024, system_prompt=None):
 
 
 def _build_profile_prompt(coachee_id):
-    """Build the Mistral prompt from coachee history."""
+    """PURPOSE: Assemble the LLM prompt for a coachee's psychological profile from their check-ins,
+    tasks, tracking, notes, acknowledgements, and context text. Returns None if coachee missing.
+    CALLED BY / SCREEN: routes_coach.py AI-profile handlers (POST on /coach/coachee/<id> profile
+    generation) — coach coachee-detail screen.
+    WHEN: on coach clicking "Generate AI Profile" (form submit)."""
     c = db()
     c.execute("SELECT name, context_text, coach_id FROM coachee WHERE id=%s", (coachee_id,))
     coachee_row = c.fetchone()
@@ -150,6 +162,9 @@ def _build_profile_prompt(coachee_id):
     acks = c.fetchall()
 
     def fmt(rows):
+        """PURPOSE: Format a list of DB rows into indented "[timestamp] {dict}" lines for the prompt.
+        CALLED BY / SCREEN: _build_profile_prompt() (enclosing) to render each history section.
+        WHEN: during profile-prompt assembly, on AI profile generation."""
         return "\n".join(f"  [{r.get('created_at','')}] {dict(r)}" for r in rows) or "  (none)"
 
     prompt = f"""I am {coach_name}, a rather dominant coach, and I am talking to you about a person called {name} whom I am coaching. You are a coaching psychology assistant. Based on the following data for coachee "{name}", write a concise psychological profile (max 300 words) to help me understand them better. Cover: emotional patterns, discipline/consistency, areas of strength, areas needing attention, and overall trajectory. Be empathetic but honest. Use third person ("{name}" or "they").

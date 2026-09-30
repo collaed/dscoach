@@ -14,6 +14,9 @@ bp = Blueprint("admin", __name__)
 @bp.route("/admin")
 @admin_required
 def admin_dashboard():
+    """PURPOSE: Build the admin overview — list all coaches with per-coach counts (coachees, tasks, 7-day tasks/notes/logins).
+    CALLED BY: Route GET /admin — renders admin_dashboard.html, the admin home screen (guarded by @admin_required).
+    WHEN: On loading the admin dashboard."""
     c = db()
     c.execute("SELECT id, username, name, status, is_admin, created_at FROM coach ORDER BY name")
     coaches = c.fetchall()
@@ -49,6 +52,9 @@ def admin_dashboard():
 @bp.route("/admin/coach/add", methods=["GET", "POST"])
 @admin_required
 def admin_add_coach():
+    """PURPOSE: Create a new coach account from the admin panel (hashed password, timezone).
+    CALLED BY: Route GET/POST /admin/coach/add — renders admin_add_coach.html form; POST inserts the coach then redirects to admin dashboard.
+    WHEN: On opening the add-coach form (GET) or submitting it (POST)."""
     if request.method == "POST":
         c = db()
         c.execute(
@@ -68,6 +74,9 @@ def admin_add_coach():
 @bp.route("/admin/coach/<int:coid>/freeze", methods=["POST"])
 @admin_required
 def admin_freeze_coach(coid):
+    """PURPOSE: Toggle a non-admin coach's status between active and frozen (frozen coaches and their coachees cannot log in).
+    CALLED BY: Route POST /admin/coach/<coid>/freeze — freeze/unfreeze button on the admin dashboard; redirects back to it.
+    WHEN: On clicking freeze/unfreeze for a coach."""
     c = db()
     c.execute(
         "UPDATE coach SET status=CASE WHEN status='active' THEN 'frozen' ELSE 'active' END WHERE id=%s AND is_admin=0",
@@ -81,6 +90,9 @@ def admin_freeze_coach(coid):
 @bp.route("/admin/coach/<int:coid>/delete", methods=["POST"])
 @admin_required
 def admin_delete_coach(coid):
+    """PURPOSE: Permanently delete a non-admin coach and cascade-delete all their coachees' data across every dependent table.
+    CALLED BY: Route POST /admin/coach/<coid>/delete — delete button on the admin dashboard; redirects back to it.
+    WHEN: On confirming coach deletion."""
     c = db()
     # prevent deleting admin or self
     c.execute("SELECT is_admin FROM coach WHERE id=%s", (coid,))
@@ -123,6 +135,9 @@ def admin_delete_coach(coid):
 @bp.route("/admin/coach/<int:coid>/reset-password", methods=["POST"])
 @admin_required
 def admin_reset_coach_password(coid):
+    """PURPOSE: Reset a coach's password to an admin-supplied value (stored hashed).
+    CALLED BY: Route POST /admin/coach/<coid>/reset-password — reset-password form on the admin dashboard; redirects back to it.
+    WHEN: On submitting a coach password reset."""
     c = db()
     c.execute("UPDATE coach SET password_hash=%s WHERE id=%s", (_hash_password(request.form["new_password"]), coid))
     _audit(f"admin_reset_password coach={coid}")
@@ -132,6 +147,9 @@ def admin_reset_coach_password(coid):
 @bp.route("/admin/support")
 @admin_required
 def admin_support():
+    """PURPOSE: List the 50 most recent coach→admin support tickets (open first), joined with the sending coach.
+    CALLED BY: Route GET /admin/support — renders admin_support.html, the admin support-inbox screen.
+    WHEN: On loading the admin support screen."""
     c = db()
     c.execute("""SELECT sm.*, co.name as coach_name, co.username
                  FROM support_message sm JOIN coach co ON sm.coach_id=co.id
@@ -143,6 +161,9 @@ def admin_support():
 @bp.route("/admin/support/<int:mid>/reply", methods=["POST"])
 @admin_required
 def admin_reply_support(mid):
+    """PURPOSE: Save an admin's reply to a support ticket and update its status (default resolved).
+    CALLED BY: Route POST /admin/support/<mid>/reply — reply form on admin_support.html; redirects back to the support screen.
+    WHEN: On submitting a support-ticket reply."""
     c = db()
     c.execute(
         "UPDATE support_message SET admin_reply=%s, status=%s WHERE id=%s",

@@ -8,7 +8,12 @@ from merge import _get_merge_context, _merge_vars
 
 
 def _run_auto_rules(coachee_id, trigger, context=None):
-    """Execute automation rules for a given trigger event."""
+    """Execute automation rules for a given trigger event.
+
+    PURPOSE: Evaluate the coach's active auto_rule rows for a trigger, check conditions, and run actions (send_note, award_badge, assign_task).
+    CALLED BY: routes_coachee.py on checkin submit (POST /me/checkin, trigger 'checkin_submitted') and task complete (POST /me/task/<tid>, trigger 'task_completed'); tasks.py _freeze_overdue ('task_missed') and _update_streak ('streak_milestone') during GET /me — serves coachee dashboard/action screens.
+    WHEN: On coachee check-in/task submit and during coachee dashboard load when tasks are missed or a streak milestone is hit.
+    """
     c = db()
     c.execute("SELECT coach_id FROM coachee WHERE id=%s", (coachee_id,))
     row = c.fetchone()
@@ -91,7 +96,12 @@ def _run_auto_rules(coachee_id, trigger, context=None):
 
 
 def _auto_escalation_note(coachee_id, missed_count):
-    """Send an auto-escalation note when tasks are missed."""
+    """Send an auto-escalation note when tasks are missed.
+
+    PURPOSE: Insert a coach->coachee note (from the coach's escalation template or a default) after missed tasks, merging in name/strikes/missed count.
+    CALLED BY: tasks.py _freeze_overdue, which runs from routes_coachee.py coachee_dashboard (GET /me) — the note then appears on the coachee dashboard/notes screen.
+    WHEN: On coachee dashboard load, when _freeze_overdue detects one or more newly missed tasks.
+    """
     c = db()
     c.execute("SELECT coach_id FROM coachee WHERE id=%s", (coachee_id,))
     row = c.fetchone()
@@ -114,7 +124,12 @@ def _auto_escalation_note(coachee_id, missed_count):
 
 
 def _streak_milestone_note(coachee_id, new_streak):
-    """Send a congratulatory note when streak hits a milestone."""
+    """Send a congratulatory note when streak hits a milestone.
+
+    PURPOSE: Insert a coach->coachee note at 7/14/30/60/90-day streaks (coach custom template or default), returning early otherwise.
+    CALLED BY: tasks.py _update_streak, which runs from routes_coachee.py coachee_dashboard (GET /me) — the note appears on the coachee dashboard/notes screen.
+    WHEN: On coachee dashboard load, when _update_streak advances the streak onto a milestone value.
+    """
     milestones = {
         7: "\U0001f525 One week, {{name}}! 7 days of consistent discipline. You've proven you can sustain this. Keep building.",
         14: "\u26a1 Two weeks, {{name}}! 14 days of unwavering commitment. Your dedication is impressive. The next level awaits.",
@@ -143,7 +158,12 @@ def _streak_milestone_note(coachee_id, new_streak):
 
 
 def _check_and_award_badges(coachee_id):
-    """Check badge conditions and award new badges."""
+    """Check badge conditions and award new badges.
+
+    PURPOSE: Evaluate streak, perfect-week grades, and first-check-in conditions and insert any newly earned badge rows.
+    CALLED BY: routes_coachee.py coachee_dashboard (GET /me) — earned badges are then shown via _get_badges on the coachee dashboard screen.
+    WHEN: On coachee dashboard load, after streak/freeze processing.
+    """
     c = db()
     c.execute("SELECT badge_type FROM badge WHERE coachee_id=%s", (coachee_id,))
     existing = {r["badge_type"] for r in c.fetchall()}
@@ -185,14 +205,24 @@ def _check_and_award_badges(coachee_id):
 
 
 def _get_badges(coachee_id):
-    """Get all badges for a coachee."""
+    """Get all badges for a coachee.
+
+    PURPOSE: Fetch the coachee's earned badges (newest first) for display.
+    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), passed as earned_badges into coachee_dashboard.html — serves the coachee dashboard screen.
+    WHEN: On coachee dashboard load.
+    """
     c = db()
     c.execute("SELECT * FROM badge WHERE coachee_id=%s ORDER BY created_at DESC", (coachee_id,))
     return c.fetchall()
 
 
 def _mood_sparkline(coachee_id):
-    """Get last 14 days of mood ratings from check-ins."""
+    """Get last 14 days of mood ratings from check-ins.
+
+    PURPOSE: Return (date, mood) points from the past 14 days for a small trend chart (empty list on error).
+    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), passed as mood_data into coachee_dashboard.html — serves the coachee dashboard screen.
+    WHEN: On coachee dashboard load.
+    """
     c = db()
     fourteen_ago = (date.today() - timedelta(days=14)).isoformat()
     try:
@@ -206,7 +236,12 @@ def _mood_sparkline(coachee_id):
 
 
 def _engagement_score(coachee_id):
-    """Compute 7-day engagement score (0-100)."""
+    """Compute 7-day engagement score (0-100).
+
+    PURPOSE: Weighted blend of 7-day check-in rate (30%), task completion (50%), and tracking frequency (20%).
+    CALLED BY: routes_coach.py coach_dashboard (GET /coach), set as cc["engagement"] per coachee — serves the coach dashboard screen.
+    WHEN: On coach dashboard load, computed for each listed coachee.
+    """
     c = db()
     week_ago = (date.today() - timedelta(days=7)).isoformat()
 
@@ -238,7 +273,12 @@ def _engagement_score(coachee_id):
 
 
 def _completion_hours(coachee_id):
-    """Get hour distribution of task completions."""
+    """Get hour distribution of task completions.
+
+    PURPOSE: Build a 24-slot histogram of the hours at which the coachee completed tasks.
+    CALLED BY: routes_coach.py coach-view-coachee (GET /coach/coachee/<cid>), passed as completion_hours into coach_view_coachee.html — serves the coach's per-coachee detail screen.
+    WHEN: On load of the coach's individual coachee view.
+    """
     c = db()
     c.execute(
         "SELECT responded_at FROM task_assignment WHERE coachee_id=%s AND responded_at IS NOT NULL",
@@ -260,7 +300,12 @@ def _completion_hours(coachee_id):
 
 
 def _get_rituals(coachee_id, coach_id):
-    """Get active rituals for a coachee."""
+    """Get active rituals for a coachee.
+
+    PURPOSE: Fetch active ritual definitions that apply to this coachee (shared or per-coachee) for the given coach.
+    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), used for the rituals list and to feed _ritual_status_today — serves the coachee dashboard screen.
+    WHEN: On coachee dashboard load.
+    """
     c = db()
     c.execute(
         "SELECT * FROM ritual WHERE (coachee_id=%s OR coachee_id IS NULL) AND coach_id=%s AND active=1",
@@ -270,7 +315,12 @@ def _get_rituals(coachee_id, coach_id):
 
 
 def _ritual_status_today(coachee_id, rituals, today_str):
-    """Check which rituals are completed today."""
+    """Check which rituals are completed today.
+
+    PURPOSE: Return the set of ritual_ids the coachee has logged as done for today.
+    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), passed as rituals_done into coachee_dashboard.html — serves the coachee dashboard screen.
+    WHEN: On coachee dashboard load, alongside _get_rituals.
+    """
     c = db()
     completed_ids = set()
     if rituals:
@@ -283,7 +333,12 @@ def _ritual_status_today(coachee_id, rituals, today_str):
 
 
 def _compute_level(coachee_id, coach_id):
-    """Compute training level from streak data and coach config."""
+    """Compute training level from streak data and coach config.
+
+    PURPOSE: Derive current/next training level (Initiate→Transcendent) and progress % from the coachee's best streak.
+    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), passed as level_info into coachee_dashboard.html — serves the coachee dashboard screen.
+    WHEN: On coachee dashboard load.
+    """
     c = db()
     c.execute("SELECT current_streak, best_streak FROM coachee WHERE id=%s", (coachee_id,))
     row = c.fetchone()
@@ -317,7 +372,12 @@ def _compute_level(coachee_id, coach_id):
 
 
 def _weekly_report(coachee_id):
-    """Compute weekly report card from existing data."""
+    """Compute weekly report card from existing data.
+
+    PURPOSE: Aggregate the last 7 days into avg grade, task compliance, check-in rate, and tracking count.
+    CALLED BY: routes_coachee.py coachee_dashboard (GET /me, weekly_report into coachee_dashboard.html) and routes_coach.py weekly_summary (GET /coach/coachee/<cid>/summary) — serves the coachee dashboard and the coach weekly-summary screens.
+    WHEN: On coachee dashboard load and on coach weekly-summary view.
+    """
     c = db()
     week_ago = (date.today() - timedelta(days=7)).isoformat()
 
@@ -370,6 +430,11 @@ def _weekly_report(coachee_id):
 
 def _payment_compliance(coachee_id):
     """Compute payment compliance status for a coachee.
+
+    PURPOSE: Compare expected vs actual payments against the active plan and return a status (green/yellow/orange/red/none) with periods_late.
+    CALLED BY: routes_coach.py coach_dashboard (GET /coach, set as cc["payment"]) and the coach payments route (GET /coach/.../payments) — serves the coach dashboard and coach payments screens.
+    WHEN: On coach dashboard load and on the coach payments screen load.
+
     Returns: dict with status (green/yellow/orange/red/none), periods_late, last_payment, plan info.
     """
     c = db()

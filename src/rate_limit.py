@@ -17,7 +17,9 @@ _lock = threading.Lock()
 
 
 def _cleanup_ip(ip: str, now: float) -> None:
-    """Remove expired entries for an IP (caller holds lock)."""
+    """PURPOSE: Drop attempt timestamps older than the sliding window for an IP (caller holds lock).
+    CALLED BY / SCREEN: is_rate_limited(), record_failed_attempt(), remaining_attempts() here; no screen.
+    WHEN: on each rate-limit check/record, i.e. during login POST handling."""
     if ip in _attempts:
         cutoff = now - WINDOW_SECONDS
         _attempts[ip] = [t for t in _attempts[ip] if t > cutoff]
@@ -26,7 +28,9 @@ def _cleanup_ip(ip: str, now: float) -> None:
 
 
 def is_rate_limited(ip: str) -> bool:
-    """Check if an IP has exceeded the login attempt limit."""
+    """PURPOSE: Return True if an IP has reached MAX_ATTEMPTS failed logins within the window.
+    CALLED BY / SCREEN: auth.py login handler (GET/POST /login) — gates the public login screen.
+    WHEN: at the start of each login POST attempt."""
     now = time.time()
     with _lock:
         _cleanup_ip(ip, now)
@@ -35,7 +39,9 @@ def is_rate_limited(ip: str) -> bool:
 
 
 def record_failed_attempt(ip: str) -> None:
-    """Record a failed login attempt for an IP."""
+    """PURPOSE: Append a failed-login timestamp for an IP to the sliding window.
+    CALLED BY / SCREEN: auth.py login handler (/login) when credentials are wrong — login screen.
+    WHEN: on each failed login POST."""
     now = time.time()
     with _lock:
         _cleanup_ip(ip, now)
@@ -45,13 +51,17 @@ def record_failed_attempt(ip: str) -> None:
 
 
 def reset_attempts(ip: str) -> None:
-    """Clear failed attempts for an IP (on successful login)."""
+    """PURPOSE: Clear an IP's failed-attempt history.
+    CALLED BY / SCREEN: auth.py login handler (/login) on successful coach/coachee login — login screen.
+    WHEN: immediately after a successful authentication."""
     with _lock:
         _attempts.pop(ip, None)
 
 
 def remaining_attempts(ip: str) -> int:
-    """Return how many attempts remain before rate limiting kicks in."""
+    """PURPOSE: Return how many login attempts remain before rate limiting triggers.
+    CALLED BY / SCREEN: available to auth.py/login screen for surfacing remaining tries (utility).
+    WHEN: on demand during login flow / attempt-count display."""
     now = time.time()
     with _lock:
         _cleanup_ip(ip, now)

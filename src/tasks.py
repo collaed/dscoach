@@ -25,7 +25,12 @@ FEATURES = [
 
 
 def _features_for(coach_id, coachee_id=None):
-    """Get effective feature flags. Coach global, optionally overridden per coachee."""
+    """Get effective feature flags. Coach global, optionally overridden per coachee.
+
+    PURPOSE: Merge coach-level feature flags with per-coachee overrides (coachee can only disable what coach enabled).
+    CALLED BY: routes_coach.py coach dashboard (GET /coach) and coach-view-coachee (GET /coach/coachee/<cid>); routes_coachee.py coachee dashboard (GET /me, passed to coachee_dashboard.html) — drives which feature tiles show on coach and coachee screens.
+    WHEN: On coach dashboard load and on coachee dashboard load.
+    """
     c = db()
     c.execute("SELECT features FROM coach WHERE id=%s", (coach_id,))
     row = c.fetchone()
@@ -52,7 +57,12 @@ def _features_for(coach_id, coachee_id=None):
 
 
 def _auto_assign_reserves(coachee_id, coach_id):
-    """If no task was manually assigned today for this coachee, pick one reserve task."""
+    """If no task was manually assigned today for this coachee, pick one reserve task.
+
+    PURPOSE: Ensure the coachee has work today by assigning due recurring tasks, week-plan entries, or (as fallback) one random reserve task.
+    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), invoked once the local unveil time has passed — serves the coachee dashboard/task screen.
+    WHEN: On coachee dashboard load, after the daily task-unveil time.
+    """
     c = db()
     c.execute("SELECT timezone, task_unveil_time, task_freeze_time FROM coachee WHERE id=%s", (coachee_id,))
     cc = c.fetchone()
@@ -60,6 +70,12 @@ def _auto_assign_reserves(coachee_id, coach_id):
     local_today = datetime.now(tz).date().isoformat()
 
     def _assign(tmpl_id, due):
+        """Insert a task_assignment for a template with computed visible/frozen times.
+
+        PURPOSE: Create one task_assignment row honoring the coachee's unveil/freeze times.
+        CALLED BY: Local closure inside _auto_assign_reserves (recurring, week-plan, and reserve branches).
+        WHEN: During coachee dashboard auto-assignment when a task must be created for today.
+        """
         vis = f"{due} {cc['task_unveil_time']}" if cc["task_unveil_time"] else None
         frz = f"{due} {cc['task_freeze_time']}" if cc["task_freeze_time"] else None
         c.execute(
@@ -133,7 +149,12 @@ def _auto_assign_reserves(coachee_id, coach_id):
 
 
 def _freeze_overdue(coachee_id, tz):
-    """Mark pending tasks as missed if past freeze time, add strikes, reset streak."""
+    """Mark pending tasks as missed if past freeze time, add strikes, reset streak.
+
+    PURPOSE: Enforce deadlines — flip overdue pending tasks to 'missed', increment strikes, zero the streak, and fire escalation/automation.
+    CALLED BY: routes_coachee.py coachee_dashboard (GET /me); also triggers _auto_escalation_note and _run_auto_rules(task_missed) — serves the coachee dashboard screen.
+    WHEN: On coachee dashboard load, evaluated against the coachee's local now.
+    """
     from automation import _auto_escalation_note, _run_auto_rules
 
     c = db()
@@ -158,7 +179,12 @@ def _freeze_overdue(coachee_id, tz):
 
 
 def _update_streak(coachee_id, tz):
-    """Update streak if all tasks for yesterday were completed on time."""
+    """Update streak if all tasks for yesterday were completed on time.
+
+    PURPOSE: Advance current/best streak when yesterday was fully completed (else reset), then fire milestone note + automation.
+    CALLED BY: routes_coachee.py coachee_dashboard (GET /me); also triggers _streak_milestone_note and _run_auto_rules(streak_milestone) — serves the coachee dashboard screen.
+    WHEN: On coachee dashboard load (once per day, guarded by last_streak_date).
+    """
     from automation import _run_auto_rules, _streak_milestone_note
 
     c = db()
@@ -195,7 +221,12 @@ def _update_streak(coachee_id, tz):
 
 
 def _visible_tasks(coachee_id, tz):
-    """Get tasks that are visible, not frozen, and whose dependencies are met."""
+    """Get tasks that are visible, not frozen, and whose dependencies are met.
+
+    PURPOSE: Return the coachee's currently actionable tasks (visible, unfrozen, deps satisfied), with mail-merge applied to title/description.
+    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), passed into coachee_dashboard.html — serves the coachee task list screen.
+    WHEN: On coachee dashboard load, after auto-assign/freeze/streak processing.
+    """
     c = db()
     local_now = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
     c.execute(
@@ -221,7 +252,12 @@ def _visible_tasks(coachee_id, tz):
 
 
 def _run_onboarding(coachee_id, coach_id, days_active):
-    """Auto-deliver onboarding steps for new coachees (first 7 days)."""
+    """Auto-deliver onboarding steps for new coachees (first 7 days).
+
+    PURPOSE: For a new coachee's current day offset, assign scripted onboarding tasks and/or send scripted coach notes (deduped per day).
+    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), gated on days_active <= 7 — serves the coachee dashboard screen.
+    WHEN: On coachee dashboard load during the first 7 days after account creation.
+    """
     if days_active > 7:
         return
     c = db()
