@@ -263,8 +263,7 @@
 <span class="type">{{ n.author_role }}</span>{% if n.pinned %} 📌{% endif %}{% if n.scheduled_at and not n.read_at %} ⏰{% endif %} {{ n.content }}
 <div class="time">{{ n.created_at }}
 {% if n.author_role=='coach' %}{% if n.read_at %}<span style="color:#2d6a4f"> ✓ read {{ n.read_at }}</span>{% else %}<span style="color:#888"> · unread</span>{% endif %}{% endif %}
-<form method="post" action="/coach/note/{{ n.id }}/pin" style="display:inline"><button type="submit" style="background:none;border:none;color:#888;cursor:pointer;font-size:.75rem;padding:0;margin:0">{% if n.pinned %}unpin{% else %}📌 pin{% endif %}</button></form>
-    {{ csrf_field() }}
+<form method="post" action="/coach/note/{{ n.id }}/pin" style="display:inline"><button type="submit" style="background:none;border:none;color:#888;cursor:pointer;font-size:.75rem;padding:0;margin:0">{% if n.pinned %}unpin{% else %}📌 pin{% endif %}</button>{{ csrf_field() }}</form>
 </div>
 </div>
 {% else %}<p style="color:#888">No notes yet.</p>{% endfor %}

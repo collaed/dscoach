@@ -116,10 +116,8 @@
 <button type="submit">✓</button>
 </form>
 <a href="/coach/coachee/{{ cc.id }}/summary" style="font-size:0.78rem;padding:0.3rem 0.55rem;border:1px solid var(--border-strong);border-radius:4px;color:var(--muted);display:inline-flex;align-items:center">📊</a>
-{% if cc.days_inactive >= 3 %}<form method="post" action="/coach/nudge/{{ cc.id }}"><button type="submit" class="small" style="margin:0;background:var(--warn)">👋 Nudge</button></form>{% endif %}
-    {{ csrf_field() }}
-{% if cc.payment.status not in ['none','green'] %}<form method="post" action="/coach/coachee/{{ cc.id }}/quick-pay"><button type="submit" class="small" style="margin:0;background:#10b981">💳 Confirm</button></form>{% endif %}
-    {{ csrf_field() }}
+{% if cc.days_inactive >= 3 %}<form method="post" action="/coach/nudge/{{ cc.id }}">{{ csrf_field() }}<button type="submit" class="small" style="margin:0;background:var(--warn)">👋 Nudge</button></form>{% endif %}
+{% if cc.payment.status not in ['none','green'] %}<form method="post" action="/coach/coachee/{{ cc.id }}/quick-pay">{{ csrf_field() }}<button type="submit" class="small" style="margin:0;background:#10b981">💳 Confirm</button></form>{% endif %}
 {% if cc.payment.status != 'none' %}<a href="/coach/coachee/{{ cc.id }}/payments" style="font-size:0.78rem;padding:0.3rem 0.55rem;border:1px solid var(--border-strong);border-radius:4px;color:var(--muted);display:inline-flex;align-items:center">💳</a>{% endif %}
 </div>
 </div>

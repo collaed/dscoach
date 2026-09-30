@@ -59,8 +59,7 @@
 {% for entry in day_entries %}
 <div class="entry" style="display:flex;align-items:center;justify-content:space-between">
 <span>{{ entry.task_title }}{% if entry.coachee_name %} <span class="badge info">{{ entry.coachee_name }}</span>{% else %} <span class="badge info">all</span>{% endif %}</span>
-<form method="post" style="margin:0"><input type="hidden" name="action" value="delete"><input type="hidden" name="plan_id" value="{{ entry.id }}"><button type="submit" class="small secondary" style="margin:0">✕</button></form>
-    {{ csrf_field() }}
+<form method="post" style="margin:0"><input type="hidden" name="action" value="delete"><input type="hidden" name="plan_id" value="{{ entry.id }}"><button type="submit" class="small secondary" style="margin:0">✕</button>{{ csrf_field() }}</form>
 </div>
 {% endfor %}
 </div>
