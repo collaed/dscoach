@@ -86,7 +86,7 @@ def _hash_password(pw):
         ph = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=1)
         return ph.hash(pw)
     except ImportError:
-        # argon2-cffi not available (e.g., WASI), fall back to SHA-256
+        # argon2-cffi not available, fall back to SHA-256
         return hashlib.sha256(pw.encode()).hexdigest()
 
 

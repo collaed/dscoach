@@ -1,0 +1,30 @@
+services:
+  coaching:
+    build: .
+    container_name: coaching
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://coaching:coaching_pwd_2026@postgres:5432/coaching
+      - DB_ENGINE=postgresql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=coaching
+      - DB_PASSWORD=coaching_pwd_2026
+      - DB_NAME=coaching
+      - SECRET_KEY=${SECRET_KEY}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - ATTACHMENTS_DIR=/data/attachments
+    volumes:
+      - coaching-data:/data/attachments
+    networks:
+      - web
+      - db
+
+volumes:
+  coaching-data:
+
+networks:
+  web:
+    external: true
+  db:
+    external: true

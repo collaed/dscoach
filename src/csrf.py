@@ -33,8 +33,9 @@ def _generate_token() -> str:
 
 def _csrf_field() -> str:
     """Return an HTML hidden input with the CSRF token."""
+    from markupsafe import Markup
     token = _generate_token()
-    return f'<input type="hidden" name="_csrf_token" value="{token}">'
+    return Markup(f'<input type="hidden" name="_csrf_token" value="{token}">')
 
 
 def _validate_csrf():
