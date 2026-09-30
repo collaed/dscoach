@@ -58,6 +58,34 @@ checkbox with helper text making the distinction explicit:
 
 ---
 
+## Journey 2b — Coach drafts a contract from sections (planned R52)
+
+```mermaid
+graph TD
+    A[/coach/coachee/<id>/contract/draft] --> B[Section library grouped by category]
+    B --> C[Check sections to include: protocol, rituals, boundaries, ...]
+    C --> D[Reorder selected sections]
+    D --> E[Assembled preview — merge vars resolved via _merge_vars]
+    E --> F[Coach edits the assembled free text]
+    F --> G{Sections carry sample tasks?}
+    G -->|yes| H[Pick which sample tasks to create — with R48/R49 hints]
+    H --> I[Optionally assign now to this coachee]
+    G -->|no| J[Skip]
+    F --> K[Save]
+    I --> K
+    J --> K
+    K --> L[Write contract_text + append contract_history version]
+    L --> M[R2 bilateral / R22 signatures / R23 renewal layer on top unchanged]
+```
+
+The novelty: the agreement and the day-to-day tasks are authored together — a
+chosen section can seed the concrete `task_template` rows that operationalise
+it, but only when the coach explicitly checks them (authority stays explicit).
+The assembled contract is still plain text, fully editable, stored exactly as
+today. Full design: `plan-contract-drafting.md`.
+
+---
+
 ## Journey 3 — Coachee's day (current)
 
 ```mermaid
