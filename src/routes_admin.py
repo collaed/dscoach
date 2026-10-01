@@ -134,8 +134,8 @@ def admin_delete_coach(coid):
     # 1. Delete every coachee-scoped row for all of this coach's coachees
     #    (children first via reversed sorted_tables inside _cascade_tables).
     for tbl in coachee_tables:
-        c.execute(  # nosec B608 - tbl from metadata, not user input
-            f"DELETE FROM {tbl} WHERE coachee_id IN (SELECT id FROM coachee WHERE coach_id=%s)",
+        c.execute(
+            f"DELETE FROM {tbl} WHERE coachee_id IN (SELECT id FROM coachee WHERE coach_id=%s)",  # nosec B608 - tbl from metadata, not user input
             (coid,),
         )
     # 2. Delete the coachees themselves.
