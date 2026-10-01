@@ -58,7 +58,8 @@ def _csrf_field() -> str:
     from markupsafe import Markup
 
     token = _generate_token()
-    return Markup(f'<input type="hidden" name="_csrf_token" value="{token}">')  # nosec B704 - token is server-generated via secrets.token_hex, not user input
+    field: str = Markup(f'<input type="hidden" name="_csrf_token" value="{token}">')  # nosec B704 - token is server-generated via secrets.token_hex, not user input
+    return field
 
 
 def _validate_csrf():
