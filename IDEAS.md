@@ -15,6 +15,13 @@ plan doc if one exists.
 
 ### Contract drafting from pre-written sections + sample tasks — 📋 promoted (R52)
 
+**Reconciled 2026-09-30**: two independent drafts of this idea converged the
+same day. Merged into one plan — real extracted seed data (20 sections + 23
+tasks from an actual contract, name-genericized) plus the simpler
+2-table "scaffold, not schema" architecture, with propose/negotiate/sign
+composing R2+R22 instead of new tables. See `plan-contract-drafting.md` §7
+for exactly what came from which draft and why.
+
 **Vibe:** the coach drafts a contract by picking pre-written **sections**
 (building blocks), editing the assembled text, and each section is
 **associated with sample task templates** so the contract and the day-to-day
