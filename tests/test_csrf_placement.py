@@ -42,9 +42,8 @@ def test_every_csrf_field_is_inside_a_form():
                 # Report line number for a helpful failure message.
                 line = html.count("\n", 0, pos) + 1
                 offenders.append(f"{os.path.basename(path)}:{line}")
-    assert not offenders, (
-        "csrf_field() rendered OUTSIDE a <form> (token won't be submitted → 403): "
-        + ", ".join(offenders)
+    assert not offenders, "csrf_field() rendered OUTSIDE a <form> (token won't be submitted → 403): " + ", ".join(
+        offenders
     )
 
 
@@ -53,11 +52,7 @@ def test_safeword_forms_carry_csrf():
     path = os.path.join(TEMPLATES_DIR, "coachee_dashboard.html")
     with open(path, encoding="utf-8") as fh:
         html = fh.read()
-    pause_forms = [
-        m.group(0)
-        for m in _FORM_SPAN.finditer(html)
-        if 'action="/me/pause"' in m.group(0)
-    ]
+    pause_forms = [m.group(0) for m in _FORM_SPAN.finditer(html) if 'action="/me/pause"' in m.group(0)]
     assert pause_forms, "expected at least one /me/pause form in coachee dashboard"
     for form in pause_forms:
         assert _CSRF in form, "safe-word/pause form is missing csrf_field() inside the <form>"

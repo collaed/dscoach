@@ -2,11 +2,13 @@
 
 import hashlib
 import os
+from datetime import UTC
 
-from flask import g, render_template_string, request, session
+from flask import g, request, session
+from sqlalchemy import text
+
 from database import get_db, get_engine
 from models import audit_log as al_t
-from sqlalchemy import text
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 ATTACHMENTS_DIR = os.environ.get("ATTACHMENTS_DIR", "/data/attachments")
@@ -88,8 +90,9 @@ def utcnow():
     CALLED BY: routes_coach.py, routes_coachee.py, routes_admin.py, merge.py, photo_validation.py, services/freeze.py — used for check-in/attachment timestamps and freeze cutoffs across coach, coachee, and admin screens.
     WHEN: On form submit / any request needing the current instant.
     """
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc)
+    from datetime import datetime
+
+    return datetime.now(UTC)
 
 
 def ensure_aware(dt):
@@ -99,13 +102,14 @@ def ensure_aware(dt):
     CALLED BY: routes_coachee.py in the task-submit handler (POST /me/task/<tid>) to compare a task's frozen_after against utcnow() — serves the coachee task screen.
     WHEN: On coachee task submit, before deciding if a task is past its freeze cutoff.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
+
     if dt is None:
         return None
     if isinstance(dt, str):
         dt = datetime.fromisoformat(dt)
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     return dt
 
 

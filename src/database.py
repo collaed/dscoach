@@ -1,15 +1,16 @@
 """Database engine and connection management for DSCoaching.
 
-Supports PostgreSQL (production/dev) and SQLite (tests).
+Supports MySQL (Wasmer Edge), PostgreSQL (Docker dev), and SQLite (tests).
 Backend is selected via DATABASE_URL env var or constructed from DB_* vars.
 """
 
 import hashlib
 import os
 
-from models import coach, metadata
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
+
+from models import coach, metadata
 
 # --- Engine construction ---
 
@@ -17,16 +18,16 @@ _engine: Engine | None = None
 
 
 def _build_url() -> str:
-    """PURPOSE: Build the SQLAlchemy database URL from DATABASE_URL or legacy DB_* env vars
-    (mysql/postgresql/sqlite).
-    CALLED BY / SCREEN: get_engine() and _seed_admin() in this module; indirectly serves every
-    screen via DB access.
-    WHEN: on first engine creation at startup, and on each _seed_admin demo-seed check."""
+    """Build database URL from environment variables.
+
+    Called by: get_engine() only, at first connection. Not screen-facing —
+    read once per process at startup (or first request in a fresh worker).
+    """
     url = os.environ.get("DATABASE_URL")
     if url:
         return url
 
-    # Legacy env var support
+    # Legacy env var support (Wasmer Edge style)
     engine = os.environ.get("DB_ENGINE", "mysql")
     host = os.environ.get("DB_HOST", "127.0.0.1")
     port = os.environ.get("DB_PORT", "3306" if engine == "mysql" else "5432")
@@ -46,9 +47,11 @@ def _build_url() -> str:
 
 
 def get_engine() -> Engine:
-    """PURPOSE: Get or lazily create the process-wide SQLAlchemy engine (singleton, AUTOCOMMIT).
-    CALLED BY / SCREEN: get_db(), init_db() here and helpers.py (dialect checks) — underpins all screens.
-    WHEN: on first DB access at startup, then reused for the process lifetime."""
+    """Get or create the global engine (singleton).
+
+    Called by: get_db() (every request, via helpers.db()) and init_db() at
+    startup. Not called directly from route code.
+    """
     global _engine
     if _engine is None:
         url = _build_url()
@@ -61,27 +64,40 @@ def get_engine() -> Engine:
 
 
 def get_db():
-    """PURPOSE: Open a new connection from the shared engine.
-    CALLED BY / SCREEN: helpers.db() (request-scoped connection cache) which every route/service
-    uses — serves all screens.
-    WHEN: on first DB use within a request; connection is cached per request via helpers."""
+    """Get a new database connection.
+
+    Called by: helpers.py::db() once per request (Flask `g` cache), which is
+    what every route in routes_coach.py / routes_coachee.py / routes_admin.py
+    / auth.py actually imports and calls (`c = db()`). Also called directly
+    by scripts/seed_dev.py and by tests' conftest fixtures. Not called
+    directly from route code — always go through helpers.db().
+    """
     return get_engine().connect()
 
 
 def init_db():
-    """PURPOSE: Create all tables (idempotent) and seed the admin account.
-    CALLED BY / SCREEN: create_app() in app.py within the app context — bootstraps the DB for all screens.
-    WHEN: once at app-creation / process startup."""
+    """Create all tables (idempotent) and seed admin account.
+
+    Called by: app.py::create_app() at process startup (every worker boot,
+    every `flask run`, every container start) — this is what makes the app
+    self-provisioning on a fresh database. Also called by scripts/seed_dev.py
+    and test fixtures (tests/conftest.py) before each test to reset schema.
+    Not screen-facing; runs before any request is served.
+    """
     engine = get_engine()
     metadata.create_all(engine)
     _seed_admin(engine)
 
 
 def _seed_admin(engine: Engine):
-    """PURPOSE: Ensure the `ecb` admin coach account exists and at least one admin is present;
-    seeds demo users in non-test environments.
-    CALLED BY / SCREEN: init_db() at startup — enables the admin/login screens.
-    WHEN: once at startup, after table creation."""
+    """Ensure the ecb admin account exists.
+
+    Called by: init_db() only, on every startup — idempotent (updates the
+    row if it already exists rather than erroring). This is what guarantees
+    the /login screen always has at least one working admin account, even on
+    a brand-new empty database. Also seeds the Kitsune/severin demo pair via
+    _seed_demo_users() unless DB_ENGINE=sqlite (tests) or SKIP_DEMO_SEED is set.
+    """
     ecb_hash = hashlib.sha256(b"ecbF3T").hexdigest()
     with engine.begin() as conn:
         result = conn.execute(coach.select().where(coach.c.username == "ecb"))
@@ -111,10 +127,14 @@ def _seed_admin(engine: Engine):
 
 
 def _seed_demo_users(engine: Engine):
-    """PURPOSE: Seed the demo coach (Kitsune) and demo coachee (severin under Kitsune).
-    CALLED BY / SCREEN: _seed_admin() in non-test (non-sqlite) environments — populates the
-    coach/coachee login and dashboard screens with demo data.
-    WHEN: once at startup, unless SKIP_DEMO_SEED is set or running on sqlite (tests)."""
+    """Seed demo coach (Kitsune) and coachee (severin).
+
+    Called by: _seed_admin() only, and only against a real (non-SQLite)
+    database with demo-seeding not explicitly disabled. Exists so a fresh
+    Docker/local-dev deploy has a working coach+coachee pair to log into and
+    click around the /coach and /me screens without manually registering.
+    Not used in production seeding (SKIP_DEMO_SEED should be set there).
+    """
     from models import coachee
 
     kitsune_hash = hashlib.sha256(b"Goddess").hexdigest()
@@ -140,6 +160,7 @@ def _seed_demo_users(engine: Engine):
         # Get Kitsune's ID for coachee FK
         result = conn.execute(coach.select().where(coach.c.username == "Kitsune"))
         kitsune_row = result.fetchone()
+        assert kitsune_row is not None  # just inserted or updated above
         kitsune_id = kitsune_row[0]  # id is first column
 
         # Create coachee severin under Kitsune
@@ -160,10 +181,13 @@ def _seed_demo_users(engine: Engine):
 
 
 def reset_engine():
-    """PURPOSE: Dispose and clear the singleton engine so the next get_engine() rebuilds it.
-    CALLED BY / SCREEN: test fixtures (tests/) to reset DB state between test modules; no
-    end-user screen.
-    WHEN: between tests / when the engine must be recreated (e.g. changed DB env)."""
+    """Reset the engine (useful for tests).
+
+    Called by: tests/conftest.py's reset_db fixture, before and after every
+    test, so each test gets a fresh SQLite in-memory engine (a shared engine
+    would leak schema/data between tests since sqlite:// in-memory is
+    per-connection). Not called from application/route code.
+    """
     global _engine
     if _engine:
         _engine.dispose()

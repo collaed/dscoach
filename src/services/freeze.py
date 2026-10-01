@@ -10,7 +10,7 @@ Business rules:
 - On reactivation, coach chooses: extend pending task deadlines or cancel them.
 """
 
-from helpers import db, utcnow
+from helpers import db
 
 
 def is_frozen(coachee_id: int) -> bool:
@@ -19,6 +19,7 @@ def is_frozen(coachee_id: int) -> bool:
     and penalties — affects /me dashboard and coach coachee views.
     WHEN: whenever freeze state must be checked (task assignment, dashboard load, detection jobs)."""
     from repos.coachee_repo import get_status
+
     status = get_status(coachee_id)
     return status in ("paused", "stopped")
 
@@ -44,6 +45,7 @@ def activate(coachee_id: int, initiated_by: str = "coachee", use_safeword: bool 
 
     # Audit
     from helpers import _audit
+
     try:
         _audit(f"freeze_activated:{initiated_by}", coachee_id, initiated_by)
     except Exception:
@@ -85,6 +87,7 @@ def deactivate(coachee_id: int, pending_action: str = "extend") -> None:
 
     # Audit
     from helpers import _audit
+
     try:
         _audit(f"freeze_deactivated:pending={pending_action}", coachee_id, "coach")
     except Exception:
@@ -97,6 +100,7 @@ def get_freeze_info(coachee_id: int) -> dict | None:
     (service accessor). No live route caller found in src/ via grep (service entry point).
     WHEN: on rendering freeze/boundaries status for a coachee."""
     from repos.coachee_repo import get_by_id
+
     coachee = get_by_id(coachee_id)
     if not coachee:
         return None

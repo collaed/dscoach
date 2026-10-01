@@ -4,7 +4,9 @@ from datetime import date, datetime
 
 from helpers import db, utcnow
 
-_merge_cache = {}  # coachee_id -> (timestamp, vars_dict) — cache per request cycle
+_merge_cache: dict[
+    int, tuple[int, dict[str, str]]
+] = {}  # coachee_id -> (timestamp, vars_dict) — cache per request cycle
 
 
 def _get_merge_context(coachee_id):
@@ -53,8 +55,12 @@ def _get_merge_context(coachee_id):
     # Level
     best_streak = max(row.get("current_streak") or 0, row.get("best_streak") or 0)
     levels = [
-        ("Initiate", 0), ("Dedicated", 7), ("Disciplined", 14),
-        ("Devoted", 30), ("Exemplary", 60), ("Transcendent", 90),
+        ("Initiate", 0),
+        ("Dedicated", 7),
+        ("Disciplined", 14),
+        ("Devoted", 30),
+        ("Exemplary", 60),
+        ("Transcendent", 90),
     ]
     level_name = "Initiate"
     for name, threshold in levels:

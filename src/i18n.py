@@ -11,19 +11,24 @@ DEFAULT_LANG = "en"
 
 
 def get_lang():
-    """PURPOSE: Return the current UI language from the session (defaults to en).
-    CALLED BY / SCREEN: t() here, and the template helper/context processor in helpers.py — used
-    on every rendered screen (coach, coachee, admin, public).
-    WHEN: on each translation lookup / template render (per request)."""
+    """Get current language from session.
+
+    Called by: helpers.py::inject_helpers() on every single request (it's in
+    the Flask context processor), which is what makes `lang` available to
+    every Jinja template. Also called directly by t() below. The language is
+    set by auth.py's `/lang/<lang>` route, hit from the EN/FR toggle button
+    in both dashboards' nav bars.
+    """
     return session.get("lang", DEFAULT_LANG)
 
 
 def t(key, **kwargs):
-    """PURPOSE: Translate a key into the current language, with optional {placeholder} formatting;
-    falls back to English then the raw key.
-    CALLED BY / SCREEN: exposed to Jinja templates (via helpers inject_helpers) as `t(...)` — used
-    across all screens for navigation, help pages, and photo-validation labels.
-    WHEN: on template render, whenever a translated string is emitted."""
+    """Translate a key to the current language. Supports {placeholder} formatting.
+
+    Called by: every template, as `{{ t('some.key') }}` — `t` is injected
+    into Jinja's global namespace by helpers.py::inject_helpers(), so this
+    runs on every page render, not just specific screens.
+    """
     lang = get_lang()
     table = TRANSLATIONS.get(lang, TRANSLATIONS[DEFAULT_LANG])
     text = table.get(key, TRANSLATIONS[DEFAULT_LANG].get(key, key))
@@ -59,7 +64,6 @@ TRANSLATIONS = {
         "nav.admin_panel": "Admin Panel",
         "nav.add_coachee": "+ Add Coachee",
         "nav.language": "Language",
-
         # Help page - Coach
         "help.title": "Navigation Guide",
         "help.subtitle": "Where to find everything in DSCoaching",
@@ -104,7 +108,6 @@ TRANSLATIONS = {
         "help.section.tools": "Tools",
         "help.tools.analyze": "Text Analyzer — Paste any conversation or text for AI psychological analysis.",
         "help.tools.audit": "Audit Log — Every action logged with timestamp, IP, and user agent.",
-
         # Help page - Coachee
         "help.coachee.title": "Your Guide",
         "help.coachee.subtitle": "How your coaching space works",
@@ -132,7 +135,6 @@ TRANSLATIONS = {
         "help.coachee.photos.desc": "Upload photos to track visual progress over time. Add captions for context.",
         "help.coachee.section.history": "History & Export",
         "help.coachee.history.desc": "View all past check-ins, tracking logs, and notes. Export everything as JSON for full transparency.",
-
         # Photo validation
         "photo_validation.title": "Photo Proof Validation",
         "photo_validation.enabled": "AI Photo Validation enabled",
@@ -168,7 +170,6 @@ TRANSLATIONS = {
         "nav.admin_panel": "Panneau admin",
         "nav.add_coachee": "+ Ajouter un coaché",
         "nav.language": "Langue",
-
         # Help page - Coach
         "help.title": "Guide de navigation",
         "help.subtitle": "Où trouver chaque fonctionnalité dans DSCoaching",
@@ -213,7 +214,6 @@ TRANSLATIONS = {
         "help.section.tools": "Outils",
         "help.tools.analyze": "Analyseur de texte — Collez une conversation ou un texte pour une analyse psychologique par IA.",
         "help.tools.audit": "Journal d'audit — Chaque action enregistrée avec horodatage, IP et user agent.",
-
         # Help page - Coachee
         "help.coachee.title": "Votre guide",
         "help.coachee.subtitle": "Comment fonctionne votre espace de coaching",
@@ -241,7 +241,6 @@ TRANSLATIONS = {
         "help.coachee.photos.desc": "Téléchargez des photos pour suivre votre progression visuelle. Ajoutez des légendes pour le contexte.",
         "help.coachee.section.history": "Historique & Export",
         "help.coachee.history.desc": "Consultez tous vos check-ins, journaux de suivi et notes passés. Exportez tout en JSON pour une transparence totale.",
-
         # Photo validation
         "photo_validation.title": "Validation des preuves photo",
         "photo_validation.enabled": "Validation IA des photos activée",

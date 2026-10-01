@@ -32,7 +32,6 @@ Coach override stored in task_assignment.photo_validation_override:
 import base64
 import json
 import random
-from datetime import datetime
 
 from helpers import db, utcnow
 
@@ -118,7 +117,7 @@ def validate_photo_proof(task_assignment_id, attachment_path, task_title, task_d
         with open(attachment_path, "rb") as f:
             img_data = f.read()
         img_b64 = base64.b64encode(img_data).decode()
-    except (FileNotFoundError, IOError):
+    except (OSError, FileNotFoundError):
         return None
 
     # Build prompt
@@ -150,7 +149,7 @@ def _build_validation_prompt(task_title, task_description):
     validation flow (/me tasks).
     WHEN: during photo validation, on coachee task submission."""
     desc_part = f"\nTask description: {task_description}" if task_description else ""
-    return f"""You are a coaching assistant validating photo proof submissions. 
+    return f"""You are a coaching assistant validating photo proof submissions.
 A coachee submitted a photo as proof of completing a task.
 
 Task title: {task_title}{desc_part}
@@ -180,7 +179,10 @@ def _validate_with_cloudflare(img_b64, prompt):
     from ai import _cf_ai_complete
 
     # Since CF doesn't support vision, we do a simplified text-based check
-    simplified_prompt = prompt.replace("Analyze the photo and determine:", "Based on the task requirements, assess whether a photo submission is likely valid:")
+    simplified_prompt = prompt.replace(
+        "Analyze the photo and determine:",
+        "Based on the task requirements, assess whether a photo submission is likely valid:",
+    )
     simplified_prompt += "\n\nNote: You cannot see the actual image. Based on the task nature, provide a general assessment of what valid proof would look like and mark as 'uncertain' since visual verification is needed."
 
     response = _cf_ai_complete(simplified_prompt, max_tokens=300)
@@ -204,7 +206,11 @@ def _validate_with_cloudflare(img_b64, prompt):
         pass
 
     # Fallback: uncertain
-    return {"status": "uncertain", "confidence": 30, "assessment": "Could not perform visual analysis. Coach review recommended."}
+    return {
+        "status": "uncertain",
+        "confidence": 30,
+        "assessment": "Could not perform visual analysis. Coach review recommended.",
+    }
 
 
 def _validate_with_openai(img_b64, prompt, api_key):
@@ -220,19 +226,24 @@ def _validate_with_openai(img_b64, prompt, api_key):
     import urllib.request
 
     url = "https://api.openai.com/v1/chat/completions"
-    payload = json.dumps({
-        "model": "gpt-4o-mini",
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}", "detail": "low"}},
-                ],
-            }
-        ],
-        "max_tokens": 300,
-    }).encode()
+    payload = json.dumps(
+        {
+            "model": "gpt-4o-mini",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{img_b64}", "detail": "low"},
+                        },
+                    ],
+                }
+            ],
+            "max_tokens": 300,
+        }
+    ).encode()
 
     req = urllib.request.Request(
         url,
@@ -245,7 +256,7 @@ def _validate_with_openai(img_b64, prompt, api_key):
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 - fixed OpenAI API URL, not user input
             data = json.loads(resp.read().decode())
             content = data["choices"][0]["message"]["content"]
             # Parse JSON from response

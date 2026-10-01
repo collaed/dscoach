@@ -1,6 +1,6 @@
 """Admin blueprint: all /admin/* routes."""
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from flask import Blueprint, redirect, render_template_string, request, url_for
 
@@ -8,7 +8,6 @@ from auth import admin_required
 from helpers import _audit, _hash_password, _tpl, db, utcnow
 
 bp = Blueprint("admin", __name__)
-
 
 
 @bp.route("/admin")
@@ -84,7 +83,6 @@ def admin_freeze_coach(coid):
     )
     _audit(f"admin_toggle_freeze coach={coid}")
     return redirect(url_for("admin.admin_dashboard"))
-
 
 
 @bp.route("/admin/coach/<int:coid>/delete", methods=["POST"])

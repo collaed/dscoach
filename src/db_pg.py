@@ -1,3 +1,13 @@
+"""Legacy raw-psycopg2 DB layer (pre-database.py/models.py SQLAlchemy migration).
+
+Not imported by any current screen/route — same status as db.py (the MySQL
+equivalent): nothing in src/*.py does `from db_pg import ...` anymore, every
+route goes through helpers.py::db() -> database.py::get_db(). This was the
+intermediate hand-written PostgreSQL schema (Docker-on-ecb.pm era, before the
+SQLAlchemy Core models.py) — kept as a historical reference for the schema at
+that point, not as a live code path.
+"""
+
 import os
 
 import psycopg2
@@ -13,16 +23,21 @@ DB_CONFIG = {
 
 
 def get_db():
+    """Unused — superseded by database.py::get_db() (SQLAlchemy engine)."""
     conn = psycopg2.connect(**DB_CONFIG)
     conn.autocommit = True
     return conn
 
 
 def dict_cursor(conn):
+    """Unused helper for get_db()'s raw psycopg2 connections."""
     return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 
 def init_db():
+    """Unused — superseded by database.py::init_db(). Historical record of
+    the schema as hand-translated from db.py's MySQL DDL to PostgreSQL DDL.
+    """
     conn = get_db()
     c = conn.cursor()
 

@@ -38,12 +38,14 @@ def _hetzner_ai_complete(prompt, max_tokens=1024, system_prompt=None):
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
-    payload = json.dumps({
-        "model": HETZNER_MODEL,
-        "messages": messages,
-        "max_tokens": max_tokens,
-        "chat_template_kwargs": {"enable_thinking": False},
-    }).encode()
+    payload = json.dumps(
+        {
+            "model": HETZNER_MODEL,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "chat_template_kwargs": {"enable_thinking": False},
+        }
+    ).encode()
     req = urllib.request.Request(
         url,
         data=payload,
@@ -51,7 +53,7 @@ def _hetzner_ai_complete(prompt, max_tokens=1024, system_prompt=None):
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=90) as resp:
+        with urllib.request.urlopen(req, timeout=90) as resp:  # nosec B310 - fixed Hetzner Inference URL, not user input
             data = json.loads(resp.read().decode())
             choices = data.get("choices", [])
             if choices:
@@ -59,7 +61,7 @@ def _hetzner_ai_complete(prompt, max_tokens=1024, system_prompt=None):
                 if content:
                     return content
                 return "[AI error: empty response content]"
-            return f"[AI error: no choices in response]"
+            return "[AI error: no choices in response]"
     except urllib.error.HTTPError as e:
         body = e.read().decode()[:500]
         if e.code == 429:
@@ -88,7 +90,7 @@ def _cf_ai_complete(prompt, max_tokens=1024):
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:  # nosec B310 - fixed Cloudflare Workers AI URL, not user input
             data = json.loads(resp.read().decode())
             if data.get("success"):
                 return data.get("result", {}).get("response", "")
@@ -165,7 +167,7 @@ def _build_profile_prompt(coachee_id):
         """PURPOSE: Format a list of DB rows into indented "[timestamp] {dict}" lines for the prompt.
         CALLED BY / SCREEN: _build_profile_prompt() (enclosing) to render each history section.
         WHEN: during profile-prompt assembly, on AI profile generation."""
-        return "\n".join(f"  [{r.get('created_at','')}] {dict(r)}" for r in rows) or "  (none)"
+        return "\n".join(f"  [{r.get('created_at', '')}] {dict(r)}" for r in rows) or "  (none)"
 
     prompt = f"""I am {coach_name}, a rather dominant coach, and I am talking to you about a person called {name} whom I am coaching. You are a coaching psychology assistant. Based on the following data for coachee "{name}", write a concise psychological profile (max 300 words) to help me understand them better. Cover: emotional patterns, discipline/consistency, areas of strength, areas needing attention, and overall trajectory. Be empathetic but honest. Use third person ("{name}" or "they").
 

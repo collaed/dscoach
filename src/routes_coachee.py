@@ -11,7 +11,6 @@ from flask import Blueprint, Response, abort, flash, redirect, render_template_s
 from auth import login_required
 from automation import (
     _check_and_award_badges,
-    _completion_hours,
     _compute_level,
     _get_badges,
     _get_rituals,
@@ -22,10 +21,16 @@ from automation import (
 )
 from helpers import ATTACHMENTS_DIR, _tpl, db, ensure_aware, utcnow
 from merge import _merge_vars
-from tasks import FEATURES, _auto_assign_reserves, _features_for, _freeze_overdue, _run_onboarding, _update_streak, _visible_tasks
+from tasks import (
+    _auto_assign_reserves,
+    _features_for,
+    _freeze_overdue,
+    _run_onboarding,
+    _update_streak,
+    _visible_tasks,
+)
 
 bp = Blueprint("coachee", __name__)
-
 
 
 @bp.route("/me")
@@ -66,6 +71,7 @@ def coachee_dashboard():
     created = coachee.get("created_at")
     if created:
         from datetime import date as _date
+
         if isinstance(created, str):
             try:
                 created_date = datetime.fromisoformat(created.split(" ")[0]).date()
@@ -144,9 +150,7 @@ def coachee_dashboard():
     # Creative writing stats for dashboard
     c.execute("SELECT COUNT(*) as cnt FROM creative_work WHERE coachee_id=%s", (cid,))
     writing_count = c.fetchone()["cnt"]
-    c.execute(
-        "SELECT COUNT(*) as cnt FROM creative_constraint WHERE coachee_id=%s AND used=0", (cid,)
-    )
+    c.execute("SELECT COUNT(*) as cnt FROM creative_constraint WHERE coachee_id=%s AND used=0", (cid,))
     writing_pending_constraints = c.fetchone()["cnt"]
 
     return render_template_string(
@@ -169,13 +173,15 @@ def coachee_dashboard():
         earned_badges=_get_badges(cid),
         mood_data=_mood_sparkline(cid),
         level_info=_compute_level(cid, coachee["coach_id"]),
-        rituals=[{**r, "description": _merge_vars(r.get("description", ""), cid)} for r in _get_rituals(cid, coachee["coach_id"])],
+        rituals=[
+            {**r, "description": _merge_vars(r.get("description", ""), cid)}
+            for r in _get_rituals(cid, coachee["coach_id"])
+        ],
         rituals_done=_ritual_status_today(cid, _get_rituals(cid, coachee["coach_id"]), local_today),
         local_today=local_today,
         writing_count=writing_count,
         writing_pending_constraints=writing_pending_constraints,
     )
-
 
 
 @bp.route("/me/checkin", methods=["POST"])
@@ -214,7 +220,9 @@ def complete_task(tid):
     CALLED BY: Route POST /me/task/<tid> — task submission form on coachee_dashboard.html; redirects back to the coachee dashboard.
     WHEN: On submitting a task response."""
     c = db()
-    c.execute("SELECT frozen_after, template_id FROM task_assignment WHERE id=%s AND coachee_id=%s", (tid, session["user_id"]))
+    c.execute(
+        "SELECT frozen_after, template_id FROM task_assignment WHERE id=%s AND coachee_id=%s", (tid, session["user_id"])
+    )
     row = c.fetchone()
     if not row:
         return redirect(url_for("coachee.coachee_dashboard"))
@@ -290,7 +298,6 @@ def complete_task(tid):
     return redirect(url_for("coachee.coachee_dashboard"))
 
 
-
 @bp.route("/me/conditioning/<int:mid>", methods=["POST"])
 @login_required("coachee")
 def respond_conditioning(mid):
@@ -340,6 +347,7 @@ def trigger_pause():
     CALLED BY: Route POST /me/pause — pause/safe-word control on coachee_dashboard.html; redirects back to the dashboard.
     WHEN: On the coachee triggering a pause or safe word."""
     from services.freeze import activate
+
     word = request.form.get("word", "pause")
     use_safeword = word.upper() == session.get("safe_word", "RED") or word.upper() == "RED"
     activate(session["user_id"], initiated_by="coachee", use_safeword=use_safeword)
@@ -361,7 +369,6 @@ def coachee_history():
     c.execute("SELECT * FROM note WHERE coachee_id=%s ORDER BY created_at DESC LIMIT 50", (cid,))
     notes = c.fetchall()
     return render_template_string(_tpl("coachee_history.html"), checkins=checkins, logs=logs, notes=notes)
-
 
 
 @bp.route("/me/voice", methods=["POST"])
@@ -434,7 +441,6 @@ def add_journal():
         (session["user_id"], request.form["content"], visible),
     )
     return redirect(url_for("coachee.coachee_dashboard"))
-
 
 
 @bp.route("/me/progress-photo", methods=["POST"])
@@ -551,7 +557,6 @@ def complete_ritual(rid):
     except Exception:
         pass  # unique constraint — already logged today
     return redirect(url_for("coachee.coachee_dashboard"))
-
 
 
 # ── Creative Writing ──

@@ -8,6 +8,7 @@ from flask import Flask, render_template_string
 from database import init_db
 from helpers import TEMPLATES_DIR, close_db, inject_helpers
 
+
 def create_app():
     """PURPOSE: Build and configure the Flask app (session cookies, teardown, context
     processor, CSRF, blueprints, error handlers, DB init).
@@ -28,6 +29,7 @@ def create_app():
 
     # CSRF protection
     from csrf import init_csrf
+
     init_csrf(application)
 
     from auth import bp as auth_bp

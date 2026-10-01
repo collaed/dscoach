@@ -22,8 +22,9 @@ def _setup_coachee_with_tasks(client, due_date, statuses):
         },
     )
     # Create task templates and assignments via direct DB
-    from database import get_engine
     from sqlalchemy import text
+
+    from database import get_engine
 
     engine = get_engine()
     with engine.begin() as conn:
@@ -48,8 +49,9 @@ def _setup_coachee_with_tasks(client, due_date, statuses):
 
 def _get_coachee_streak(client):
     """Get current streak data for coachee id=1."""
-    from database import get_engine
     from sqlalchemy import text
+
+    from database import get_engine
 
     engine = get_engine()
     with engine.connect() as conn:
@@ -132,8 +134,9 @@ def test_best_streak_updates(client):
     _setup_coachee_with_tasks(client, yesterday, ["completed"])
 
     # Manually set current_streak to 5, best_streak to 5
-    from database import get_engine
     from sqlalchemy import text
+
+    from database import get_engine
 
     engine = get_engine()
     with engine.begin() as conn:
@@ -152,8 +155,9 @@ def test_best_streak_not_lowered(client):
     yesterday = (date.today() - timedelta(days=1)).isoformat()
     _setup_coachee_with_tasks(client, yesterday, ["completed"])
 
-    from database import get_engine
     from sqlalchemy import text
+
+    from database import get_engine
 
     engine = get_engine()
     with engine.begin() as conn:

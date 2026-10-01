@@ -1,3 +1,13 @@
+"""Legacy raw-pymysql DB layer (pre-database.py/models.py SQLAlchemy migration).
+
+Not imported by any current screen/route — grep confirms nothing in
+src/*.py does `from db import ...` anymore; every route goes through
+helpers.py::db() -> database.py::get_db() instead. Kept only as a reference
+for the original hand-rolled MySQL schema (Wasmer Edge era) that
+init_db() below used to auto-create; the SQLAlchemy models in models.py are
+now the source of truth. Safe to delete once nobody needs the history.
+"""
+
 import os
 
 import pymysql
@@ -14,11 +24,18 @@ DB_CONFIG = {
 
 
 def get_db():
+    """Unused — superseded by database.py::get_db() (SQLAlchemy engine)."""
     return pymysql.connect(**DB_CONFIG, cursorclass=pymysql.cursors.DictCursor, autocommit=True,
                            ssl_disabled=True)
 
 
 def init_db():
+    """Unused — superseded by database.py::init_db() (metadata.create_all
+    against models.py's Table definitions). This version's hand-written
+    CREATE TABLE / ALTER TABLE chain was the original schema-migration
+    mechanism before Alembic; left here only as a historical record of every
+    column that was ever bolted onto the MySQL schema, in order.
+    """
     conn = get_db()
     c = conn.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS coach (

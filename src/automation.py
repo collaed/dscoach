@@ -1,7 +1,7 @@
 """Automation engine: rules, badges, reports, engagement scoring, rituals, levels."""
 
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from helpers import db
 from merge import _get_merge_context, _merge_vars
@@ -10,9 +10,12 @@ from merge import _get_merge_context, _merge_vars
 def _run_auto_rules(coachee_id, trigger, context=None):
     """Execute automation rules for a given trigger event.
 
-    PURPOSE: Evaluate the coach's active auto_rule rows for a trigger, check conditions, and run actions (send_note, award_badge, assign_task).
-    CALLED BY: routes_coachee.py on checkin submit (POST /me/checkin, trigger 'checkin_submitted') and task complete (POST /me/task/<tid>, trigger 'task_completed'); tasks.py _freeze_overdue ('task_missed') and _update_streak ('streak_milestone') during GET /me — serves coachee dashboard/action screens.
-    WHEN: On coachee check-in/task submit and during coachee dashboard load when tasks are missed or a streak milestone is hit.
+    Called by: tasks.py (trigger="task_missed" / "streak_milestone", from the
+    per-request auto-assignment sweep that runs on every coachee_dashboard
+    GET) and routes_coachee.py (trigger="checkin_submitted" /
+    "task_completed", right after the coachee submits a check-in or completes
+    a task from /me). Rules themselves are configured by the coach at
+    /coach/automations (manage_automations.html).
     """
     c = db()
     c.execute("SELECT coach_id FROM coachee WHERE id=%s", (coachee_id,))
@@ -45,17 +48,20 @@ def _run_auto_rules(coachee_id, trigger, context=None):
                 field_num = float(field_val) if field_val.replace(".", "").replace("-", "").isdigit() else 0
                 target_num = float(rule["condition_value"])
                 op = rule["condition_op"]
-                if op == ">=" and not (field_num >= target_num):
-                    continue
-                elif op == "<=" and not (field_num <= target_num):
-                    continue
-                elif op == ">" and not (field_num > target_num):
-                    continue
-                elif op == "<" and not (field_num < target_num):
-                    continue
-                elif op == "==" and not (field_num == target_num):
-                    continue
-                elif op == "!=" and not (field_num != target_num):
+                if (
+                    op == ">="
+                    and not (field_num >= target_num)
+                    or op == "<="
+                    and not (field_num <= target_num)
+                    or op == ">"
+                    and not (field_num > target_num)
+                    or op == "<"
+                    and not (field_num < target_num)
+                    or op == "=="
+                    and field_num != target_num
+                    or op == "!="
+                    and field_num == target_num
+                ):
                     continue
             except (ValueError, TypeError):
                 continue
@@ -69,9 +75,7 @@ def _run_auto_rules(coachee_id, trigger, context=None):
             )
         elif rule["action_type"] == "award_badge":
             badge_type = f"rule_{rule['id']}_{date.today().isoformat()}"
-            c.execute(
-                "SELECT id FROM badge WHERE coachee_id=%s AND badge_type=%s", (coachee_id, badge_type)
-            )
+            c.execute("SELECT id FROM badge WHERE coachee_id=%s AND badge_type=%s", (coachee_id, badge_type))
             if not c.fetchone():
                 c.execute(
                     "INSERT INTO badge (coachee_id, badge_type, badge_name, description, icon) VALUES (%s,%s,%s,%s,%s)",
@@ -98,9 +102,9 @@ def _run_auto_rules(coachee_id, trigger, context=None):
 def _auto_escalation_note(coachee_id, missed_count):
     """Send an auto-escalation note when tasks are missed.
 
-    PURPOSE: Insert a coach->coachee note (from the coach's escalation template or a default) after missed tasks, merging in name/strikes/missed count.
-    CALLED BY: tasks.py _freeze_overdue, which runs from routes_coachee.py coachee_dashboard (GET /me) — the note then appears on the coachee dashboard/notes screen.
-    WHEN: On coachee dashboard load, when _freeze_overdue detects one or more newly missed tasks.
+    Called by: tasks.py::_freeze_overdue() only, when it transitions one or
+    more assignments to 'missed' during the coachee_dashboard GET sweep. The
+    resulting note shows up in both the coach's and coachee's notes panel.
     """
     c = db()
     c.execute("SELECT coach_id FROM coachee WHERE id=%s", (coachee_id,))
@@ -110,7 +114,11 @@ def _auto_escalation_note(coachee_id, missed_count):
     # Check if coach has configured an escalation template
     c.execute("SELECT features FROM coach WHERE id=%s", (row["coach_id"],))
     coach_row = c.fetchone()
-    features = json.loads(coach_row["features"]) if coach_row and coach_row["features"] and isinstance(coach_row["features"], str) else (coach_row["features"] if coach_row and isinstance(coach_row.get("features"), dict) else {})
+    features = (
+        json.loads(coach_row["features"])
+        if coach_row and coach_row["features"] and isinstance(coach_row["features"], str)
+        else (coach_row["features"] if coach_row and isinstance(coach_row.get("features"), dict) else {})
+    )
     template = features.get("escalation_template", "")
     if not template:
         template = "{{name}}, you missed {{strikes}} task(s) today. Your streak has been reset. Tomorrow is a new opportunity to demonstrate your commitment."
@@ -126,9 +134,9 @@ def _auto_escalation_note(coachee_id, missed_count):
 def _streak_milestone_note(coachee_id, new_streak):
     """Send a congratulatory note when streak hits a milestone.
 
-    PURPOSE: Insert a coach->coachee note at 7/14/30/60/90-day streaks (coach custom template or default), returning early otherwise.
-    CALLED BY: tasks.py _update_streak, which runs from routes_coachee.py coachee_dashboard (GET /me) — the note appears on the coachee dashboard/notes screen.
-    WHEN: On coachee dashboard load, when _update_streak advances the streak onto a milestone value.
+    Called by: tasks.py's streak-update logic during the coachee_dashboard
+    GET sweep, right after current_streak is incremented and happens to land
+    on 7/14/30/60/90. Shows up as a coach-authored note on both dashboards.
     """
     milestones = {
         7: "\U0001f525 One week, {{name}}! 7 days of consistent discipline. You've proven you can sustain this. Keep building.",
@@ -147,7 +155,11 @@ def _streak_milestone_note(coachee_id, new_streak):
     # Check if coach has custom milestone templates
     c.execute("SELECT features FROM coach WHERE id=%s", (row["coach_id"],))
     coach_row = c.fetchone()
-    features = json.loads(coach_row["features"]) if coach_row and coach_row["features"] and isinstance(coach_row["features"], str) else (coach_row["features"] if coach_row and isinstance(coach_row.get("features"), dict) else {})
+    features = (
+        json.loads(coach_row["features"])
+        if coach_row and coach_row["features"] and isinstance(coach_row["features"], str)
+        else (coach_row["features"] if coach_row and isinstance(coach_row.get("features"), dict) else {})
+    )
     custom = features.get(f"milestone_{new_streak}", "")
     template = custom if custom else milestones[new_streak]
     text = _merge_vars(template, coachee_id)
@@ -160,9 +172,9 @@ def _streak_milestone_note(coachee_id, new_streak):
 def _check_and_award_badges(coachee_id):
     """Check badge conditions and award new badges.
 
-    PURPOSE: Evaluate streak, perfect-week grades, and first-check-in conditions and insert any newly earned badge rows.
-    CALLED BY: routes_coachee.py coachee_dashboard (GET /me) — earned badges are then shown via _get_badges on the coachee dashboard screen.
-    WHEN: On coachee dashboard load, after streak/freeze processing.
+    Called by: routes_coachee.py::coachee_dashboard() on every /me GET, right
+    alongside the streak/freeze sweep — so a newly-earned badge appears the
+    next time the coachee loads their dashboard, not instantly on completion.
     """
     c = db()
     c.execute("SELECT badge_type FROM badge WHERE coachee_id=%s", (coachee_id,))
@@ -190,7 +202,9 @@ def _check_and_award_badges(coachee_id):
     )
     recent_grades = [r["grade"] for r in c.fetchall()]
     if len(recent_grades) >= 3 and all(g == "A" for g in recent_grades) and "perfect_week" not in existing:
-        badges_to_award.append(("perfect_week", "\U0001f31f Perfect Week", "All tasks graded A in a week", "\U0001f31f"))
+        badges_to_award.append(
+            ("perfect_week", "\U0001f31f Perfect Week", "All tasks graded A in a week", "\U0001f31f")
+        )
 
     # First check-in badge
     c.execute("SELECT COUNT(*) as cnt FROM checkin WHERE coachee_id=%s", (coachee_id,))
@@ -207,9 +221,8 @@ def _check_and_award_badges(coachee_id):
 def _get_badges(coachee_id):
     """Get all badges for a coachee.
 
-    PURPOSE: Fetch the coachee's earned badges (newest first) for display.
-    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), passed as earned_badges into coachee_dashboard.html — serves the coachee dashboard screen.
-    WHEN: On coachee dashboard load.
+    Called by: routes_coachee.py::coachee_dashboard() to populate the
+    coachee's own /me badge shelf.
     """
     c = db()
     c.execute("SELECT * FROM badge WHERE coachee_id=%s ORDER BY created_at DESC", (coachee_id,))
@@ -219,9 +232,9 @@ def _get_badges(coachee_id):
 def _mood_sparkline(coachee_id):
     """Get last 14 days of mood ratings from check-ins.
 
-    PURPOSE: Return (date, mood) points from the past 14 days for a small trend chart (empty list on error).
-    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), passed as mood_data into coachee_dashboard.html — serves the coachee dashboard screen.
-    WHEN: On coachee dashboard load.
+    Called by: routes_coachee.py::coachee_dashboard() to render the small
+    mood-trend sparkline widget on /me. (R19 in the roadmap proposes
+    expanding this into a full trend chart on the coach side too.)
     """
     c = db()
     fourteen_ago = (date.today() - timedelta(days=14)).isoformat()
@@ -238,9 +251,9 @@ def _mood_sparkline(coachee_id):
 def _engagement_score(coachee_id):
     """Compute 7-day engagement score (0-100).
 
-    PURPOSE: Weighted blend of 7-day check-in rate (30%), task completion (50%), and tracking frequency (20%).
-    CALLED BY: routes_coach.py coach_dashboard (GET /coach), set as cc["engagement"] per coachee — serves the coach dashboard screen.
-    WHEN: On coach dashboard load, computed for each listed coachee.
+    Called by: routes_coach.py::coach_dashboard() for every coachee card in
+    the coach's roster view — this is the number shown next to each
+    coachee's name on the main /coach landing screen.
     """
     c = db()
     week_ago = (date.today() - timedelta(days=7)).isoformat()
@@ -269,15 +282,14 @@ def _engagement_score(coachee_id):
     tracking = min(c.fetchone()["cnt"], 21)
     tracking_score = tracking / 21 * 100
 
-    return round((checkin_score * 0.3 + task_score * 0.5 + tracking_score * 0.2))
+    return round(checkin_score * 0.3 + task_score * 0.5 + tracking_score * 0.2)
 
 
 def _completion_hours(coachee_id):
     """Get hour distribution of task completions.
 
-    PURPOSE: Build a 24-slot histogram of the hours at which the coachee completed tasks.
-    CALLED BY: routes_coach.py coach-view-coachee (GET /coach/coachee/<cid>), passed as completion_hours into coach_view_coachee.html — serves the coach's per-coachee detail screen.
-    WHEN: On load of the coach's individual coachee view.
+    Called by: routes_coach.py::coach_view_coachee() to draw the
+    hour-of-day completion heatmap in the individual coachee detail screen.
     """
     c = db()
     c.execute(
@@ -302,9 +314,10 @@ def _completion_hours(coachee_id):
 def _get_rituals(coachee_id, coach_id):
     """Get active rituals for a coachee.
 
-    PURPOSE: Fetch active ritual definitions that apply to this coachee (shared or per-coachee) for the given coach.
-    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), used for the rituals list and to feed _ritual_status_today — serves the coachee dashboard screen.
-    WHEN: On coachee dashboard load.
+    Called by: routes_coachee.py::coachee_dashboard(), twice — once to list
+    the rituals themselves and once (via _ritual_status_today) to compute
+    which are already done today. Rituals are managed by the coach at
+    /coach/rituals (manage_rituals.html).
     """
     c = db()
     c.execute(
@@ -317,9 +330,9 @@ def _get_rituals(coachee_id, coach_id):
 def _ritual_status_today(coachee_id, rituals, today_str):
     """Check which rituals are completed today.
 
-    PURPOSE: Return the set of ritual_ids the coachee has logged as done for today.
-    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), passed as rituals_done into coachee_dashboard.html — serves the coachee dashboard screen.
-    WHEN: On coachee dashboard load, alongside _get_rituals.
+    Called by: routes_coachee.py::coachee_dashboard() to mark each ritual
+    card on /me as done/not-done for the coachee's local "today." (Ritual
+    *misses* aren't auto-detected yet — R18 in the roadmap.)
     """
     c = db()
     completed_ids = set()
@@ -335,9 +348,8 @@ def _ritual_status_today(coachee_id, rituals, today_str):
 def _compute_level(coachee_id, coach_id):
     """Compute training level from streak data and coach config.
 
-    PURPOSE: Derive current/next training level (Initiate→Transcendent) and progress % from the coachee's best streak.
-    CALLED BY: routes_coachee.py coachee_dashboard (GET /me), passed as level_info into coachee_dashboard.html — serves the coachee dashboard screen.
-    WHEN: On coachee dashboard load.
+    Called by: routes_coachee.py::coachee_dashboard() to show the
+    "Initiate → Transcendent" level badge and progress bar on /me.
     """
     c = db()
     c.execute("SELECT current_streak, best_streak FROM coachee WHERE id=%s", (coachee_id,))
@@ -374,9 +386,9 @@ def _compute_level(coachee_id, coach_id):
 def _weekly_report(coachee_id):
     """Compute weekly report card from existing data.
 
-    PURPOSE: Aggregate the last 7 days into avg grade, task compliance, check-in rate, and tracking count.
-    CALLED BY: routes_coachee.py coachee_dashboard (GET /me, weekly_report into coachee_dashboard.html) and routes_coach.py weekly_summary (GET /coach/coachee/<cid>/summary) — serves the coachee dashboard and the coach weekly-summary screens.
-    WHEN: On coachee dashboard load and on coach weekly-summary view.
+    Called by: routes_coachee.py::coachee_dashboard() (the coachee's own
+    weekly-report widget on /me) and routes_coach.py's coachee detail view
+    (same numbers, coach-facing) — same computation, two screens.
     """
     c = db()
     week_ago = (date.today() - timedelta(days=7)).isoformat()
@@ -427,15 +439,13 @@ def _weekly_report(coachee_id):
     }
 
 
-
 def _payment_compliance(coachee_id):
     """Compute payment compliance status for a coachee.
-
-    PURPOSE: Compare expected vs actual payments against the active plan and return a status (green/yellow/orange/red/none) with periods_late.
-    CALLED BY: routes_coach.py coach_dashboard (GET /coach, set as cc["payment"]) and the coach payments route (GET /coach/.../payments) — serves the coach dashboard and coach payments screens.
-    WHEN: On coach dashboard load and on the coach payments screen load.
-
     Returns: dict with status (green/yellow/orange/red/none), periods_late, last_payment, plan info.
+
+    Called by: routes_coach.py::coach_dashboard() (the colored dot on each
+    coachee's roster card) and the coachee detail screen (payments.html's
+    status summary at the top of the page).
     """
     c = db()
     # Get payment plan
@@ -451,12 +461,14 @@ def _payment_compliance(coachee_id):
     )
     last_payment = c.fetchone()
 
-    from datetime import date as _date, timedelta
+    from datetime import date as _date
+
     today = _date.today()
     freq = plan["frequency"]
     start = plan["start_date"]
     if isinstance(start, str):
         from datetime import datetime as _dt
+
         start = _dt.fromisoformat(start).date()
 
     # Compute how many periods should have been paid since start_date

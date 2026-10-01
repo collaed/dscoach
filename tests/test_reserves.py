@@ -5,8 +5,9 @@ from datetime import date
 
 def _create_reserve_template(coach_id=1, title="Reserve Task"):
     """Insert a reserve task template directly."""
-    from database import get_engine
     from sqlalchemy import text
+
+    from database import get_engine
 
     engine = get_engine()
     with engine.begin() as conn:
@@ -22,8 +23,9 @@ def _create_reserve_template(coach_id=1, title="Reserve Task"):
 
 def _create_manual_task(coach_id, coachee_id, due_date):
     """Insert a manually assigned (non-reserve) task for today."""
-    from database import get_engine
     from sqlalchemy import text
+
+    from database import get_engine
 
     engine = get_engine()
     with engine.begin() as conn:
@@ -46,8 +48,9 @@ def _create_manual_task(coach_id, coachee_id, due_date):
 
 def _count_assignments(coachee_id, due_date):
     """Count task assignments for a coachee on a given date."""
-    from database import get_engine
     from sqlalchemy import text
+
+    from database import get_engine
 
     engine = get_engine()
     with engine.connect() as conn:
@@ -121,8 +124,9 @@ def test_no_reserve_if_recurring_assigned(client):
     _create_reserve_template()
 
     # Create a recurring template that will auto-assign
-    from database import get_engine
     from sqlalchemy import text
+
+    from database import get_engine
 
     engine = get_engine()
     with engine.begin() as conn:

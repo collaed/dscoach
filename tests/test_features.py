@@ -5,8 +5,9 @@ import json
 
 def _set_coach_features(features_dict):
     """Set feature flags for coach id=1."""
-    from database import get_engine
     from sqlalchemy import text
+
+    from database import get_engine
 
     engine = get_engine()
     with engine.begin() as conn:
@@ -15,8 +16,9 @@ def _set_coach_features(features_dict):
 
 def _set_coachee_features(features_dict):
     """Set feature flags override for coachee id=1."""
-    from database import get_engine
     from sqlalchemy import text
+
+    from database import get_engine
 
     engine = get_engine()
     with engine.begin() as conn:

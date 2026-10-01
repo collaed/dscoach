@@ -10,7 +10,8 @@ def get_by_id(coachee_id: int) -> dict | None:
     WHEN: on freeze-info lookup for a coachee."""
     c = db()
     c.execute("SELECT * FROM coachee WHERE id=%s", (coachee_id,))
-    return c.fetchone()
+    row: dict | None = c.fetchone()
+    return row
 
 
 def get_status(coachee_id: int) -> str | None:
@@ -40,7 +41,8 @@ def get_active_coachees() -> list[dict]:
     WHEN: intended on dashboard load or scheduled jobs over active coachees."""
     c = db()
     c.execute("SELECT * FROM coachee WHERE status='active'")
-    return c.fetchall()
+    rows: list[dict] = c.fetchall()
+    return rows
 
 
 def get_pending_task_count(coachee_id: int) -> int:
@@ -50,4 +52,5 @@ def get_pending_task_count(coachee_id: int) -> int:
     WHEN: intended on dashboard/tasks screen render."""
     c = db()
     c.execute("SELECT COUNT(*) as cnt FROM task_assignment WHERE coachee_id=%s AND status='pending'", (coachee_id,))
-    return c.fetchone()["cnt"]
+    count: int = c.fetchone()["cnt"]
+    return count

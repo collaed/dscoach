@@ -4,12 +4,12 @@ Simple sliding-window counter per IP. Sufficient for a single-process app with 2
 For multi-worker deployments, replace with a PG table or Redis.
 """
 
-import time
 import threading
+import time
 
 # Config
-MAX_ATTEMPTS = 5        # Max failed login attempts per window
-WINDOW_SECONDS = 900    # 15 minutes
+MAX_ATTEMPTS = 5  # Max failed login attempts per window
+WINDOW_SECONDS = 900  # 15 minutes
 
 # Storage: {ip: [(timestamp, ...), ...]}
 _attempts: dict[str, list[float]] = {}

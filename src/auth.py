@@ -4,7 +4,7 @@ from functools import wraps
 
 from flask import Blueprint, redirect, render_template_string, request, session, url_for
 
-from helpers import _audit, _hash, _hash_password, _real_ip, _tpl, _verify_password, db
+from helpers import _audit, _hash_password, _real_ip, _tpl, _verify_password, db
 from rate_limit import is_rate_limited, record_failed_attempt, reset_attempts
 
 bp = Blueprint("auth", __name__)
@@ -14,6 +14,7 @@ def login_required(role):
     """PURPOSE: Decorator factory guarding a route so only a session of the given role ("coach"/"coachee") may enter, else redirect to login.
     CALLED BY: Wraps route handlers across routes_coach.py, routes_coachee.py (/me* screens) and routes_admin.py; the returned wrapper runs per request.
     WHEN: On every request to a decorated route, before the handler executes."""
+
     def decorator(fn):
         @wraps(fn)
         def wrapper(*a, **kw):
@@ -30,6 +31,7 @@ def admin_required(fn):
     """PURPOSE: Decorator guarding a route so only a logged-in coach with the is_admin flag may enter, else redirect to login.
     CALLED BY: Wraps every /admin* handler in routes_admin.py (admin dashboard, add/freeze/delete coach, reset password, support screens).
     WHEN: On every request to a decorated admin route, before the handler executes."""
+
     @wraps(fn)
     def wrapper(*a, **kw):
         if "user_id" not in session or session.get("role") != "coach" or not session.get("is_admin"):
@@ -103,7 +105,9 @@ def login():
         if row:
             valid, needs_rehash = _verify_password(password, row["password_hash"])
             if valid:
-                c.execute("SELECT accent_color, bg_color, card_color, status FROM coach WHERE id=%s", (row["coach_id"],))
+                c.execute(
+                    "SELECT accent_color, bg_color, card_color, status FROM coach WHERE id=%s", (row["coach_id"],)
+                )
                 coach_brand = c.fetchone()
                 if coach_brand.get("status") == "frozen":
                     err = "Your coach's account is frozen."
@@ -203,7 +207,6 @@ def features_page():
     CALLED BY: Route GET /features — public features.html screen, linked from login/register pages.
     WHEN: On navigation to /features."""
     return render_template_string(_tpl("features.html"))
-
 
 
 @bp.route("/lang/<lang>")

@@ -1,7 +1,8 @@
 """Test admin_delete_coach cascade — destructive operation across 12+ tables."""
 
-from database import get_engine
 from sqlalchemy import text
+
+from database import get_engine
 
 
 def _count_rows(table):
