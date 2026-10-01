@@ -6,8 +6,6 @@ import os
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from flask import Blueprint, Response, abort, flash, redirect, render_template_string, request, session, url_for
-
 from auth import login_required
 from automation import (
     _check_and_award_badges,
@@ -19,6 +17,7 @@ from automation import (
     _run_auto_rules,
     _weekly_report,
 )
+from flask import Blueprint, Response, abort, flash, redirect, render_template_string, request, session, url_for
 from helpers import ATTACHMENTS_DIR, _tpl, db, ensure_aware, utcnow
 from merge import _merge_vars
 from tasks import (

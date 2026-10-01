@@ -4,11 +4,10 @@ import hashlib
 import os
 from datetime import UTC
 
-from flask import g, request, session
-from sqlalchemy import text
-
 from database import get_db, get_engine
+from flask import g, request, session
 from models import audit_log as al_t
+from sqlalchemy import text
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 ATTACHMENTS_DIR = os.environ.get("ATTACHMENTS_DIR", "/data/attachments")
@@ -24,7 +23,6 @@ def inject_helpers():
     WHEN: On every template render, before Jinja evaluates the template.
     """
     from flask import get_flashed_messages as gfm
-
     from i18n import get_lang, t
 
     messages = gfm(with_categories=True)

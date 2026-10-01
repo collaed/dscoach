@@ -6,11 +6,10 @@ import os
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from flask import Blueprint, Response, abort, flash, redirect, render_template_string, request, session, url_for
-
 from ai import LLM_KEY, _build_profile_prompt, _cf_ai_complete
 from auth import login_required
 from automation import _completion_hours, _engagement_score, _payment_compliance, _weekly_report
+from flask import Blueprint, Response, abort, flash, redirect, render_template_string, request, session, url_for
 from helpers import ATTACHMENTS_DIR, _audit, _hash_password, _tpl, _verify_password, db, utcnow
 from merge import _merge_vars
 from tasks import FEATURES

@@ -3,9 +3,8 @@
 import os
 import secrets
 
-from flask import Flask, render_template_string
-
 from database import init_db
+from flask import Flask, render_template_string
 from helpers import TEMPLATES_DIR, close_db, inject_helpers
 
 

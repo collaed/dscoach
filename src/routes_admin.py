@@ -2,9 +2,8 @@
 
 from datetime import timedelta
 
-from flask import Blueprint, redirect, render_template_string, request, url_for
-
 from auth import admin_required
+from flask import Blueprint, redirect, render_template_string, request, url_for
 from helpers import _audit, _hash_password, _tpl, db, utcnow
 
 bp = Blueprint("admin", __name__)

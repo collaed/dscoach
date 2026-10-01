@@ -7,10 +7,9 @@ Backend is selected via DATABASE_URL env var or constructed from DB_* vars.
 import hashlib
 import os
 
+from models import coach, metadata
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
-
-from models import coach, metadata
 
 # --- Engine construction ---
 

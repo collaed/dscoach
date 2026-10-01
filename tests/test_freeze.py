@@ -23,9 +23,8 @@ def _setup_with_overdue_tasks(client, num_overdue=2):
 
     from zoneinfo import ZoneInfo
 
-    from sqlalchemy import text
-
     from database import get_engine
+    from sqlalchemy import text
 
     engine = get_engine()
     # Use UTC time since the coachee timezone is UTC
@@ -56,9 +55,8 @@ def _setup_with_overdue_tasks(client, num_overdue=2):
 
 def _get_coachee_data():
     """Get coachee strikes and streak."""
-    from sqlalchemy import text
-
     from database import get_engine
+    from sqlalchemy import text
 
     engine = get_engine()
     with engine.connect() as conn:
@@ -68,9 +66,8 @@ def _get_coachee_data():
 
 def _count_missed():
     """Count missed tasks for coachee id=1."""
-    from sqlalchemy import text
-
     from database import get_engine
+    from sqlalchemy import text
 
     engine = get_engine()
     with engine.connect() as conn:
@@ -105,9 +102,8 @@ def test_resets_streak_on_miss(client):
     _setup_with_overdue_tasks(client, num_overdue=1)
 
     # Set a streak first
-    from sqlalchemy import text
-
     from database import get_engine
+    from sqlalchemy import text
 
     engine = get_engine()
     with engine.begin() as conn:
@@ -137,9 +133,8 @@ def test_does_nothing_before_freeze_time(client):
         },
     )
 
-    from sqlalchemy import text
-
     from database import get_engine
+    from sqlalchemy import text
 
     engine = get_engine()
     tz = ZoneInfo("UTC")
