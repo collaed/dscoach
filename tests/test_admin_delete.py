@@ -148,3 +148,80 @@ def test_delete_coach_with_no_coachees(client):
     resp = client.post("/admin/coach/2/delete", follow_redirects=False)
     assert resp.status_code == 302
     assert _count_rows("coach") == 1
+
+
+def test_delete_coach_leaves_zero_orphans_in_every_table(client):
+    """BUG-017: after deleting a coach, NO table that references coach.id or
+    coachee.id may retain rows for that coach's dyad.
+
+    This is deliberately generic — it enumerates the FK graph from metadata and
+    seeds + checks EVERY referencing table, so it stays valid as new tables are
+    added (closing the bug class, not just the known 14-table instance that the
+    original cascade handled).
+    """
+    from datetime import date, datetime, time
+
+    from models import coach as coach_t
+    from models import coachee as coachee_t
+    from models import metadata
+
+    # Discover every table carrying coachee_id / coach_id (excluding the
+    # coachee table itself), newest-first for seeding.
+    coachee_tables, coach_tables = [], []
+    for tbl in metadata.sorted_tables:
+        if tbl.name == "coachee":
+            continue
+        cols = {c.name for c in tbl.columns}
+        if "coachee_id" in cols:
+            coachee_tables.append(tbl)
+        if "coach_id" in cols:
+            coach_tables.append(tbl)
+
+    engine = get_engine()
+    with engine.begin() as conn:
+        # Create a victim coach (id=2) and coachee (id=1).
+        conn.execute(coach_t.insert().values(id=2, username="victim2", password_hash="x", name="Victim2", is_admin=0))
+        conn.execute(coachee_t.insert().values(id=1, username="orphan2", password_hash="x", name="Orphan2", coach_id=2))
+
+        def _min_row(tbl, **fks):
+            """Build a minimal valid row: the FK columns plus any other
+            NOT NULL column without a default/server_default, filled with a
+            type-appropriate placeholder."""
+            values = dict(fks)
+            for col in tbl.columns:
+                if col.name in values or col.primary_key:
+                    continue
+                if col.nullable or col.default is not None or col.server_default is not None:
+                    continue
+                t = str(col.type).upper()
+                if "INT" in t or "SMALL" in t:
+                    values[col.name] = 0
+                elif "DATETIME" in t or "TIMESTAMP" in t:
+                    values[col.name] = datetime(2026, 7, 1, 0, 0, 0)
+                elif "DATE" in t:
+                    values[col.name] = date(2026, 7, 1)
+                elif "TIME" in t:
+                    values[col.name] = time(0, 0, 0)
+                else:
+                    values[col.name] = "x"
+            return values
+
+        for tbl in coachee_tables:
+            conn.execute(tbl.insert().values(**_min_row(tbl, coachee_id=1)))
+        for tbl in coach_tables:
+            conn.execute(tbl.insert().values(**_min_row(tbl, coach_id=2)))
+
+    # Sanity: every referencing table now has at least one row.
+    for tbl in coachee_tables + coach_tables:
+        assert _count_rows(tbl.name) >= 1, f"seed failed for {tbl.name}"
+
+    # Delete the victim coach as admin.
+    client.post("/login", data={"username": "ecb", "password": "ecbF3T"})
+    resp = client.post("/admin/coach/2/delete", follow_redirects=False)
+    assert resp.status_code == 302
+
+    # No orphans anywhere.
+    assert _count_rows("coachee") == 0
+    for tbl in coachee_tables + coach_tables:
+        assert _count_rows(tbl.name) == 0, f"orphaned rows left in {tbl.name} (BUG-017 regression)"
+    assert _count_rows("coach") == 1  # only admin ecb remains
