@@ -390,10 +390,8 @@ Close with your sign-off..."></textarea>
 <h3>Safe Word & Pause</h3>
 <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.2rem">Your safe word is: <strong style="color:var(--accent)">{{ coachee.safe_word }}</strong></p>
 <div style="display:flex;gap:0.6rem;flex-wrap:wrap">
-<form method="post" action="/me/pause"><button type="submit" name="word" value="pause" class="secondary" style="margin:0">⏸️ I need to pause</button></form>
-    {{ csrf_field() }}
-<form method="post" action="/me/pause"><button type="submit" name="word" value="RED" onclick="return confirm('This will STOP the dynamic entirely. Are you sure?')" style="margin:0">🛑 {{ coachee.safe_word }}</button></form>
-    {{ csrf_field() }}
+<form method="post" action="/me/pause"><button type="submit" name="word" value="pause" class="secondary" style="margin:0">⏸️ I need to pause</button>{{ csrf_field() }}</form>
+<form method="post" action="/me/pause"><button type="submit" name="word" value="RED" onclick="return confirm('This will STOP the dynamic entirely. Are you sure?')" style="margin:0">🛑 {{ coachee.safe_word }}</button>{{ csrf_field() }}</form>
 </div>
 </div>
 <div class="section">

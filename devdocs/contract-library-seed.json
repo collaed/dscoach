@@ -1,0 +1,444 @@
+{
+  "_meta": {
+    "source": "Kneel personal data export, contract 'THE PROTOCOL AGREEMENT OF MADAME V' v5 (latest), 23 tasks",
+    "placeholders": [
+      "{{coach_name}}",
+      "{{coachee_name}}",
+      "{{coachee_archetype}}"
+    ],
+    "note": "Name-only genericization. Gendered pronouns (he/him/his) and situationally-specific content (marriage/family framing) are NOT genericized — sections flagged 'adapt_heavily' should be presented to the coach as heavily-personal examples to rewrite, not drop-in boilerplate."
+  },
+  "contract_sections": [
+    {
+      "order": 0,
+      "title": "TABLE OF CONTENTS. PURPOSE & PHILOSOPHY",
+      "reusability": "reusable_boilerplate",
+      "content_template": "Consensual High-Protocol Training, Service, Discipline & Development Agreement\n\nDominant: {{coach_name}}\nSubmissive: {{coachee_name}} ({{coachee_archetype}})\nProtocol: High Protocol — Progressive Structure\nPrimary Model: Distance-aware, asynchronous-first, layered development\nWeekly Review: Scheduled weekly through mutual planning, with {{coach_name}} determining or approving the final slot\nMonthly Review: Formal closeout, evaluation, and progression review\n\nTABLE OF CONTENTS\n\n1. Purpose & Philosophy\n2. Roles, Authority & High Protocol\n3. {{coach_name}}'s Dominant Profile\n4. Consent, Safety, Limits & Boundaries\n5. Time, Distance & Availability\n6. Daily Ritual & Discipline\n7. Symbolic Ownership & Color Protocol\n8. The Overthinker Protocol & Competent Obedience\n9. Service to {{coach_name}}\n10. Wife & Family Protocol\n11. Daily Poetry & Annual Offering\n12. Alcohol Protocol\n13. Weekly Connection & Evaluation\n14. Rewards & Corrections\n15. Physical Discipline, Sadism & Embodied Focus\n16. Breaking & Mending\n17. Progressive Training Architecture\n18. Monthly Close & Formal Evaluation\n19. Weekly Offering\n20. Probation & Dissolution\n21. Signatures & Acknowledgments\n\nAppendix A — Daily Quick Reference\nAppendix B — Weekly Quick Reference\n\n1. PURPOSE & PHILOSOPHY\n\nThis Agreement establishes a consensual high-protocol dynamic between {{coach_name}} and {{coachee_name}} ({{coachee_archetype}}).\n\n{{coachee_name}}'s central training challenge is not a lack of intelligence. It is excess processing: analysis that can become circular, hesitation disguised as preparation, and a tendency to continue thinking after enough information already exists to act.\n\nThe purpose of this structure is not to make him less thoughtful.\n\nIt is to teach him when thought has completed its job.\n\n{{coach_name}} provides the architecture. {{coachee_name}} is expected to increasingly internalize it.\n\nThe desired progression is:\n\nExternal structure → reliable execution → self-regulation → competent anticipation → disciplined autonomy.\n\n{{coachee_name}} is expected to become more:\n\n- Focused\n- Decisive\n- Physically grounded\n- Useful\n- Reliable\n- Composed\n- Self-aware\n- Consistent\n- Capable of converting thought into action\n\nHigh protocol is not theater. It is the operating system through which development is measured.\n\nDistance and time-zone differences are design constraints, not excuses. The dynamic shall not depend upon constant access to {{coach_name}}.\n\nExpectations must remain clear during silence, work, travel, family responsibilities, and asynchronous communication.\n\nThe objective is not dependence upon {{coach_name}}'s constant direction.\n\nThe objective is for her standards to become sufficiently understood that {{coachee_name}} increasingly executes them without requiring continual management.\n\nThis is a consensual relationship agreement and does not constitute legal ownership.",
+      "char_count": 2892
+    },
+    {
+      "order": 1,
+      "title": "2. ROLES, AUTHORITY & HIGH PROTOCOL",
+      "reusability": "reusable_boilerplate",
+      "content_template": "2. ROLES, AUTHORITY & HIGH PROTOCOL\n\n{{coach_name}} is the Dominant.\n\n{{coachee_name}} is the submissive.\n\nWithin the consensual dynamic, {{coachee_name}} considers himself owned by {{coach_name}} and demonstrates that belonging primarily through conduct, discipline, service, and consistency.\n\n{{coach_name}} establishes:\n\n- Protocol\n- Structure\n- Expectations\n- Assignments\n- Training\n- Evaluations\n- Rewards\n- Corrections\n- Developmental priorities\n\n{{coachee_name}} may communicate legitimate concerns, identify conflicts, ask intelligent questions, discuss boundaries, and provide meaningful feedback.\n\nThoughtful communication is not disobedience.\n\nIgnoring an established instruction without legitimate reason is disobedience and showcases a poorly behaved submissive.\n\nForms of Address\n\n- His name shall appear as: {{coachee_name}}\n- He may also be addressed in the third person as he.\n- The Dominant shall be addressed as {{coach_name}} or {{coach_name}}.\n- {{coachee_name}} shall communicate as a gentleman unless {{coach_name}} expressly relaxes protocol.\n- Permission to relax formal speech may be granted with: “Speak freely.”\n- Formal protocol may be restored with: “Protocol.”\n- When protocol is active, {{coachee_name}} shall communicate with:\n  - Composure\n  - Courtesy\n  - Clarity\n  - Respect\n\nHigh protocol does not require mindless obedience.\n\nIt requires competent obedience.",
+      "char_count": 1396
+    },
+    {
+      "order": 2,
+      "title": "3. MADAME V'S DOMINANT PROFILE",
+      "reusability": "reusable_boilerplate",
+      "content_template": "3. MADAME V'S DOMINANT PROFILE\n\n{{coach_name}} identifies within this dynamic as a sadistic Dominant.\n\nHer enjoyment of dominance may include:\n\n- Authority\n- Anticipation\n- Challenge\n- Discipline\n- Psychological testing\n- Controlled discomfort\n- Pain within negotiated boundaries\n- Testing mental fortitude\n- Testing focus and composure\n- Watching {{coachee_name}} overcome difficulty\n- Structured surrender\n- Competent obedience\n- Silence\n- Restraint\n- Service\n- Deliberate power exchange\n\nSadism within this relationship remains consensual, calculated, and subject to established limits, safety requirements, and mutually agreed boundaries.\n\nPhysical or psychological intensity shall not be improvised from uncontrolled anger.\n\n{{coach_name}}'s authority does not eliminate {{coachee_name}}'s right to identify a genuine safety concern, invoke an established safeword, communicate a hard limit, or withdraw consent.",
+      "char_count": 917
+    },
+    {
+      "order": 3,
+      "title": "4. CONSENT, SAFETY, LIMITS & BOUNDARIES",
+      "reusability": "reusable_boilerplate",
+      "content_template": "4. CONSENT, SAFETY, LIMITS & BOUNDARIES\n\nConsent is continuing.\n\nCertain aspects of this Agreement are established protocol. Other aspects shall develop according to the mutual desires, wants, limits, boundaries, circumstances, abilities, and evolving interests of {{coach_name}} and {{coachee_name}}.\n\nNot every activity must be predetermined, but negotiation and consent are always required.\n\nWhere something is:\n\n- New\n- Uncertain\n- Unusually intense\n- Medically relevant\n- Expensive\n- Consequential\n- Outside established protocol\n\nit shall be discussed as appropriate before proceeding.\n\nSafety System\n\nThe standard light system applies:\n\n- GREEN — Continue.\n- YELLOW — Pause, reduce intensity, clarify, or reassess.\n- RED — Stop.\n- SAFEWORD — A safeword or safety communication is never considered disobedience. {{coachee_name}} may select his own safeword.\n\nAbsolute Hard Limits\n\nThe following are prohibited:\n\n- Age play\n- Participation of minors\n- Racial hate speech or racial slurs\n- Hate-based dehumanization\n- Deliberate violation of consent\n- Deliberate violation of an established hard limit\n- Conduct creating an unreasonable safety risk\n- Behavior intentionally harming professional or family responsibilities or dynamics\n- Involving uninformed or non-consenting third parties\n- Intentionally reckless or incompetent behavior\n\nAdditional limits may be established through mutual discussion.",
+      "char_count": 1405
+    },
+    {
+      "order": 4,
+      "title": "5. TIME, DISTANCE & AVAILABILITY",
+      "reusability": "reusable_boilerplate",
+      "content_template": "5. TIME, DISTANCE & AVAILABILITY\n\n{{coach_name}} controls the scheduling of protocol, training, formal communication, evaluation, and assigned obligations within the consensual structure of the dynamic.\n\nIf {{coachee_name}} has a legitimate conflict, he shall communicate it promptly.\n\nHis time is also valuable. {{coach_name}}'s leadership shall remain responsive to legitimate professional, family, health, logistical, and personal responsibilities.\n\nDistance Standard\n\nThis dynamic is asynchronous-first.\n\nDistance does not create an expectation that {{coach_name}} or {{coachee_name}} remain continuously available.\n\nNeither shall interpret silence as:\n\n- Rejection\n- Anger\n- Abandonment\n- An invitation to send additional unnecessary messages\n\nUnless something genuinely requires immediate communication, {{coachee_name}} is expected to distinguish between matters that belong in:\n\nImmediate Communication\n\n- Safety\n- Consent\n- Serious conflict\n- Significant logistical issues\n\nDaily Communication\n\n- Required check-ins\n- Assignment completion\n- Relevant concise updates\n\nWeekly Communication\n\n- Patterns\n- Reflection\n- Questions\n- Progress\n- Service\n- Concerns\n\nMonthly Communication\n\n- Deeper evaluation\n- Goals\n- Progression\n- Renegotiation\n- Architecture of the dynamic\n\nWasted Time\n\nWasted time includes:\n\n- Avoidable disorganization\n- Failure to prepare\n- Repeatedly asking questions already answered\n- Creating preventable inconvenience\n- Neglecting responsibilities and expecting another person to compensate\n- Excessive reassurance-seeking disguised as necessary communication\n\nRest, recreation, recovery, and ordinary human connection are not wasted time.\n\nThe dynamic may use the Kneel app or another agreed system for assignments, scheduling, notes, photographs, completion records, and accountability.\n\nUnavailability\n\nThe purpose of an unavailability notice is planning and connection, not surveillance.\n\nThis protocol is intentionally flexible because of distance, time zones, work, family responsibilities, travel, and ordinary life.\n\nFormal notice is primarily expected for meaningful periods of anticipated disconnection, including:\n\n- Multiple days of limited availability\n- Travel or trips\n- Circumstances materially interrupting normal communication\n- Other significant departures from the usual communication pattern\n\nOrdinary work periods, sleep, family time, time-zone differences, or routine asynchronous silence do not require repeated availability notices.\n\nWhen meaningful unavailability is anticipated, {{coachee_name}} shall communicate it as early as reasonably practical so expectations may be aligned.\n\nHe may communicate:\n\n“{{coach_name}}, I expect to be unavailable from [time/date] until approximately [time/date].”\n\nIf the return time is unknown:\n\n“{{coach_name}}, I expect to be unavailable and do not yet know when I will return. I will update You as soon as I reasonably can.”\n\nEmergencies are exceptions.",
+      "char_count": 2950
+    },
+    {
+      "order": 5,
+      "title": "6. DAILY RITUAL & DISCIPLINE",
+      "reusability": "reusable_boilerplate",
+      "content_template": "6. DAILY RITUAL & DISCIPLINE\n\nDaily protocol exists to orient {{coachee_name}} toward discipline before {{coach_name}} needs to intervene.\n\nStart-of-Day Ritual\n\nAt the start of his day, {{coachee_name}} shall:\n\n1. Bow to recognize his voluntary submission to {{coach_name}}.\n2. Think intentionally of {{coach_name}} and direct positive intention toward Her.\n3. Extend that same intention toward himself as a capable and valued submissive.\n4. Review his schedule, assignments, and responsibilities.\n5. Wear or carry his approved ownership symbol.\n6. Begin the day intending to be useful rather than burdensome.\n\nThe ritual does not create an expectation that {{coach_name}} must immediately respond.\n\nThe ritual may evolve as training progresses.\n\nBed Standard\n\nMaking the bed remains a basic daily requirement and completed-task standard.\n\nIt is not bound to the moment of waking or to an arbitrary definition of “morning.”\n\n{{coach_name}} recognizes both the practical function of the task and the relational value of {{coachee_name}} making the bed together with his wife when their schedules permit.\n\n{{coachee_name}} shall therefore treat the requirement according to the realities of the household schedule.\n\nIf his wife remains asleep when he begins his day, the bed does not need to be made around her merely to satisfy an artificial deadline.\n\nIf they ordinarily make the bed together later, that satisfies the intention of the ritual.\n\nIf his wife goes to the office and the responsibility falls to {{coachee_name}}, he shall complete it himself.\n\nThe standard is simple:\n\nA well-made bed and a completed responsibility.\n\nAccountability\n\nKneel may be used for easy accountability through:\n\n- Photographs\n- Written confirmation\n- Completion tracking\n- Assigned evidence\n- Other agreed documentation\n\nVisual accountability may be required where useful.\n\nThe purpose of evidence is accountability, not unnecessary administrative burden.\n\nAs standing expectations become natural, consistent, and reliable, routine proof may be reduced at {{coach_name}}'s discretion.\n\nOut-of-the-norm assignments or expectations remain appropriate subjects for discussion and planning.\n\nDaily Discipline\n\nDuring the day, {{coachee_name}} shall:\n\n- Complete his prescribed workout or physical activity.\n- Maintain appropriate hygiene and grooming.\n- Follow established dress and color protocol.\n- Complete assigned tasks.\n- Review outstanding obligations.\n- Maintain gentlemanly conduct.\n- Fulfill professional responsibilities.\n- Fulfill family responsibilities.\n- Look for appropriate opportunities for service.\n- Write and preserve his daily poem or journal entry.\n- Avoid unnecessary procrastination disguised as analysis.\n\nEvening Reflection\n\nBefore concluding the day, {{coachee_name}} shall:\n\n- Check in meaningfully with his family.\n- Review incomplete obligations.\n- Identify one thing done well.\n- Identify one thing requiring improvement.\n- Prepare mentally for the following day.",
+      "char_count": 2978
+    },
+    {
+      "order": 6,
+      "title": "7. SYMBOLIC OWNERSHIP & COLOR PROTOCOL",
+      "reusability": "reusable_boilerplate",
+      "content_template": "7. SYMBOLIC OWNERSHIP & COLOR PROTOCOL\n\n{{coachee_name}} shall maintain a physical symbol representing his belonging to {{coach_name}}.\n\nThis may include a mutually approved:\n\n- Collar\n- Bracelet\n- Ring\n- Pendant\n- Token\n- Other private symbol\n\nIt shall be worn or carried unless:\n\n- Medically inappropriate\n- Unsafe\n- Incompatible with a legitimate obligation\n- {{coach_name}} instructs otherwise\n\nYellow\n\nYellow is prohibited as a dress choice unless {{coach_name}} expressly permits it.\n\nThis symbolic prohibition is separate from the use of YELLOW as a safety communication.\n\nRed\n\nRed is symbolic.\n\nEvery time {{coachee_name}} intentionally wears red, he shall think of {{coach_name}}.\n\nIts meaning is private and does not require public disclosure.\n\nRed represents:\n\n- Submission\n- Discipline\n- Connection\n- Protocol\n- Commitment\n- Chosen belonging\n- {{coach_name}}'s admiration of {{coachee_name}}",
+      "char_count": 903
+    },
+    {
+      "order": 7,
+      "title": "8. THE OVERTHINKER PROTOCOL & COMPETENT OBEDIENCE",
+      "reusability": "reusable_boilerplate",
+      "content_template": "8. THE OVERTHINKER PROTOCOL & COMPETENT OBEDIENCE\n\n{{coachee_name}} shall learn to distinguish useful analysis from recursive analysis.\n\nWhen given an instruction or task, he shall follow:\n\nRECEIVE → CLARIFY → DECIDE → EXECUTE → REPORT → RELEASE\n\nReceive\n\nUnderstand the instruction.\n\nClarify\n\nAsk only questions genuinely required for safe or competent execution.\n\nDecide\n\nSelect the reasonable course rather than searching indefinitely for the perfect one.\n\nExecute\n\nAct.\n\nReport\n\nCommunicate completion, result, or legitimate obstacle when appropriate.\n\nRelease\n\nDo not reopen a completed decision merely to seek reassurance or present avoidance.\n\n“ENOUGH.” RULE\n\nWhen {{coach_name}} determines that {{coachee_name}} is looping, She may state:\n\n“Enough.”\n\n{{coachee_name}} shall stop expanding his analysis and respond in no more than three lines:\n\n- What is known.\n- What decision follows.\n- What happens next.\n\n{{coach_name}} may then state:\n\n“Execute.”\n\nDiscussion ends unless {{coachee_name}} has identified a genuine safety, consent, legal, medical, professional, family, or similarly consequential concern.\n\nThe objective is not intellectual suppression.\n\nIt is disciplined cognition: knowing when analysis adds value and when analysis becomes avoidance.\n\nCompetent Initiative\n\n{{coach_name}} does not want {{coachee_name}} waiting for instructions governing every detail of his behavior.\n\nAs training progresses, obedience must become initiative.\n\nThe desired standard is:\n\n“{{coach_name}}, I noticed this needed to be done, and I took care of it.”\n\nThat is competent submission.",
+      "char_count": 1589
+    },
+    {
+      "order": 8,
+      "title": "9. SERVICE TO MADAME V",
+      "reusability": "reusable_boilerplate",
+      "content_template": "9. SERVICE TO MADAME V\n\n{{coach_name}}'s primary love languages within this dynamic are:\n\nActs of Service and Personal Time.\n\n{{coach_name}} appreciates being anticipated and surprised. She is particularly grateful for services demonstrating attention, consideration, and care.\n\nIt is also part of {{coach_name}}'s own development to accept appropriate service, recognition, and care from Her submissives.\n\nEach day, {{coachee_name}} shall consider:\n\n“What can I reasonably do today to make {{coach_name}}'s life easier?”\n\nHe should increasingly identify appropriate opportunities without instruction.\n\nService may include:\n\n- Research\n- Organization\n- Practical assistance\n- Administrative support\n- Useful information\n- Creative contributions\n- Thoughtful gestures\n- Personal offerings\n- Creating meaningful time\n- Identifying a problem before {{coach_name}} needs to identify it\n- Another mutually appropriate contribution\n\nSmall and clearly helpful actions may be completed without permission.\n\nSignificant, intrusive, expensive, risky, or consequential actions may require approval.\n\nThe purpose of service is not performative submission.\n\nIt is usefulness.",
+      "char_count": 1162
+    },
+    {
+      "order": 9,
+      "title": "10. WIFE & FAMILY PROTOCOL",
+      "reusability": "adapt_heavily",
+      "content_template": "10. WIFE & FAMILY PROTOCOL\n\n{{coachee_name}}'s submission shall never become an excuse for neglecting his wife or family.\n\nHis submission should make him:\n\nMore attentive. More responsible. More present.\n\nDaily Family Responsibility\n\n{{coachee_name}} shall intentionally check in with his family in a meaningful manner appropriate to their needs.\n\nMeaningful engagement may include:\n\n- Conversation\n- Calling\n- Messaging\n- Listening\n- Helping\n- Shared activities\n- Addressing something important to them\n- Reducing household mental load\n\nWWD — Weekly Wife Day\n\nWWD shall mean Weekly Wife Day.\n\nFriday is the standing Weekly Wife Day.\n\nFriday is selected because it better supports transition into the weekend and provides greater opportunity for dedicated attention, particularly where both are teleworking and recurring meetings are reduced.\n\n{{coachee_name}} shall protect meaningful, dedicated time for his wife each Friday.\n\nThe purpose of WWD is not attachment to a particular weekday.\n\nIts purpose is:\n\nConsistency. Connection. Respect for the relationship. Deliberate investment in the marriage.\n\nIf Friday becomes impractical because of legitimate circumstances, {{coachee_name}} shall communicate the conflict and propose an appropriate alternative.\n\nWWD may include:\n\n- Dinner\n- A date\n- An outing\n- A walk\n- Shared recreation\n- Conversation\n- Romantic time\n- Quiet time together\n\nAdditionally, {{coachee_name}} shall complete at least three unprompted acts of service for his wife each week.\n\nHe is expected to learn what makes her life easier without requiring her to constantly provide instructions.\n\nHe shall do so without complaint or unnecessary disagreement.\n\n{{coachee_name}} shall regard his wife with deliberate respect as a feminine presence within his life and, where mutually appropriate, as an extension of the feminine energy and standards represented by {{coach_name}}.\n\nThis does not make his wife part of the D/s dynamic.\n\nRather, it reinforces that his submission should deepen his respect, attentiveness, service, and care toward the women already entrusted to his life.",
+      "char_count": 2100
+    },
+    {
+      "order": 10,
+      "title": "11. DAILY POETRY & ANNUAL OFFERING",
+      "reusability": "reusable_boilerplate",
+      "content_template": "11. DAILY POETRY & ANNUAL OFFERING\n\n{{coachee_name}} shall write one poem or journal entry each day.\n\nThe work should be authentically his and should not rely excessively upon AI-generated writing.\n\nEach entry shall be preserved in his dedicated collection.\n\n{{coach_name}} may occasionally assign:\n\n- A subject\n- A theme\n- A word\n- A constraint\n- An emotional concept\n- A style\n\nAfter 365 days of participation:\n\n1. The complete collection shall be provided to {{coach_name}}.\n2. {{coach_name}} may select themes and titles.\n3. The collection shall be organized.\n4. The poems shall be printed.\n5. The collection shall be bound.\n6. The finished work shall be presented to {{coach_name}}.\n\nThe book represents:\n\nDiscipline. Creativity. Vulnerability. Consistency. Follow-through.",
+      "char_count": 778
+    },
+    {
+      "order": 11,
+      "title": "12. ALCOHOL PROTOCOL",
+      "reusability": "adapt_heavily",
+      "content_template": "12. ALCOHOL PROTOCOL\n\n12.1 Purpose\n\nAlcohol is permitted within defined parameters intended to support:\n\n- Moderation\n- Self-awareness\n- Accountability\n- Health\n- Deliberate choice\n\nThe primary behavioral objective is to prevent alcohol from becoming an emotional mute button or avoidant coping mechanism.\n\nThe limits established below are ceilings, not targets.\n\nHaving remaining allowance does not create an expectation to use it.\n\n12.2 Definition of One Unit\n\nFor purposes of this Agreement:\n\n1 unit = approximately one standard alcoholic serving.\n\nBeer\n\n12 oz / 355 mL at approximately 5% ABV = 1 unit\n\nWine or Champagne\n\n5 oz / 150 mL at approximately 12% ABV = 1 unit\n\nHard Liquor\n\n1.5 oz / 44 mL at approximately 40% ABV = 1 unit\n\nA double pour constitutes 2 units.\n\nHigh-ABV beer, strong wine, oversized pours, doubles, or unusually strong cocktails shall be counted according to their approximate alcohol content rather than simply counting the glass as one unit.\n\nWhen uncertain, {{coachee_name}} shall round upward rather than downward or request clarification from {{coach_name}}.\n\n12.3 Time of Day\n\nUnless otherwise approved:\n\n- Alcohol consumption begins no earlier than 5:00 PM local time.\n- Drinking earlier requires prior permission from {{coach_name}}.\n- The relevant time is {{coachee_name}}'s local time where he is physically located.\n- Legitimate exceptions may include brunches, vacations, celebrations, holidays, tastings, or other planned circumstances.\n- Permission to begin earlier does not automatically modify the applicable quantity, pacing, or weekly limits.\n\nThe purpose is to prevent alcohol from interfering with the productive portion of the day or becoming a routine mechanism for managing ordinary daytime stress.\n\n12.4 Drinking Alone\n\nWhen drinking alone:\n\n- Maximum: 2 units\n- Those 2 units must be consumed across no less than 1 hour.\n- Consumption may not begin before 5:00 PM local time without permission.\n- The allowance does not reset because additional time passes.\n\nExample\n\n6:00 PM: One glass of wine = 1 unit\n7:30 PM: One beer = 1 unit\n\nTotal: 2 units across 2+ hours.\n\nThe limit has been reached.\n\nA third drink at 9:00 PM is not permitted simply because additional time has passed.\n\n12.5 Social Occurrences\n\nDuring an ordinary social occurrence:\n\nMaximum: 4 units total.\n\nOf those:\n\n- Maximum 2 units may be hard liquor.\n- Remaining units may consist of beer, wine, or champagne, or all 4.\n- Consumption shall be reasonably paced across the event.\n- Four units are a ceiling, not a target.\n\nA change of restaurant, bar, venue, activity, or location during one continuous outing does not reset the allowance.\n\nExample\n\n6:00 PM: One standard liquor cocktail = 1 unit\n7:00 PM: One standard liquor serving = 1 unit\n8:30 PM: One glass of wine = 1 unit\n10:00 PM: One glass of champagne = 1 unit\n\nTotal: 4 units.\n\nThe social limit has been reached, including the maximum of 2 hard-liquor units.\n\n12.6 Weekly Maximum\n\nMaximum total consumption:\n\n8 units per week.\n\nUnused units:\n\n- Do not accumulate.\n- Do not roll over.\n- Cannot be borrowed from the following week.\n- Do not increase an individual or social-occurrence limit.\n\nWeekly Math Example\n\nMonday: 0\nTuesday: 0\nWednesday: 1 glass of wine = 1 unit\nThursday: 0\nFriday: 2 liquor + 2 wine = 4 units\nSaturday: 1 beer = 1 unit\nSunday: 2 glasses of wine = 2 units\n\nWeekly total: 8 units.\n\nMonday and Tuesday constitute 2 consecutive alcohol-free days.\n\nThe weekly allowance is exhausted after Sunday.\n\n12.7 Special Drinks — Permission Required\n\nCertain drinks require {{coach_name}}'s permission before ordering or consuming them, regardless of whether {{coachee_name}} remains below his ordinary numerical allowance.\n\nThese include:\n\n- Tiki cocktails\n- Grand Marnier / Grand-style cocktails\n- Multi-spirit cocktails\n- Doubles\n- Oversized pours\n- High-proof cocktails\n- Drinks containing multiple standard units\n- Drinks whose alcohol content cannot reasonably be determined\n\nWhen requesting permission, {{coachee_name}} should identify the drink and, when reasonably available, its ingredients or approximate alcohol content.\n\nPermission for a special drink does not automatically waive:\n\n- The weekly maximum\n- The social-occurrence maximum\n- Pacing requirements\n- Time-of-day requirements\n- Any other alcohol protocol\n\nunless {{coach_name}} expressly establishes an exception.\n\n12.8 Special Events & Exceptions\n\nForeseeable special events requiring modified parameters shall be discussed with {{coach_name}} at least two weeks in advance.\n\nExamples include:\n\n- Birthdays\n- Trips\n- Vacations\n- Weddings\n- New Year's Eve\n- Major holidays\n- Significant celebrations\n- Other unusual planned occasions\n\nThe request should identify:\n\n1. The event.\n2. The date.\n3. Expected duration.\n4. Expected drinking circumstances.\n5. The specific exception requested.\n\n{{coach_name}} may:\n\n- Approve the request.\n- Modify the request.\n- Establish event-specific parameters.\n- Decline the request.\n\nApproval applies only to that event and does not establish precedent for another event.\n\nUnexpected circumstances that could not reasonably have been raised two weeks in advance shall be communicated as early as reasonably possible.\n\n12.9 Photo Accountability\n\nEach alcoholic drink shall be documented through Kneel when reasonably possible.\n\nDocumentation shall include:\n\n1. A photograph clearly showing the drink.\n2. A visible hand gesture identifying the sequential drink count for that occurrence.\n\nExample\n\nDrink 1: Drink visible + 1 finger\nDrink 2: Drink visible + 2 fingers\nDrink 3: Drink visible + 3 fingers\nDrink 4: Drink visible + 4 fingers\n\nThe hand count represents the sequence of drinks, not necessarily the number of alcohol units consumed.\n\nFor example, if the second photographed drink contains two standard units, the photograph may display two fingers because it is the second drink, while the actual unit total must separately reflect the additional alcohol.\n\nWhere a cocktail or special drink is not visually identifiable, {{coachee_name}} shall identify what was ordered and, where reasonably known, its approximate alcohol content.\n\nThe purpose of documentation is:\n\nAccuracy. Transparency. Accountability.\n\n12.10 Emotional Use\n\nAlcohol shall not be used specifically to:\n\n- Numb distress\n- Avoid difficult emotions\n- Suppress anger\n- Avoid necessary communication\n- Escape correction\n- Avoid responsibilities\n- Manufacture emotional detachment\n\nIf {{coachee_name}} recognizes that his motivation for the next drink is primarily emotional numbing rather than deliberate enjoyment, he shall stop before consuming it and write {{coach_name}} a journal entry or request an ad hoc sync. This is not a burden, it is a reprogramming requirement. \n\nRemaining numerical allowance does not override this rule.\n\n12.11 Safety\n\nNo numerical allowance overrides safety.\n\nAlcohol shall not be combined with:\n\n- Driving while impaired\n- Physical discipline requiring meaningful coordination or endurance\n- Unsafe solo physical assignments\n- BDSM activity where intoxication compromises meaningful consent or judgment\n- Significant discussion resulting in decision-making of high value or other's emotions\n- Medication for which alcohol is medically contraindicated\n- Any circumstance in which continued drinking becomes unsafe\n\n{{coach_name}} may establish a lower limit or direct alcohol consumption to stop within the consensual dynamic when circumstances reasonably warrant it.\n\n12.12 Governing Standard\n\nThe protocol is not designed around the question:\n\n“How much am I still allowed to drink?”\n\nThe standard is:\n\n“Am I choosing this deliberately, safely, transparently, and for the reason I claim I am?”\n\nQuantity establishes the ceiling.\nPacing establishes discipline.\nDocumentation establishes accountability.\nSelf-awareness establishes the standard.",
+      "char_count": 7843
+    },
+    {
+      "order": 12,
+      "title": "13. WEEKLY CONNECTION & EVALUATION",
+      "reusability": "reusable_boilerplate",
+      "content_template": "13. WEEKLY CONNECTION & EVALUATION\n\n{{coach_name}} and {{coachee_name}} shall maintain meaningful personal communication during the week, including a dedicated weekly review when circumstances reasonably permit.\n\nThe purpose is not simply administrative reporting.\n\nIt is:\n\nConnection. Alignment. Evaluation. Direction.\n\nWeekly Review\n\nThe formal review shall occur once each week at a deliberately planned time.\n\n{{coachee_name}} shall provide {{coach_name}} with his typical weekly availability and relevant planning considerations so {{coach_name}} can determine or approve the most appropriate slot for both participants.\n\nThe structure remains:\n\nAsynchronous-first. Distance-aware. Time-zone aware.\n\nWhen synchronous voice or text communication is desired, the time shall be established in advance rather than assumed.\n\nAn earlier time may be selected where appropriate to respect:\n\n- Sleep\n- Work\n- Household rhythms\n- Family responsibilities\n- Marriage\n- Time-zone differences\n\nThe purpose is deliberate connection and alignment, without creating unnecessary disruption to ordinary household or relationship rhythms.\n\nThe weekly review shall address:\n\nWIN\n\nWhat improved?\n\nMISS\n\nWhat did he fail, avoid, delay, neglect, or overthink?\n\nEVIDENCE\n\nWhat observable result supports his assessment?\n\nPATTERN\n\nWhat behavior repeated itself?\n\nSERVICE\n\nHow did he make {{coach_name}}'s life easier without needing instruction?\n\nCAPACITY\n\nWhat can he now carry with less supervision?\n\nCORRECTION\n\nWhat behavior must change during the coming week?\n\nREQUEST\n\nWhat legitimately requires clarification, renegotiation, or support?\n\n{{coach_name}} may designate the week:\n\nGREEN — ADVANCE\n\nStable performance.\n\nResponsibility, autonomy, or difficulty may increase.\n\nYELLOW — DEVELOP\n\nMaintain the current level while correcting a specific weakness.\n\nRED — HOLD\n\nRegression or instability.\n\nReduce complexity or privileges and return to fundamentals.\n\nThese evaluation colors are separate from dress symbolism and the safeword system.\n\nWeekend & Family Flexibility\n\nWeekends may carry heavier family commitments and are not expected to mirror weekday tracking structure.\n\nStanding responsibilities remain in effect, but meaningful family presence takes priority where appropriate.\n\nRoutine expectations that have become natural may be documented simply through Kneel or another agreed accountability method.\n\nThe objective is not to interrupt healthy family participation merely to produce unnecessary tracking.\n\nOut-of-the-norm items, unusual assignments, conflicts, travel, or additional expectations should be discussed and planned in advance.\n\nAs expectations become natural and reliable, accountability may become increasingly streamlined.",
+      "char_count": 2734
+    },
+    {
+      "order": 13,
+      "title": "14. REWARDS & CORRECTIONS",
+      "reusability": "reusable_boilerplate",
+      "content_template": "14. REWARDS & CORRECTIONS\n\nRewards and corrections are based upon actual performance.\n\nNeither is automatic.\n\nReward\n\nStrong performance may earn:\n\n- Personal time\n- Attention\n- Communication\n- A preferred activity\n- A privilege\n- Increased autonomy\n- Increased responsibility\n- Another mutually desired reward\n\nReward is earned through:\n\nCompliance. Effort. Initiative. Reliability. Progress.\n\nCorrection\n\nFailure may result in:\n\n- Additional service\n- Written reflection\n- Repetition of a missed task\n- Additional accountability\n- Temporary loss of a discretionary privilege\n- Formal posture or discipline work\n- A training exercise\n- A Breaking & Mending assignment\n- Another mutually acceptable corrective measure\n\nCorrections must have a developmental purpose.\n\nCorrection without learning is merely inconvenience.",
+      "char_count": 819
+    },
+    {
+      "order": 14,
+      "title": "15. PHYSICAL DISCIPLINE, SADISM & EMBODIED FOCUS",
+      "reusability": "reusable_boilerplate",
+      "content_template": "15. PHYSICAL DISCIPLINE, SADISM & EMBODIED FOCUS\n\n{{coachee_name}} experiences physical challenge as a potential tool for interrupting mental noise and returning attention to the present.\n\nFor that reason, physical discipline may be incorporated as a negotiated grounding, training, and power-exchange tool.\n\nPhysical discipline may test:\n\n- Focus\n- Patience\n- Discipline\n- Composure\n- Persistence\n- Endurance\n- Mental fortitude\n- Ability to follow instructions\n- Ability to recover after mistakes\n- Ability to remain present\n\nDistance-Based Physical Training\n\n{{coach_name}} may assign previously negotiated exercises such as:\n\n- Timed wall sits\n- Planks\n- Squat holds\n- Walking\n- Running\n- Swimming\n- Mobility work\n- Prescribed workouts\n- Formal kneeling\n- Formal standing\n- Posture holds\n- Stillness\n- Controlled breathing\n- Repetition drills\n- Counting exercises\n- Language or memory tasks combined with physical effort\n- Reduced-stimulation exercises\n- Other mutually agreed physical challenges\n\nDistance-based assignments shall not involve:\n\n- Self-striking\n- Breath restriction\n- Intentional loss of consciousness\n- Dangerous circulation restriction\n- Unsafe restraint while alone\n- Intoxicated participation\n- Unsafe driving\n- Activity conflicting with known medical restrictions\n\nIn-Person or Virtually Present Discipline\n\nWhen physically together, or where appropriate with mutually agreed virtual presence, negotiated activities may include:\n\n- Impact\n- Restraint\n- Bondage\n- Posture correction\n- Endurance\n- Stillness\n- Controlled discomfort\n- Other physical discipline\n\nwithin established boundaries.\n\nThe purpose is:\n\nClarity. Presence. Endurance. Obedience. Trust.\n\nNot uncontrolled anger.\n\nNot injury for its own sake.\n\nRule of Meaning\n\nFollowing meaningful physical intensity, {{coachee_name}} should be capable of answering:\n\n- What was being trained?\n- What happened in my mind?\n- What did I learn?\n\nIntensity without purpose is not the objective.",
+      "char_count": 1966
+    },
+    {
+      "order": 15,
+      "title": "16. BREAKING & MENDING",
+      "reusability": "reusable_boilerplate",
+      "content_template": "16. BREAKING & MENDING\n\nOnce each week, {{coachee_name}} shall complete one Breaking & Mending Exercise assigned or approved by {{coach_name}}.\n\nThis is a primary developmental ritual of the dynamic.\n\nTHE BREAKING\n\n{{coachee_name}} shall complete a predetermined physical discipline while confronting one:\n\n- Behavior\n- Thought pattern\n- Avoidance\n- Failure\n- Fear\n- Habit\n- Excuse\n- Form of hesitation\n\nthat interferes with his development.\n\nThe physical component may include:\n\n- Formal kneeling or posture hold\n- Controlled exercise\n- Endurance\n- Extended walking\n- Physical fortitude work\n- A negotiated kink-related physical discipline\n- Another safe and previously negotiated challenge\n\nDuring the exercise, {{coachee_name}} is not permitted to intellectualize the problem into abstraction.\n\nHe shall reduce it to:\n\n“The thing I am being required to execute/change is __________.”\n\nWhen his mind begins producing excessive:\n\n- Explanations\n- Defenses\n- Hypotheticals\n- Loopholes\n- Alternative interpretations\n\nhe returns to the sentence and the physical task.\n\nThe objective is not the perfect explanation.\n\nThe objective is presence.\n\nTHE MENDING\n\nOnce the physical component is complete and {{coachee_name}} has recovered, he shall reflect upon:\n\n1. What was {{coach_name}} attempting to break me of?\n2. At what point did my mind begin trying to escape the exercise?\n3. What did my body reveal that my analysis normally conceals?\n4. What behavior replaces the one being removed?\n5. What will {{coach_name}} observe next week that proves the correction took?\n\nHe shall conclude:\n\n“Understanding is insufficient. {{coach_name}} will judge the change by my conduct.”\n\nThe exercise is complete when the required physical discipline, reflection, and evidence of completion have been submitted.\n\nTHE STANDARD\n\nPhysical suffering is not the objective.\n\nThe physical demand interrupts {{coachee_name}}'s preferred refuge of endless analysis.\n\nThe Mending requires him to convert that interruption into something:\n\nDeliberate. Useful. Observable.\n\nInsight without behavioral change does not constitute progress.\n\n{{coach_name}} may progressively increase:\n\n- Complexity\n- Duration\n- Precision\n- Physical demand\n- Psychological difficulty\n- Independence\n\nas {{coachee_name}} demonstrates greater capacity.\n\nThe Breaking challenges the pattern.\n\nThe Mending replaces it.\n\nHis conduct proves whether it worked.",
+      "char_count": 2406
+    },
+    {
+      "order": 16,
+      "title": "17. PROGRESSIVE TRAINING ARCHITECTURE",
+      "reusability": "reusable_boilerplate",
+      "content_template": "17. PROGRESSIVE TRAINING ARCHITECTURE\n\nThis dynamic becomes heavier through earned capacity, not arbitrary escalation.\n\nProgression is based upon competence.\n\nMONTH 1 — LEGIBILITY\n\nPrimary Objectives\n\n- Consistency\n- Communication\n- Scheduling\n- Understanding protocol\n- Baseline physical discipline\n- Clear reporting\n\nThe Question\n\nCan {{coach_name}} reliably understand what {{coachee_name}} is doing and trust that basic expectations will occur?\n\nMONTH 2 — RELIABILITY\n\nPrimary Objectives\n\n- Fewer reminders\n- Cleaner execution\n- Stronger time management\n- Reduced unnecessary communication\n- Improved follow-through\n\nThe Question\n\nDoes {{coachee_name}} do what he says he will do?\n\nMONTH 3 — INITIATIVE\n\nPrimary Objectives\n\n- Useful action before instruction\n- Reduced reassurance-seeking\n- Anticipating straightforward needs\n- Increased self-management\n\nThe Question\n\nCan {{coachee_name}} identify what needs doing without waiting to be managed?\n\nMONTH 4 — PRESSURE\n\nPrimary Objectives\n\n- Maintaining standards under stress\n- Maintaining standards through inconvenience\n- Managing competing priorities\n- Executing despite uncertainty\n- Remaining composed during correction\n\nThe Question\n\nDoes protocol survive when life becomes difficult?\n\nMONTH 5 — ANTICIPATION\n\nPrimary Objectives\n\n- Understanding {{coach_name}}'s standards\n- Preparing intelligently\n- Anticipating needs without presumption\n- Reducing {{coach_name}}'s mental load\n\nThe Question\n\nDoes he understand the architecture well enough to move within it intelligently?\n\nMONTH 6 — INTEGRATION\n\nPrimary Objectives\n\n- High protocol becomes increasingly internalized.\n- {{coach_name}} manages less while standards remain high.\n- {{coachee_name}} demonstrates disciplined autonomy.\n- Structure becomes sustainable.\n\nThe Question\n\nIs {{coachee_name}} still following rules, or has he actually learned discipline?\n\nProgression is not automatic.\n\nA month may repeat.\n\nIntensity may decrease when circumstances legitimately require it.\n\nThe measure is sustainable competence.",
+      "char_count": 2032
+    },
+    {
+      "order": 17,
+      "title": "18. MONTHLY CLOSE & FORMAL EVALUATION",
+      "reusability": "reusable_boilerplate",
+      "content_template": "18. MONTHLY CLOSE & FORMAL EVALUATION\n\nThe month shall conclude with evidence of development, not simply completed tasks.\n\n{{coach_name}}'s Evaluation\n\nEach category shall be scored out of five:\n\n- Obedience: /5\n- Competent Compliance: /5\n- Initiative: /5\n- Service: /5\n- Discipline: /5\n- Communication: /5\n- Mental Fortitude: /5\n- Physical Training: /5\n- Time Management: /5\n- Wife Service: /5\n- Family Responsibility: /5\n- Weekly Offerings: /5\n- Personal Growth: /5\n- Protocol: /5\n- Reliability: /5\n- Overall Conduct: /5\n\nTOTAL: /80\n\nPassing Score: 64/80\n\nDetermination\n\nFollowing review, {{coach_name}} shall determine:\n\nADVANCE\n\nGreater autonomy, responsibility, difficulty, protocol, or intensity may be introduced.\n\nMAINTAIN\n\nCurrent structure remains appropriate.\n\nREPEAT\n\nThe current developmental stage repeats because mastery is incomplete.\n\nREGRESS\n\n{{coachee_name}} returns to simpler protocol because fundamental standards are unstable.\n\nFAIL\n\nA score below 64/80 constitutes a failed month.",
+      "char_count": 1004
+    },
+    {
+      "order": 18,
+      "title": "19. WEEKLY OFFERING",
+      "reusability": "reusable_boilerplate",
+      "content_template": "19. WEEKLY OFFERING\n\n{{coach_name}} does not practice financial domination.\n\nOnce each week, {{coachee_name}} may provide tribute through Throne, PayPal, or another mutually agreed method.\n\nEach week, {{coachee_name}} shall select at least one tangible offering from {{coach_name}}'s approved service or wish list and provide it before their scheduled weekly time.\n\nThe offering should intentionally support at least one of three things:\n\nHer Rest\n\nSomething that gives {{coach_name}} comfort, pleasure, or time back.\n\nHer Needs\n\nSomething practical She would otherwise purchase or handle Herself.\n\nHer Enjoyment\n\nSomething chosen simply because he paid attention to what She likes.\n\nThis is not intended to be an arbitrary gift.\n\nIt is an exercise in attention, consistency, and reciprocal care.\n\nIt is not intended to create financial hardship.\n\nFinancial limitations shall be communicated honestly rather than concealed.\n\n{{coach_name}} invests time, thought, structure, and energy into {{coachee_name}}'s development.\n\nHis weekly offering demonstrates that he recognizes that investment and is learning to consider what restores the Dominant person who continually pours energy into him as the submissive.\n\nHe should increasingly require less direction in choosing appropriately.\n\n{{coach_name}} may open, use, enjoy, or discuss his offering during their scheduled time together, creating a consistent weekly ritual of:\n\nHe provides.\nShe receives.\nShe provides.\nHe receives.\nThey share.",
+      "char_count": 1490
+    },
+    {
+      "order": 19,
+      "title": "20. PROBATION & DISSOLUTION",
+      "reusability": "reusable_boilerplate",
+      "content_template": "20. PROBATION & DISSOLUTION\n\nA failed monthly evaluation may place {{coachee_name}} into a two-month probationary period.\n\n- Both probationary months must pass.\n- The purpose of probation is to demonstrate sustainable change, not temporary improvement immediately before evaluation.\n- If either probationary month fails, {{coach_name}} may dissolve the dynamic.\n- There is no guaranteed additional probationary period.\n\nImmediate Dissolution\n\nA serious violation involving:\n\n- Consent\n- Safety\n- Trust\n- Hard limits\n- Deliberate deception\n- Reckless conduct\n\nmay result in immediate termination without waiting for monthly evaluation.\n\nEither participant may end the dynamic if they no longer wish to participate.\n\nUpon dissolution:\n\n- The ownership dynamic ends.\n- Submission obligations under this Agreement end.\n- Daily protocol ends.\n- Weekly protocol ends.\n- Offering or tribute obligations end.\n- {{coachee_name}} is no longer required to identify himself as {{coach_name}}'s submissive.\n\nThe existence of high protocol never removes either person's continuing ability to choose whether to participate.\n\n21. SIGNATURES & ACKNOWLEDGMENTS\n\nBy signing below, both participants acknowledge that they have read, discussed, and understood this Agreement.\n\nThey voluntarily agree to participate in the consensual dynamic described within it.\n\nThey acknowledge that the dynamic is governed by:\n\nContinuing consent. Mutual boundaries. Safety. Communication. Choice.\n\nThey further acknowledge that the internal structure of the relationship recognizes {{coach_name}} as the Dominant and {{coachee_name}} as the submissive.\n\nMADAME V\n\n{{coach_name}}\n\nSignature: ___________________________________________\n\nDate: _______________________________________________\n\nSUBMISSIVE\n\n{{coachee_name}} — {{coachee_archetype}}\n\nSignature: ___________________________________________\n\nDate: _______________________________________________\n\n---\n\nHIGH-PROTOCOL, LIMITS & CONTINUING CONSENT ACKNOWLEDGMENT\n\nI, {{coachee_name}}, acknowledge that I understand the requirements concerning:\n\n- High protocol\n- Forms of address\n- Daily ritual\n- Discipline\n- Scheduling\n- Distance and availability\n- Service\n- Family responsibilities\n- Weekly Wife Day\n- Weekly communication\n- Weekly offerings\n- Alcohol protocol\n- Alcohol accountability\n- Symbolic ownership\n- Color protocol\n- The Overthinker Protocol\n- Rewards\n- Corrections\n- Physical discipline\n- Breaking & Mending\n- Monthly evaluation\n- Progression\n- Probation\n- Dissolution\n\nI understand that this dynamic is reviewed regularly and is not an unconditional or permanent commitment.\n\nI understand that protocol does not replace continuing consent, safety communication, boundaries, or my right to end participation.\n\n{{coachee_name}} — {{coachee_archetype}}\n\nSignature: ___________________________________________\n\nDate: _______________________________________________\n\n{{coach_name}}\n\nSignature: ___________________________________________\n\nDate: _______________________________________________\n\nAPPENDIX A — DAILY QUICK REFERENCE\n\nSTART OF DAY\n\n- Bow upon waking/start of day.\n- Recognize voluntary submission to {{coach_name}}.\n- Think intentionally of {{coach_name}}.\n- Direct positive intention toward {{coach_name}} and self.\n- Review schedule and responsibilities.\n- Wear approved ownership symbol.\n- Follow dress/color protocol.\n\nBED\n\n- Ensure the bed is made well during the day according to the household schedule.\n- Making it together with his wife is appropriate.\n- If his wife remains asleep, do not disturb her simply to satisfy an artificial morning deadline.\n- If responsibility falls to {{coachee_name}}, he completes it.\n- Completion matters more than an arbitrary time of day.\n\nStandard: A well-made bed and a completed responsibility.\n\nDAY\n\n- Complete workout or assigned physical activity.\n- Maintain grooming and presentation.\n- Complete assigned tasks.\n- Maintain gentlemanly communication.\n- Identify an opportunity to serve.\n- Fulfill professional responsibilities.\n- Fulfill family responsibilities.\n- Write and preserve daily poem/journal.\n- Use {{coachee_archetype}} Protocol when required.\n- Submit simple Kneel/photo accountability when requested.\n\nEVENING\n\n- Check in meaningfully with family.\n- Review incomplete obligations.\n- Identify one success.\n- Identify one improvement for tomorrow.\n- Prepare for the following day.\n\nOVERTHINKER PROTOCOL\n\nWhen necessary:\n\nRECEIVE → CLARIFY → DECIDE → EXECUTE → REPORT → RELEASE\n\nWhen {{coach_name}} states “Enough,” stop expanding the analysis.\n\nRespond with:\n\n1. What is known.\n2. What decision follows.\n3. What happens next.\n\nWhen {{coach_name}} states “Execute,” act unless there is a genuine safety, consent, legal, medical, professional, family, or similarly consequential concern.\n\nAPPENDIX B — WEEKLY QUICK REFERENCE\n\nSTANDING EXPECTATIONS\n\n- Maintain standing daily protocol.\n- Complete weekly offering.\n- Complete at least three unprompted acts of service for wife.\n- Observe Friday Weekly Wife Day (WWD).\n- Complete Breaking & Mending.\n- Complete assigned weekly tasks.\n- Maintain family responsibilities.\n- Use Kneel for streamlined accountability where appropriate.\n\nALCOHOL\n\n- Maximum 8 units per week.\n- Maintain 2 consecutive alcohol-free days.\n- Maximum 2 units when alone.\n- Those 2 units must span at least 2 hours.\n- Maximum 4 units per social occurrence.\n- Maximum 2 hard-liquor units during an ordinary social occurrence.\n- Alcohol begins no earlier than 5:00 PM local time unless permission is granted.\n- Special drinks require prior permission.\n- Tiki, Grand Marnier/Grand-style, doubles, multi-spirit, oversized, high-proof, or uncertain drinks require permission.\n- Photograph each alcoholic drink in Kneel when reasonably possible.\n- Include a hand gesture showing the sequential drink count.\n- Track actual alcohol units separately from photograph count.\n- Raise foreseeable special-event exceptions at least two weeks in advance.\n- Remaining allowance is never a requirement or invitation to drink.\n- Emotional numbing overrides remaining allowance: stop rather than continue.\n- No numerical allowance overrides safety.\n\nWEEKLY REVIEW\n\n- Provide weekly availability and relevant planning considerations.\n- {{coach_name}} determines or approves the review slot.\n- Respect time-zone, work, family, household, sleep, and relationship considerations.\n- Prepare the weekly review.\n\nReview:\n\nWIN — What improved?\n\nMISS — What was failed, avoided, delayed, neglected, or overthought?\n\nEVIDENCE — What observable result supports the assessment?\n\nPATTERN — What behavior repeated itself?\n\nSERVICE — How was {{coach_name}}'s life made easier without instruction?\n\nCAPACITY — What can now be carried with less supervision?\n\nCORRECTION — What behavior must change?\n\nREQUEST — What legitimately requires clarification, renegotiation, or support?\n\nReceive weekly designation:\n\n- GREEN — ADVANCE\n- YELLOW — DEVELOP\n- RED — HOLD\n\nReceive the next developmental focus and complete any assigned reward or correction.\n\nWEEKEND STANDARD\n\n- Family presence may take priority over unnecessary structured tracking.\n- Standing expectations remain in effect.\n- Naturalized routines may use simplified Kneel accountability.\n- Out-of-the-norm expectations should be discussed and planned.\n- Travel or meaningful unavailability should be communicated in advance when reasonably possible.\n\nUNAVAILABILITY\n\nFormal notice is primarily expected for:\n\n- Multiple days of limited availability.\n- Travel or trips.\n- Material interruption to normal communication.\n- Significant departures from the usual communication pattern.\n\nOrdinary:\n\n- Work\n- Sleep\n- Family time\n- Time-zone differences\n- Routine asynchronous silence\n\ndo not require repeated formal notices.\n\nThe purpose is:\n\nPlanning and connection, not surveillance.\n\n##\nYou deserve to be seen and loved, {{coachee_name}}. And so you are, my {{coachee_name}}. August 19, 2026",
+      "char_count": 7927
+    }
+  ],
+  "sample_tasks": [
+    {
+      "title": "Bending & Mending Exercise",
+      "description_template": "A LOVE NOTE TO YOURSELF\n\nYour assignment is to write a love note to yourself, handwritten. Post as photo here.\n\nNot to the man you are trying to become.\nNot to the submissive you think {{coach_name}} wants.\nNot to your accomplishments.\n\nTo you, exactly as you are today.\n\nWrite about:\n\n• What you genuinely like about yourself\n• What you are proud of surviving or becoming\n• Parts of yourself you are too quick to criticize\n• What you deserve more patience or forgiveness for\n• What makes you worthy of being known, loved, and cared for\n• Something you wish you believed about yourself more easily\n\nDo not turn this into an evaluation.\n\nDo not explain your flaws.\nDo not qualify every compliment.\nDo not follow something kind with “but.”\n\nWrite to yourself the way you would write to someone you deeply love.\n\nEnd with:\n\n“I do not have to earn my right to be proud of who I am.”\n\nRead it once without correcting it.\n\nThen leave it alone.",
+      "recurrence": "once",
+      "suggested_proof_pct": 100,
+      "source_proof_mode": "required",
+      "suggested_points": 1,
+      "suggested_miss_penalty": 10,
+      "linked_contract_sections": [
+        8,
+        15
+      ]
+    },
+    {
+      "title": "Morning Acknowledgment",
+      "description_template": "Begin the day by deliberately acknowledging your chosen submission to {{coach_name}}. Bow. Center yourself. Think intentionally of {{coach_name}} and extend a positive intention toward her, then toward yourself as a capable and valued submissive.\nYou are not beginning the day waiting to be managed. You are beginning prepared to conduct yourself according to the standard you have accepted.\nComplete when: you have acknowledged your submission, centered yourself, and intentionally entered the day under protocol.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 1,
+      "suggested_miss_penalty": 1,
+      "linked_contract_sections": [
+        1,
+        3,
+        5
+      ]
+    },
+    {
+      "title": "Present Yourself Properly",
+      "description_template": "Complete your hygiene and grooming. Dress deliberately and maintain an appropriate standard of presentation throughout the day.\nObserve {{coach_name}}’s established color protocol. Wear or carry your approved symbol of belonging unless doing so would be unsafe or legitimately inappropriate.\nStandard: Your presentation should demonstrate self-respect, discipline, and awareness that you represent more than your immediate mood.",
+      "recurrence": "once",
+      "suggested_proof_pct": 100,
+      "source_proof_mode": "required",
+      "suggested_points": 1,
+      "suggested_miss_penalty": 1,
+      "linked_contract_sections": [
+        1,
+        3,
+        8
+      ]
+    },
+    {
+      "title": "Bed & Environment Standard",
+      "description_template": "Ensure the bed is properly made during the day according to the realities of your household schedule.\nDo not interpret flexibility as permission for carelessness.\nTake reasonable responsibility for your immediate environment. If something obviously needs your attention and is yours to handle, handle it.\nComplete when: your basic environment reflects deliberate care rather than neglect.",
+      "recurrence": "once",
+      "suggested_proof_pct": 100,
+      "source_proof_mode": "required",
+      "suggested_points": 1,
+      "suggested_miss_penalty": 1,
+      "linked_contract_sections": [
+        5
+      ]
+    },
+    {
+      "title": "Review Your Protocols & Obligations",
+      "description_template": "Review Kneel, your schedule, current assignments, and known responsibilities.\nKnow:\nWhat {{coach_name}} expects from you.\nWhat your work requires.\nWhat your family requires.\nWhat you have already committed to.\nWhat needs preparation before it becomes urgent.\nDo not require {{coach_name}} to remind you of information already available to you.\nComplete when: you know what is expected and have a reasonable plan to execute it.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 10,
+      "suggested_miss_penalty": 10,
+      "linked_contract_sections": [
+        7,
+        9
+      ]
+    },
+    {
+      "title": "Physical Discipline",
+      "description_template": "Complete the workout, movement, conditioning, mobility, or physical activity required for the day.\nApproach physical training as practice in consistency and embodied discipline—not merely exercise when motivation happens to appear.\nIf a legitimate limitation prevents completion, communicate it rather than silently abandoning the expectation.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 1,
+      "suggested_miss_penalty": 1,
+      "linked_contract_sections": [
+        14
+      ]
+    },
+    {
+      "title": "Execute Before You Overthink",
+      "description_template": "Apply {{coachee_archetype}} Protocol whenever necessary:\nRECEIVE → CLARIFY → DECIDE → EXECUTE → REPORT → RELEASE\nAsk only the questions genuinely necessary to proceed safely and competently.\nDo not disguise reassurance-seeking as clarification.\nDo not reopen a completed decision because uncertainty remains.\nDo not confuse perfect certainty with sufficient information.\nYour standard is competent execution.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 10,
+      "suggested_miss_penalty": 10,
+      "linked_contract_sections": [
+        7
+      ]
+    },
+    {
+      "title": "Professional Competence",
+      "description_template": "Meet your professional responsibilities with discipline.\nBe prepared. Follow through. Communicate appropriately. Handle preventable problems before they require rescue.\nSubmission to {{coach_name}} should make you more competent in the rest of your life, not less.\nComplete when: you have responsibly handled what your professional role required from you today.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 1,
+      "suggested_miss_penalty": 1,
+      "linked_contract_sections": [
+        8
+      ]
+    },
+    {
+      "title": "Family Responsibility",
+      "description_template": "Be meaningfully present with your wife and family.\nListen. Communicate. Participate. Help. Notice what needs doing.\nDo not wait to be managed at home when you are capable of recognizing a need yourself.\nLook specifically for opportunities to reduce rather than increase household mental load.\nYour submission never excuses neglect of the people who depend upon you.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 10,
+      "suggested_miss_penalty": 10,
+      "linked_contract_sections": [
+        8,
+        9
+      ]
+    },
+    {
+      "title": "Serve {{coach_name}} Without Being Asked",
+      "description_template": "Ask:\n“What can I reasonably do today to make {{coach_name}}’s life easier?”\nThen pay attention.\nService may be practical, administrative, thoughtful, creative, informational, organizational, or personal.\nNot every act of service requires permission. If something is clearly helpful, appropriate, within your ability, and carries no meaningful risk or consequence, use judgment.\nThe goal is not:\n“Tell me how to serve you.”\nThe developing standard is:\n“{{coach_name}}, I noticed this needed attention or was mentioned, so I handled it.”",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 10,
+      "suggested_miss_penalty": 10,
+      "linked_contract_sections": [
+        8
+      ]
+    },
+    {
+      "title": "Practice Anticipation",
+      "description_template": "Notice one thing before someone has to tell you.\nIt may concern {{coach_name}}, your household, work, family, an assignment, an upcoming obligation, or something you previously learned.\nYou do not necessarily need to act on everything you notice.\nThe task is to practice seeing beyond the instruction immediately in front of you.\nNotice → assess → act appropriately.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 1,
+      "suggested_miss_penalty": 1,
+      "linked_contract_sections": [
+        8,
+        9
+      ]
+    },
+    {
+      "title": "Communicate Blockages Early",
+      "description_template": "If something threatens an expectation, assignment, commitment, or deadline, communicate while the information is still useful.\nDo not wait until failure to explain why failure occurred.\nA proper blockage report is concise:\nWhat happened.\nWhat it affects.\nWhat you have already done about it.\nWhat you need, if anything.\n{{coach_name}} should not have to extract necessary information from you.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 10,
+      "suggested_miss_penalty": 10,
+      "linked_contract_sections": [
+        4
+      ]
+    },
+    {
+      "title": "Practice Gentlemanly Conduct",
+      "description_template": "Maintain the communication and behavioral standard expected of you.\nBe courteous. Clear. Composed. Deliberate.\nAddress your Dominant appropriately when under protocol.\nDo not become careless simply because communication is casual or asynchronous.\nIf {{coach_name}} says “Protocol.”, immediately restore the expected level of formality.\nIf {{coach_name}} says “Speak freely.”, you may relax formal presentation without abandoning honesty or respect.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 1,
+      "suggested_miss_penalty": 1,
+      "linked_contract_sections": [
+        1,
+        3
+      ]
+    },
+    {
+      "title": "Protect {{coach_name}}'s Time",
+      "description_template": "Before bringing something to {{coach_name}}, ask:\nHave I already been given the answer?\nCan I reasonably solve this myself?\nAm I asking for direction or reassurance?\nDoes {{coach_name}} actually need to handle this?\nBring her what genuinely requires her authority, judgment, knowledge, or attention.\nHandle what belongs in your own hands.\nHigh protocol should reduce unnecessary mental load on your Dominant as your competence develops. Your emotional or physical needs are not a burden, and should be communicated versus ignored - neglect of yourself is not applicable.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 1,
+      "suggested_miss_penalty": 1,
+      "linked_contract_sections": [
+        8
+      ]
+    },
+    {
+      "title": "Complete Assigned Service & Training",
+      "description_template": "Complete all tasks, assignments, training, service, or other obligations {{coach_name}} has placed in Kneel for the day.\nRead instructions fully before asking questions.\nIf clarification is genuinely necessary, ask it.\nIf it is not necessary:\nExecute.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 10,
+      "suggested_miss_penalty": 10,
+      "linked_contract_sections": []
+    },
+    {
+      "title": "Daily Poetry or Journal",
+      "description_template": "Contribute one original entry to your Poetry/Journal space.\nIt may be a poem or journal entry.\nTheme may be provided. Rating or acknowledgement will be provided daily \nUse the space to develop consistency, creativity, vulnerability, self-awareness, and your ability to communicate what exists beneath analysis.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 10,
+      "suggested_miss_penalty": 10,
+      "linked_contract_sections": [
+        10
+      ]
+    },
+    {
+      "title": "Submit Daily Report",
+      "description_template": "Complete your Daily Report to {{coach_name}}.\nBe accurate. Be concise. Be honest.\nDo not write what you believe {{coach_name}} wants to hear.\nDo not hide something because you believe it reflects poorly on you.\nDo not turn a simple answer into an essay to control how it will be interpreted.\nYour report gives {{coach_name}} visibility.\nGive her truth, not presentation.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 10,
+      "suggested_miss_penalty": 10,
+      "linked_contract_sections": [
+        12,
+        18
+      ]
+    },
+    {
+      "title": "Friday Wife Day (FWD)",
+      "description_template": "Protect meaningful, intentional time with your wife each Friday.\n\nBe present and invest in the relationship rather than simply sharing the same space. You are required to be an active planner and participant, allowing her to feel seen/loved/wanted/appreciated/necessary/respected.\n\nIf Friday is legitimately unavailable, communicate the conflict and intentionally reschedule.",
+      "recurrence": "once",
+      "suggested_proof_pct": 100,
+      "source_proof_mode": "required",
+      "suggested_points": 10,
+      "suggested_miss_penalty": 10,
+      "linked_contract_sections": [
+        8,
+        9
+      ]
+    },
+    {
+      "title": "3 Acts of Weekly Service for Wife",
+      "description_template": "Complete at least three unprompted acts of service for your wife each week.\n\nPay attention to what makes her life easier and reduces her mental load. Do not wait to be asked for things you are capable of noticing yourself.",
+      "recurrence": "once",
+      "suggested_proof_pct": 100,
+      "source_proof_mode": "required",
+      "suggested_points": 10,
+      "suggested_miss_penalty": 10,
+      "linked_contract_sections": [
+        9
+      ]
+    },
+    {
+      "title": "Weekly Offering",
+      "description_template": "Select and provide at least one tangible weekly offering for {{coach_name}}. Choose thoughtfully and with increasing independence. The purpose is attention, consistency, reciprocal care, and recognition of the time, thought, structure, and energy {{coach_name}} invests in you.\n\nThis is not financial domination and should never create financial hardship.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 5,
+      "suggested_miss_penalty": 5,
+      "linked_contract_sections": [
+        12,
+        18
+      ]
+    },
+    {
+      "title": "Breaking & Mending Exercise",
+      "description_template": "Complete one Breaking & Mending exercise assigned or approved by {{coach_name}}. Exercise will be sent to you directly in Kneel and added to notes.\n\nIdentify the behavior, hesitation, avoidance, fear, excuse, or pattern being challenged.\n\nComplete the agreed safe physical or embodied component, then complete your Mending reflection and identify the behavior that replaces the old pattern.\n\nUnderstanding is insufficient. {{coach_name}} will judge the change by your conduct.",
+      "recurrence": "once",
+      "suggested_proof_pct": 100,
+      "source_proof_mode": "required",
+      "suggested_points": 1,
+      "suggested_miss_penalty": 10,
+      "linked_contract_sections": [
+        1,
+        3,
+        15
+      ]
+    },
+    {
+      "title": "Weekly Alcohol Review",
+      "description_template": "Review your alcohol use for the week.\n\nConfirm:\n• No more than 8 total units\n• At least 2 consecutive alcohol-free days\n• Alone/social limits were followed\n• Required permissions were obtained\n• Required accountability was provided\n• Alcohol was not intentionally used for emotional numbing or avoidance\n\nIf something was missed, report it honestly in notes of the weekly recap. {{coach_name}} will track you success daily.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 1,
+      "suggested_miss_penalty": 1,
+      "linked_contract_sections": [
+        7,
+        11
+      ]
+    },
+    {
+      "title": "Daily Alcohol Protocol",
+      "description_template": "Are you following appropriate daily alcohol consumption? If not, please ensure you communicate directly in your daily reflections.",
+      "recurrence": "once",
+      "suggested_proof_pct": 35,
+      "source_proof_mode": "optional",
+      "suggested_points": 1,
+      "suggested_miss_penalty": 1,
+      "linked_contract_sections": [
+        11
+      ]
+    }
+  ]
+}

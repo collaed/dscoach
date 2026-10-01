@@ -118,7 +118,7 @@
 |---|---------|--------|-------------|------------|
 | R22 | Digital contract signatures | 🔴 | Both coach and coachee must "sign" (click + timestamp + IP) for a contract to become active. Visual signature block with date. Unsigned contracts shown as "draft". Builds on existing `contract_history`. | R2 (Bilateral contract editing) |
 | R23 | Contract renewal & expiration | 🔴 | Contracts have an optional `expires_at` date. 7 days before expiry, both parties receive a notification (in-app). Coach can renew (creates new version) or let expire (coachee status → paused). | R2, R22 |
-| R24 | Points & rewards redemption | 🟡 | Formalize the implicit grading system into explicit points. Tasks award points based on grade (A=10, B=8, C=6, D=4, F=0). Coach defines a reward catalog (custom rewards with point costs). Coachee can "redeem" — coach approves. New tables: `reward_catalog`, `reward_redemption`. | Existing grading system |
+| R24 | Points & rewards redemption | 🟡 | Formalize the implicit grading system into explicit points. Tasks award points based on grade (A=10, B=8, C=6, D=4, F=0). Coach defines a reward catalog (custom rewards with point costs). Coachee can "redeem" — coach approves. New tables: `reward_catalog`, `reward_redemption`. **Note:** the *persisted daily score* half of this idea is now split out as R49 (see `plan-proof-and-scoring.md`); R24 should spend the R49 score as currency via R51. | Existing grading system; R49, R51 |
 
 ### Priority 9 — Privacy & Stealth (inspired by Kneel)
 
@@ -172,6 +172,40 @@
 | R45 | Compound/multi-phase tasks | 🔴 | A task that requires multiple sequential steps to complete. Coach defines phases (e.g. Phase 1: Physical exercise with timer, Phase 2: Written reflection, Phase 3: Evidence of change). Coachee must complete each phase in order. Each phase can require different proof types (photo, video, text, timer completion). New table: `task_phase` (id, template_id, phase_number, title, description, proof_type [text/photo/video/timer], duration_min, required). "Breaking & Mending" is a compound task with 2 phases: physical discipline + structured reflection. | Existing `task_template`, `task_assignment` |
 | R46 | Communication priority/category | 🔴 | Notes sent between coach and coachee carry a priority level: immediate (safety/consent), daily (check-ins/completions), weekly (patterns/reflection), monthly (evaluation/renegotiation). Add `priority` column to `note` table. Dashboard groups notes by priority. Coach can filter. Coachee trained to self-categorize when sending. Reduces noise and teaches communication discipline (directly implements §5 of the protocol). | Existing `note` system |
 | R47 | Unavailability protocol | 🔴 | Coachee can declare unavailability with an expected return time. Status shown on coach dashboard. During unavailability: rituals are paused (no miss detection), tasks freeze, but the record shows the absence. Coach can also declare unavailability (async-first principle). New fields on coachee: `unavailable_since`, `unavailable_until`, `unavailable_note`. Route: `POST /me/unavailable` and `POST /me/available`. | Existing `coachee` status system |
+
+### Priority 15 — Adaptive Proof & Scoring (2026-09-30 planning batch)
+
+Full technical plan: [`plan-proof-and-scoring.md`](plan-proof-and-scoring.md).
+Distinct from R11 (which decides whether to *AI-check* an already-submitted
+photo) and from R24 (reward *redemption*).
+
+| # | Feature | Status | Description | Depends on |
+|---|---------|--------|-------------|------------|
+| R48 | Probabilistic proof demand | 🔴 | Per-template `proof_pct` (0–100). At assignment time the system rolls once and persists `task_assignment.proof_required`. When required, the coachee must attach a photo; completion without one is rejected. Reduces coach review load and coachee friction on recurring tasks while keeping accountability credible (intermittent verification). Rolls on every assignment path (manual, recurring, reserve, week-plan, onboarding). | Existing `task_template`, `_auto_assign_reserves`, `complete_task`; composes with R11 |
+| R49 | Points & persisted daily score | 🔴 | Per-template signed `points`. New append-only `score_log` table records every delta with a coachee-local `score_date`. Completing awards points; missing deducts a configurable penalty; a required-proof completion can add a `proof_bonus`. Rollups: today, per-week (Sun–Sat *and* Mon–Sun, per preference), per-month, all-time, best-week. All rollup SQL portable; week bucketing done in Python. Coachee sees score widget; coach sees line-item history. | Existing grading/streak patterns; feeds R24 later |
+| R50 | FetLife-inspired `noir` theme | 🔴 | Opt-in `theme-noir` body class + branding preset: warm near-black surfaces, single crimson accent, calm grey text hierarchy, flatter elevation. Design **tokens** derived from public palette, not copied CSS (see [`plan-aesthetic-noir.md`](plan-aesthetic-noir.md) for legal position). Targets the FetLife user base without using their marks/assets. | Existing `style.css` token system, `font_pref` pattern, `coach_branding` |
+| R51 | R24 ↔ R49 integration (reward currency) | 🔴 | Once R49 ships, R24's reward redemption spends the R49 running score as its point currency instead of a re-derived grade sum. Redemptions append a negative `score_log` row (`reason='reward_redeemed'`). **Balance rule:** redemption is balance-checked by default (cannot redeem below zero); "debt"/negative balance is explicitly out of scope. | R24, R49 |
+| R52 | Section-based contract drafting | 🔴 | Coach drafts a contract by picking/arranging pre-written **contract sections** (library of clauses, system-default + per-coach), editing the assembled free text, which saves to `contract_text`/`contract_history` unchanged. Each section is associated with **sample task templates** (incl. R48 `proof_pct` / R49 `points` hints) the coach can create/assign on save — so the agreement and the operational tasks are authored together. Starter library extracted from a real 20-section contract + 23 real tasks (name-genericized; see `contract-library-seed.json`), not invented. New tables `contract_section`, `contract_section_task`. Propose/negotiate/sign reuses R2's `contract_proposal` (+1 `proposed_by` column) and R22's `contract_signature` rather than new tables. Full plan: [`plan-contract-drafting.md`](plan-contract-drafting.md). | Existing `contract_history`, `_merge_vars`, `task_template`; composes under R2/R22/R23 |
+
+### Harvested items — ideas/bugs that had slipped off the roadmap (2026-09-30 audit)
+
+These were found by re-reading all devdocs + BUGS.md and are re-surfaced here so
+they are not lost. Bugs are tracked in `BUGS.md`; listed here for planning
+visibility.
+
+| # | Type | Status | Description | Source |
+|---|------|--------|-------------|--------|
+| H1 | data-integrity bug | 🔴 | **BUG-017** — `admin_delete_coach` cascade does not clean 11 newer tables (`badge`, `ritual`, `ritual_log`, `auto_rule`, `week_plan`, `onboarding_step`, `payment_plan`, `payment_log`, `creative_collection`, `creative_constraint`, `creative_work`); deleting a coach orphans rows. Should be fixed before shipping more coach-scoped features. | BUGS.md BUG-017 |
+| H2 | correctness | 🔴 | Auto-grade heuristic produces only **A–D by response length**, but the documented scale is **A–F** and length rewards verbosity, not quality. Gameable. Candidate to fold into R6 (LLM auto-rating) or replace with a rubric. | routes_coachee.py `complete_task`; onboarding.md grading scale |
+| H3 | observability | 🔴 | **BUG-005 / BUG-006 / BUG-015** — silent `except Exception: pass` in `_audit`, cascade delete, and `init_db`. At minimum log to stderr so failures are visible. | BUGS.md |
+| H4 | config | 🔴 | **BUG-007** — hardcoded `papillon.severin@gmail.com` in `login.html` forgot-password. Make per-deployment configurable or remove. | BUGS.md, login.html:33 |
+| H5 | robustness | 🔴 | **BUG-010** — no input length validation; oversized form values can exceed VARCHAR limits (truncation or DB error). Add length guards on write paths. | BUGS.md |
+| H6 | performance | 🔴 | **BUG-011** — `_auto_assign_reserves` + freeze/streak all run on **every** `GET /me` (N+1). Acceptable now; revisit if multi-coachee scale grows. | BUGS.md, tasks.py |
+| H7 | robustness | 🔴 | **BUG-009** — login flow can `fetchone()` a `None` coach if the coach is deleted mid-session (race). Guard the None. | BUGS.md |
+| H8 | doc drift | 🔴 | `src/models.py` docstring says "20 tables" but 30 are defined (31 after R48/R49). Fix as part of Step 1. | models.py |
+| H9 | video proof | 🟡 | Video-as-proof (MediaRecorder, 30 MB, webm, multipart upload, `/attachment/video/<id>`) is fully specified under **R32** but not built. Relevant to R48 (a required proof could be a short video for positions). | roadmap.md R32 notes |
+| H10 | **security (safety-critical)** | 🟢 | **BUG-018** — `{{ csrf_field() }}` rendered outside `<form>` in 7 templates → token not submitted → POST 403 under server-side CSRF. Broke the coachee **safe-word / STOP** buttons among others. Found by maintainer review + 2 extra by the new generic test. **Fixed in this PR** (csrf_field moved inside each form; `tests/test_csrf_placement.py` added, scans all templates). | maintainer review; BUG-018 |
+| H11 | security | 🔴 | **BUG-019** — `llm_key` and Telegram `tg_token` embedded in client-side JS (`coach_view_coachee.html`) and Telegram API called from the browser; secrets visible in page source. Move to a server-side proxy route. | maintainer review; BUG-019 |
 
 ---
 
@@ -351,7 +385,7 @@ These features from the community feedback are already in the product:
 - **Upload method**: switch from base64-in-form to multipart file upload (`enctype="multipart/form-data"`) for video. Keep base64 for photos (backward compat).
 - **Schema**: add `attachment_type` column to distinguish photo/video (or infer from file extension)
 - **Compression**: client-side recording at 720p, 1Mbps bitrate cap. No server-side transcoding (zero dependencies principle).
-- **Wasmer consideration**: single_concurrency means a large upload blocks other requests. Acceptable for now since it's a single-user coaching app. If problematic later, add chunked upload or external storage.
+- **Concurrency note**: a large upload blocks other requests in the single-process Flask container. Acceptable for now since it's a single-user coaching app. If problematic later, add chunked upload or external storage.
 
 ### R33 — Positional commands vocabulary
 

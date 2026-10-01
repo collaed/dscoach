@@ -4,11 +4,17 @@ from datetime import date, datetime
 
 from helpers import db, utcnow
 
-_merge_cache = {}  # coachee_id -> (timestamp, vars_dict) — cache per request cycle
+_merge_cache: dict[
+    int, tuple[int, dict[str, str]]
+] = {}  # coachee_id -> (timestamp, vars_dict) — cache per request cycle
 
 
 def _get_merge_context(coachee_id):
-    """Build the merge variable context for a coachee. Cached per coachee_id within a request."""
+    """PURPOSE: Build the mail-merge variable dict for a coachee (name, streak, level, grade_avg,
+    days_active, strikes, date, avatar, safe_word, etc.), cached per coachee within a request.
+    CALLED BY / SCREEN: _merge_vars() here and automation.py — feeds coachee dashboard/tasks/notes/
+    conditioning/rituals text (/me screens) and coach automation actions.
+    WHEN: on first merge for a coachee during a request (e.g. coachee dashboard load, task render)."""
     now_ts = int(utcnow().timestamp())
     cached = _merge_cache.get(coachee_id)
     if cached and cached[0] == now_ts:
@@ -49,8 +55,12 @@ def _get_merge_context(coachee_id):
     # Level
     best_streak = max(row.get("current_streak") or 0, row.get("best_streak") or 0)
     levels = [
-        ("Initiate", 0), ("Dedicated", 7), ("Disciplined", 14),
-        ("Devoted", 30), ("Exemplary", 60), ("Transcendent", 90),
+        ("Initiate", 0),
+        ("Dedicated", 7),
+        ("Disciplined", 14),
+        ("Devoted", 30),
+        ("Exemplary", 60),
+        ("Transcendent", 90),
     ]
     level_name = "Initiate"
     for name, threshold in levels:
@@ -76,7 +86,10 @@ def _get_merge_context(coachee_id):
 
 
 def _merge_vars(text, coachee_id):
-    """Replace {{variable}} placeholders in text with coachee context values."""
+    """PURPOSE: Replace {{variable}} placeholders in text with the coachee's merge-context values.
+    CALLED BY / SCREEN: routes_coachee.py (conditioning, notes, rituals on /me dashboard),
+    tasks.py (task title/desc, onboarding notes), automation.py (auto-note/rule action text).
+    WHEN: on render of coachee-facing text (dashboard/tasks load) and when automations fire."""
     if not text or "{{" not in text:
         return text
     ctx = _get_merge_context(coachee_id)

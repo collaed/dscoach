@@ -1,6 +1,6 @@
-# Coaching Relationship Management System
+# DSCoaching — Coaching Relationship Management System
 
-A 1-coach-to-many-coachees system deployable on Wasmer Edge with MySQL.
+A 1-coach-to-many-coachees system deployed on Docker (ecb.pm) with PostgreSQL.
 
 ## Features
 
@@ -14,53 +14,42 @@ A 1-coach-to-many-coachees system deployable on Wasmer Edge with MySQL.
 - **Safe word / pause**: coachee can trigger pause or full stop
 - **Tracking**: food, hydration, alcohol, exercise, emotional regulation
 - **Notes**: async bidirectional communication
+- **Feature flags**: 10 toggleable features per coach/coachee
+- **i18n**: English and French (session-based)
 
 ## Local Development
 
 ```bash
-# Create venv and install deps
-python -m venv .env
-source .env/bin/activate
-pip install -r requirements.txt
-
-# You need a local MySQL running. Set env vars:
-export DB_HOST=127.0.0.1
-export DB_PORT=3306
-export DB_USERNAME=root
-export DB_PASSWORD=yourpassword
-export DB_NAME=coaching
-
-# Run
+# SQLite (no external DB needed)
+export DB_ENGINE=sqlite SECRET_KEY=dev
 flask --app src/app run --debug --no-reload
 ```
 
 Then visit http://127.0.0.1:5000/setup to create the coach account.
 
-## Deploy to Wasmer Edge
-
 ```bash
-# Install wasmer CLI: https://docs.wasmer.io/install
-wasmer login
-
-# Set up python venv for wasmer packaging
-python -m venv .env
-source .env/bin/activate
-pip install -r requirements.txt
-
-# Deploy (will auto-provision MySQL)
-wasmer deploy
+# Or with PostgreSQL via Docker Compose
+docker-compose up
+# Visit http://localhost:8080
 ```
 
-The app will be available at `https://coaching-system-<owner>.wasmer.app`.
+## Production
 
-Visit `/setup` on first deploy to create the coach account.
+Deployed at `https://dscoaching.ecb.pm/` — Docker container on ecb.pm behind Caddy, backed by PostgreSQL 16.
+
+```bash
+# Automated: push to main → CI quality gates → manual approval → SSH deploy
+git push origin main
+
+# Manual deploy: see devdocs/deployment.md
+```
 
 ## Architecture
 
-- **Backend**: Python / Flask
-- **Database**: MySQL (auto-provisioned by Wasmer Edge)
+- **Backend**: Python 3.12 / Flask 3.1.3
+- **Database**: PostgreSQL 16 (production), SQLite (tests)
 - **Frontend**: Server-rendered HTML with Jinja2 templates
-- **Deployment**: Wasmer Edge (WASI/WASIX Python runtime)
+- **Deployment**: Docker on ecb.pm, Caddy reverse proxy, CI via GitHub Actions
 
 ## Data Model
 

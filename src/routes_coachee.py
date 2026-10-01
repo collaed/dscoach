@@ -6,12 +6,9 @@ import os
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from flask import Blueprint, Response, abort, flash, redirect, render_template_string, request, session, url_for
-
 from auth import login_required
 from automation import (
     _check_and_award_badges,
-    _completion_hours,
     _compute_level,
     _get_badges,
     _get_rituals,
@@ -20,17 +17,27 @@ from automation import (
     _run_auto_rules,
     _weekly_report,
 )
+from flask import Blueprint, Response, abort, flash, redirect, render_template_string, request, session, url_for
 from helpers import ATTACHMENTS_DIR, _tpl, db, ensure_aware, utcnow
 from merge import _merge_vars
-from tasks import FEATURES, _auto_assign_reserves, _features_for, _freeze_overdue, _run_onboarding, _update_streak, _visible_tasks
+from tasks import (
+    _auto_assign_reserves,
+    _features_for,
+    _freeze_overdue,
+    _run_onboarding,
+    _update_streak,
+    _visible_tasks,
+)
 
 bp = Blueprint("coachee", __name__)
-
 
 
 @bp.route("/me")
 @login_required("coachee")
 def coachee_dashboard():
+    """PURPOSE: Assemble the coachee home screen — auto-assign reserves, freeze overdue, update streak, award badges, run onboarding, then gather tasks, conditioning, check-ins, acks, notes, tracking, goals, journals, voice notes, photos, rituals and writing stats.
+    CALLED BY: Route GET /me — renders coachee_dashboard.html; primary redirect target after coachee login and most /me* POST handlers.
+    WHEN: On every coachee dashboard load."""
     c = db()
     cid = session["user_id"]
     c.execute("SELECT * FROM coachee WHERE id=%s", (cid,))
@@ -63,6 +70,7 @@ def coachee_dashboard():
     created = coachee.get("created_at")
     if created:
         from datetime import date as _date
+
         if isinstance(created, str):
             try:
                 created_date = datetime.fromisoformat(created.split(" ")[0]).date()
@@ -141,9 +149,7 @@ def coachee_dashboard():
     # Creative writing stats for dashboard
     c.execute("SELECT COUNT(*) as cnt FROM creative_work WHERE coachee_id=%s", (cid,))
     writing_count = c.fetchone()["cnt"]
-    c.execute(
-        "SELECT COUNT(*) as cnt FROM creative_constraint WHERE coachee_id=%s AND used=0", (cid,)
-    )
+    c.execute("SELECT COUNT(*) as cnt FROM creative_constraint WHERE coachee_id=%s AND used=0", (cid,))
     writing_pending_constraints = c.fetchone()["cnt"]
 
     return render_template_string(
@@ -166,7 +172,10 @@ def coachee_dashboard():
         earned_badges=_get_badges(cid),
         mood_data=_mood_sparkline(cid),
         level_info=_compute_level(cid, coachee["coach_id"]),
-        rituals=[{**r, "description": _merge_vars(r.get("description", ""), cid)} for r in _get_rituals(cid, coachee["coach_id"])],
+        rituals=[
+            {**r, "description": _merge_vars(r.get("description", ""), cid)}
+            for r in _get_rituals(cid, coachee["coach_id"])
+        ],
         rituals_done=_ritual_status_today(cid, _get_rituals(cid, coachee["coach_id"]), local_today),
         local_today=local_today,
         writing_count=writing_count,
@@ -174,10 +183,12 @@ def coachee_dashboard():
     )
 
 
-
 @bp.route("/me/checkin", methods=["POST"])
 @login_required("coachee")
 def submit_checkin():
+    """PURPOSE: Persist a morning/evening/weekly check-in (with optional mood) and fire the checkin_submitted automation rules.
+    CALLED BY: Route POST /me/checkin — check-in form on coachee_dashboard.html; redirects back to the coachee dashboard.
+    WHEN: On submitting a check-in."""
     c = db()
     mood = request.form.get("mood")
     if mood:
@@ -204,8 +215,13 @@ def submit_checkin():
 @bp.route("/me/task/<int:tid>", methods=["POST"])
 @login_required("coachee")
 def complete_task(tid):
+    """PURPOSE: Record a coachee's task response (status, text, optional image attachment, reflection), then run automation rules, optional AI photo validation, and auto-grading.
+    CALLED BY: Route POST /me/task/<tid> — task submission form on coachee_dashboard.html; redirects back to the coachee dashboard.
+    WHEN: On submitting a task response."""
     c = db()
-    c.execute("SELECT frozen_after, template_id FROM task_assignment WHERE id=%s AND coachee_id=%s", (tid, session["user_id"]))
+    c.execute(
+        "SELECT frozen_after, template_id FROM task_assignment WHERE id=%s AND coachee_id=%s", (tid, session["user_id"])
+    )
     row = c.fetchone()
     if not row:
         return redirect(url_for("coachee.coachee_dashboard"))
@@ -281,10 +297,12 @@ def complete_task(tid):
     return redirect(url_for("coachee.coachee_dashboard"))
 
 
-
 @bp.route("/me/conditioning/<int:mid>", methods=["POST"])
 @login_required("coachee")
 def respond_conditioning(mid):
+    """PURPOSE: Store a coachee's response to a mental-conditioning prompt.
+    CALLED BY: Route POST /me/conditioning/<mid> — conditioning response form on coachee_dashboard.html; redirects back to the dashboard.
+    WHEN: On answering a daily conditioning prompt."""
     c = db()
     c.execute(
         "INSERT INTO mental_conditioning_response (conditioning_id, coachee_id, content) VALUES (%s,%s,%s)",
@@ -296,6 +314,9 @@ def respond_conditioning(mid):
 @bp.route("/me/tracking", methods=["POST"])
 @login_required("coachee")
 def submit_tracking():
+    """PURPOSE: Log a tracking entry (food/hydration/alcohol/exercise/emotional) for the coachee.
+    CALLED BY: Route POST /me/tracking — tracking form on coachee_dashboard.html; redirects back to the dashboard.
+    WHEN: On submitting a tracking entry."""
     c = db()
     c.execute(
         "INSERT INTO tracking_log (coachee_id, category, content) VALUES (%s,%s,%s)",
@@ -307,6 +328,9 @@ def submit_tracking():
 @bp.route("/me/note", methods=["POST"])
 @login_required("coachee")
 def coachee_add_note():
+    """PURPOSE: Post a note from the coachee to their coach (async bidirectional messaging).
+    CALLED BY: Route POST /me/note — note form on coachee_dashboard.html; redirects back to the dashboard.
+    WHEN: On sending a note to the coach."""
     c = db()
     c.execute(
         "INSERT INTO note (coachee_id, author_role, content) VALUES (%s,'coachee',%s)",
@@ -318,7 +342,11 @@ def coachee_add_note():
 @bp.route("/me/pause", methods=["POST"])
 @login_required("coachee")
 def trigger_pause():
+    """PURPOSE: Activate a pause/safe-word freeze for the coachee via the freeze service.
+    CALLED BY: Route POST /me/pause — pause/safe-word control on coachee_dashboard.html; redirects back to the dashboard.
+    WHEN: On the coachee triggering a pause or safe word."""
     from services.freeze import activate
+
     word = request.form.get("word", "pause")
     use_safeword = word.upper() == session.get("safe_word", "RED") or word.upper() == "RED"
     activate(session["user_id"], initiated_by="coachee", use_safeword=use_safeword)
@@ -328,6 +356,9 @@ def trigger_pause():
 @bp.route("/me/history")
 @login_required("coachee")
 def coachee_history():
+    """PURPOSE: Gather the coachee's recent check-ins, tracking logs and notes (last 50 each) for review.
+    CALLED BY: Route GET /me/history — renders coachee_history.html, the coachee history screen.
+    WHEN: On opening the coachee history screen."""
     c = db()
     cid = session["user_id"]
     c.execute("SELECT * FROM checkin WHERE coachee_id=%s ORDER BY created_at DESC LIMIT 50", (cid,))
@@ -339,10 +370,12 @@ def coachee_history():
     return render_template_string(_tpl("coachee_history.html"), checkins=checkins, logs=logs, notes=notes)
 
 
-
 @bp.route("/me/voice", methods=["POST"])
 @login_required("coachee")
 def coachee_voice_note():
+    """PURPOSE: Decode a base64 audio recording, save it to attachments, and record a coachee voice note with duration.
+    CALLED BY: Route POST /me/voice — voice-recorder control on coachee_dashboard.html; redirects back to the dashboard.
+    WHEN: On submitting a recorded voice note."""
     c = db()
     audio = request.form.get("audio_data")
     if audio and audio.startswith("data:audio"):
@@ -360,6 +393,9 @@ def coachee_voice_note():
 
 @bp.route("/voice/<int:vid>")
 def serve_voice(vid):
+    """PURPOSE: Stream a stored voice-note audio file, enforcing that a coachee may only fetch their own; coaches allowed.
+    CALLED BY: Route GET /voice/<vid> — <audio> src references in coachee_dashboard.html and coach_view_coachee.html; requires a session.
+    WHEN: On the browser loading/playing a voice note."""
     if "user_id" not in session:
         return redirect(url_for("auth.login"))
     c = db()
@@ -380,6 +416,9 @@ def serve_voice(vid):
 @bp.route("/me/goal", methods=["POST"])
 @login_required("coachee")
 def propose_goal():
+    """PURPOSE: Create a coachee-proposed goal (enters the coach approval workflow in status 'proposed').
+    CALLED BY: Route POST /me/goal — goal proposal form on coachee_dashboard.html; redirects back to the dashboard.
+    WHEN: On proposing a new goal."""
     c = db()
     c.execute(
         "INSERT INTO goal (coachee_id, title, description) VALUES (%s,%s,%s)",
@@ -391,6 +430,9 @@ def propose_goal():
 @bp.route("/me/journal", methods=["POST"])
 @login_required("coachee")
 def add_journal():
+    """PURPOSE: Save a coachee journal entry, flagged private or visible to the coach.
+    CALLED BY: Route POST /me/journal — journal form on coachee_dashboard.html; redirects back to the dashboard.
+    WHEN: On saving a journal entry."""
     c = db()
     visible = 1 if request.form.get("visible_to_coach") else 0
     c.execute(
@@ -400,10 +442,12 @@ def add_journal():
     return redirect(url_for("coachee.coachee_dashboard"))
 
 
-
 @bp.route("/me/progress-photo", methods=["POST"])
 @login_required("coachee")
 def add_progress_photo():
+    """PURPOSE: Decode a base64 image, save it to attachments, and record a progress photo with caption.
+    CALLED BY: Route POST /me/progress-photo — progress-photo capture form on coachee_dashboard.html; redirects back to the dashboard.
+    WHEN: On uploading a progress photo."""
     img_data = request.form.get("photo_data")
     if img_data and img_data.startswith("data:image"):
         os.makedirs(ATTACHMENTS_DIR, exist_ok=True)
@@ -420,6 +464,9 @@ def add_progress_photo():
 
 @bp.route("/progress-photo/<int:pid>")
 def serve_progress_photo(pid):
+    """PURPOSE: Stream a stored progress-photo file, enforcing that a coachee may only fetch their own; coaches allowed.
+    CALLED BY: Route GET /progress-photo/<pid> — <img> src references in coachee_dashboard.html and coach_view_coachee.html; requires a session.
+    WHEN: On the browser loading a progress photo."""
     if "user_id" not in session:
         return redirect(url_for("auth.login"))
     c = db()
@@ -439,6 +486,9 @@ def serve_progress_photo(pid):
 
 @bp.route("/task/<int:tid>/attachment")
 def task_attachment(tid):
+    """PURPOSE: Stream a task's proof-image attachment, enforcing that a coachee may only fetch their own; coaches allowed.
+    CALLED BY: Route GET /task/<tid>/attachment — <img> src references in coachee_dashboard.html and coach_view_coachee.html; requires a session.
+    WHEN: On the browser loading a task attachment image."""
     if "user_id" not in session:
         return redirect(url_for("auth.login"))
     c = db()
@@ -459,6 +509,9 @@ def task_attachment(tid):
 @bp.route("/me/export")
 @login_required("coachee")
 def data_export():
+    """PURPOSE: Build a full JSON export of the coachee's own data (profile, check-ins, tasks, tracking, notes, acknowledgements) as a downloadable file.
+    CALLED BY: Route GET /me/export — data-export/download link on coachee screens; returns a JSON attachment.
+    WHEN: On requesting a personal data export."""
     c = db()
     cid = session["user_id"]
     data = {}
@@ -488,6 +541,9 @@ def data_export():
 @bp.route("/me/ritual/<int:rid>/complete", methods=["POST"])
 @login_required("coachee")
 def complete_ritual(rid):
+    """PURPOSE: Log completion of a ritual for today (idempotent — unique per ritual/coachee/day).
+    CALLED BY: Route POST /me/ritual/<rid>/complete — ritual completion buttons on coachee_dashboard.html; redirects back to the dashboard.
+    WHEN: On marking a ritual done for the day."""
     c = db()
     cid = session["user_id"]
     tz = ZoneInfo(session.get("timezone", "UTC"))
@@ -502,14 +558,15 @@ def complete_ritual(rid):
     return redirect(url_for("coachee.coachee_dashboard"))
 
 
-
 # ── Creative Writing ──
 
 
 @bp.route("/me/writing", methods=["GET"])
 @login_required("coachee")
 def writing_collection():
-    """View all creative works and active constraints."""
+    """PURPOSE: View all of the coachee's creative works, active (unused) constraints, and collections.
+    CALLED BY: Route GET /me/writing — renders writing.html, the coachee creative-writing screen.
+    WHEN: On opening the writing collection screen."""
     c = db()
     cid = session["user_id"]
     c.execute("SELECT * FROM creative_work WHERE coachee_id=%s ORDER BY created_at DESC", (cid,))
@@ -534,7 +591,9 @@ def writing_collection():
 @bp.route("/me/writing/submit", methods=["POST"])
 @login_required("coachee")
 def submit_work():
-    """Submit a new creative work (poem, journal entry)."""
+    """PURPOSE: Submit a new creative work (poem/prose/journal) with type/tags, optionally linked to a collection and marking its constraint used.
+    CALLED BY: Route POST /me/writing/submit — submission form on writing.html; redirects back to the writing collection screen.
+    WHEN: On submitting a creative work."""
     c = db()
     cid = session["user_id"]
     title = request.form.get("title", "").strip()
@@ -566,7 +625,9 @@ def submit_work():
 @bp.route("/me/writing/<int:wid>")
 @login_required("coachee")
 def view_work(wid):
-    """View a single creative work."""
+    """PURPOSE: View a single creative work owned by the coachee, plus its linked constraint if any.
+    CALLED BY: Route GET /me/writing/<wid> — renders writing_view.html; linked from work listings on writing.html.
+    WHEN: On opening an individual creative work."""
     c = db()
     cid = session["user_id"]
     c.execute("SELECT * FROM creative_work WHERE id=%s AND coachee_id=%s", (wid, cid))
@@ -583,5 +644,7 @@ def view_work(wid):
 @bp.route("/me/help")
 @login_required("coachee")
 def coachee_help():
-    """In-app navigation guide for coachees."""
+    """PURPOSE: Render the in-app navigation/help guide for coachees.
+    CALLED BY: Route GET /me/help — renders coachee_help.html, the coachee help screen (linked from dashboard nav).
+    WHEN: On opening the coachee help screen."""
     return render_template_string(_tpl("coachee_help.html"))

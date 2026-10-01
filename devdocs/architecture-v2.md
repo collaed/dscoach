@@ -163,7 +163,7 @@ Ces changements sont des **pré-requis** avant toute nouvelle feature.
 | Aspect | Détail |
 |--------|--------|
 | Hébergement | Hetzner VPS (ecb.pm), Docker |
-| DB | PostgreSQL 16 (container `postgres`, DB `coaching`, 27 tables) |
+| DB | PostgreSQL 16 (container `postgres`, DB `coaching`, 30 tables) |
 | App | Container `coaching` (Flask, port 8000) |
 | Proxy | Caddy (TLS, `coaching.ecb.pm`) |
 | Stockage | Filesystem local dans le container (à migrer) |
@@ -182,13 +182,13 @@ La Phase 1 (infrastructure) est déjà réalisée. La convergence se fait en **4
 
 ### Phase 1 — Infrastructure ✅ DÉJÀ EN PLACE
 
-**État constaté** : Wasmer est out. L'app tourne déjà sur ecb.pm.
+**État constaté** : L'app tourne sur ecb.pm (Docker + Caddy + PostgreSQL).
 
 | Composant | Status |
 |-----------|--------|
 | Hetzner VPS (ecb.pm) | ✅ En place |
 | PostgreSQL 16 (container `postgres`, réseau `db`) | ✅ En place |
-| DB `coaching` (27 tables, user `coaching`) | ✅ Données live |
+| DB `coaching` (30 tables, user `coaching`) | ✅ Données live |
 | Container `coaching` (port 8000) | ✅ En place |
 | Caddy reverse proxy | ✅ En place (`coaching.ecb.pm` → container) |
 | Redis | ❌ Non nécessaire (2 users) |

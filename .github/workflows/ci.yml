@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Ruff lint
+        run: ruff check src/ tests/
+
+      - name: Ruff format check
+        run: ruff format --check src/ tests/
+
+      - name: Bandit security scan
+        run: bandit -r src/ -x src/templates/,src/db.py,src/db_pg.py,src/server_docker.py -ll
+
+      - name: Mypy type check
+        run: mypy src/ --ignore-missing-imports --exclude 'db\.py|db_pg\.py|server_docker\.py'
+
+      - name: Run tests with coverage
+        env:
+          DB_ENGINE: sqlite
+          SECRET_KEY: ci-test-key
+        run: pytest --cov=src --cov-report=xml --cov-report=term
+
+      - name: Upload coverage to SonarCloud
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: SonarSource/sonarcloud-github-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  deploy:
+    needs: quality
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Build deploy tarball
+        run: |
+          tar czf /tmp/coaching-deploy.tar.gz \
+            --exclude='__pycache__' --exclude='*.pyc' \
+            Dockerfile src/ lib/ static/
+
+      - name: Upload and build image on ecb.pm
+        run: |
+          scp /tmp/coaching-deploy.tar.gz root@ecb.pm:/tmp/coaching-deploy.tar.gz
+          ssh root@ecb.pm "
+            mkdir -p /tmp/coaching-build &&
+            cd /tmp/coaching-build &&
+            tar xzf /tmp/coaching-deploy.tar.gz &&
+            docker build -t coaching-coaching . &&
+            rm -rf /tmp/coaching-build /tmp/coaching-deploy.tar.gz
+          "
+
+      - name: Deploy container
+        run: |
+          ssh root@ecb.pm '
+            docker stop coaching && docker rm coaching || true
+            docker run -d --name coaching \
+              --network db \
+              -e DB_ENGINE=postgresql \
+              -e DB_HOST=postgres \
+              -e DB_PORT=5432 \
+              -e DB_USERNAME=coaching \
+              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              -e DB_NAME=coaching \
+              -e SECRET_KEY=${{ secrets.SECRET_KEY }} \
+              -e PORT=8000 \
+              --restart unless-stopped \
+              coaching-coaching
+            docker network connect web coaching
+          '
+
+      - name: Health check
+        run: |
+          sleep 10
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://dscoaching.ecb.pm/login)
+          echo "Health check: HTTP $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            sleep 10
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://dscoaching.ecb.pm/login)
+            echo "Retry: HTTP $STATUS"
+          fi
+          [ "$STATUS" = "200" ] || exit 1

@@ -6,22 +6,25 @@ import os
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from flask import Blueprint, Response, abort, flash, redirect, render_template_string, request, session, url_for
-
 from ai import LLM_KEY, _build_profile_prompt, _cf_ai_complete
 from auth import login_required
 from automation import _completion_hours, _engagement_score, _payment_compliance, _weekly_report
-from helpers import ATTACHMENTS_DIR, _audit, _hash, _hash_password, _tpl, _verify_password, db, utcnow
+from flask import Blueprint, Response, abort, flash, redirect, render_template_string, request, session, url_for
+from helpers import ATTACHMENTS_DIR, _audit, _hash_password, _tpl, _verify_password, db, utcnow
 from merge import _merge_vars
-from tasks import FEATURES, _features_for
+from tasks import FEATURES
 
 bp = Blueprint("coach", __name__)
-
 
 
 @bp.route("/coach")
 @login_required("coach")
 def coach_dashboard():
+    """Build per-coachee stats (tasks, grades, streaks, engagement, payment compliance).
+
+    Route GET /coach — renders the coach dashboard screen (coach_dashboard.html).
+    When: on dashboard load, the coach's landing screen after login.
+    """
     c = db()
     c.execute("SELECT * FROM coachee WHERE coach_id=%s ORDER BY name", (session["user_id"],))
     coachees = c.fetchall()
@@ -54,9 +57,7 @@ def coach_dashboard():
         cc["checkins_today"] = c.fetchone()["cnt"]
         cc["engagement"] = _engagement_score(cc["id"])
         # Inactivity detection: days since last check-in
-        c.execute(
-            "SELECT MAX(created_at) as last_checkin FROM checkin WHERE coachee_id=%s", (cc["id"],)
-        )
+        c.execute("SELECT MAX(created_at) as last_checkin FROM checkin WHERE coachee_id=%s", (cc["id"],))
         last_row = c.fetchone()
         if last_row and last_row["last_checkin"]:
             last_ci = last_row["last_checkin"]
@@ -73,6 +74,7 @@ def coach_dashboard():
             cc["days_inactive"] = 999
     # Check if payments feature is enabled for this coach
     from tasks import _features_for as _ff
+
     coach_features = _ff(session["user_id"])
     payments_enabled = coach_features.get("payments", False)
     if payments_enabled:
@@ -94,10 +96,14 @@ def coach_dashboard():
     return render_template_string(_tpl("coach_dashboard.html"), coachees=coachees, ungraded_total=ungraded_total)
 
 
-
 @bp.route("/coach/settings", methods=["GET", "POST"])
 @login_required("coach")
 def coach_settings():
+    """Show/update coach account settings: password, display name, feature toggles.
+
+    Route GET/POST /coach/settings — renders the coach settings screen (coach_settings.html).
+    When: GET on settings load; POST on settings form submit (action=password|name|features).
+    """
     c = db()
     if request.method == "POST":
         action = request.form.get("action")
@@ -127,16 +133,24 @@ def coach_settings():
         return redirect(url_for("coach.coach_settings"))
     c.execute("SELECT name, features FROM coach WHERE id=%s", (session["user_id"],))
     coach = c.fetchone()
-    coach_features = json.loads(coach["features"]) if coach["features"] and isinstance(coach["features"], str) else (coach["features"] if isinstance(coach["features"], dict) else {k: True for k, _ in FEATURES})
+    coach_features = (
+        json.loads(coach["features"])
+        if coach["features"] and isinstance(coach["features"], str)
+        else (coach["features"] if isinstance(coach["features"], dict) else {k: True for k, _ in FEATURES})
+    )
     return render_template_string(
         _tpl("coach_settings.html"), coach=coach, features=FEATURES, coach_features=coach_features
     )
 
 
-
 @bp.route("/coach/change-password", methods=["POST"])
 @login_required("coach")
 def coach_change_password():
+    """Verify the old password and set a new one for the logged-in coach.
+
+    Route POST /coach/change-password — no screen; redirects to the coach settings screen.
+    When: on password-change form submit (legacy endpoint alongside coach_settings action).
+    """
     c = db()
     c.execute("SELECT password_hash FROM coach WHERE id=%s", (session["user_id"],))
     row = c.fetchone()
@@ -144,7 +158,8 @@ def coach_change_password():
     if not valid:
         return redirect(url_for("coach.coach_settings"))
     c.execute(
-        "UPDATE coach SET password_hash=%s WHERE id=%s", (_hash_password(request.form["new_password"]), session["user_id"])
+        "UPDATE coach SET password_hash=%s WHERE id=%s",
+        (_hash_password(request.form["new_password"]), session["user_id"]),
     )
     _audit("change_password")
     return redirect(url_for("coach.coach_settings"))
@@ -153,6 +168,11 @@ def coach_change_password():
 @bp.route("/coach/change-name", methods=["POST"])
 @login_required("coach")
 def coach_change_name():
+    """Update the coach's display name and session name.
+
+    Route POST /coach/change-name — no screen; redirects to the coach branding screen.
+    When: on name form submit from the branding screen (coach_branding.html).
+    """
     c = db()
     new_name = request.form["name"].strip()
     if new_name:
@@ -164,6 +184,11 @@ def coach_change_name():
 @bp.route("/coach/support", methods=["GET", "POST"])
 @login_required("coach")
 def coach_support():
+    """List the coach's support messages and let them file a new one (with recent audit trail).
+
+    Route GET/POST /coach/support — renders the coach support screen (coach_support.html).
+    When: GET on support screen load; POST on support-message form submit.
+    """
     c = db()
     if request.method == "POST":
         c.execute(
@@ -185,10 +210,14 @@ def coach_support():
     return render_template_string(_tpl("coach_support.html"), messages=messages)
 
 
-
 @bp.route("/coach/branding", methods=["GET", "POST"])
 @login_required("coach")
 def coach_branding():
+    """Show/save coach branding: logo upload, accent/bg/card colors, Telegram bot token.
+
+    Route GET/POST /coach/branding — renders the coach branding screen (coach_branding.html).
+    When: GET on branding screen load; POST on branding form submit.
+    """
     c = db()
     if request.method == "POST":
         logo_path = None
@@ -224,6 +253,11 @@ def coach_branding():
 
 @bp.route("/coach/logo")
 def coach_logo():
+    """Serve a coach's uploaded PNG logo (by ?id, or from session for coach/coachee).
+
+    Route GET /coach/logo — no HTML screen; returns the image used across coach/coachee headers.
+    When: on every page load that references the coach logo <img> src.
+    """
     cid = request.args.get("id") or (
         session.get("coach_id") if session.get("role") == "coachee" else session.get("user_id")
     )
@@ -242,10 +276,15 @@ def coach_logo():
         return "", 404
 
 
-
 @bp.route("/coach/coachee/add", methods=["GET", "POST"])
 @login_required("coach")
 def add_coachee():
+    """Show the new-coachee form and create the coachee record under this coach.
+
+    Route GET/POST /coach/coachee/add — renders the add-coachee screen (add_coachee.html);
+    on success redirects to the coach dashboard.
+    When: GET on form load; POST on add-coachee form submit.
+    """
     if request.method == "POST":
         c = db()
         c.execute(
@@ -270,10 +309,14 @@ def add_coachee():
     return render_template_string(_tpl("add_coachee.html"), coach_tz=coach["timezone"] or "Europe/London")
 
 
-
 @bp.route("/coach/coachee/<int:cid>")
 @login_required("coach")
 def coach_view_coachee(cid):
+    """Aggregate a coachee's full record: tasks, check-ins, acks, tracking, notes, profile, goals, media, writing.
+
+    Route GET /coach/coachee/<cid> — renders the detailed coachee screen (coach_view_coachee.html).
+    When: on coachee detail-page load from the coach dashboard.
+    """
     c = db()
     c.execute("SELECT * FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     coachee = c.fetchone()
@@ -284,7 +327,7 @@ def coach_view_coachee(cid):
         v = coachee[k]
         if isinstance(v, timedelta):
             total = int(v.total_seconds())
-            coachee[k] = f"{total//3600:02d}:{(total%3600)//60:02d}"
+            coachee[k] = f"{total // 3600:02d}:{(total % 3600) // 60:02d}"
     c.execute(
         """SELECT ta.*, tt.title, tt.category FROM task_assignment ta
                  JOIN task_template tt ON ta.template_id=tt.id
@@ -328,9 +371,7 @@ def coach_view_coachee(cid):
     # Creative writing
     c.execute("SELECT COUNT(*) as cnt FROM creative_work WHERE coachee_id=%s", (cid,))
     writing_count = c.fetchone()["cnt"]
-    c.execute(
-        "SELECT COUNT(*) as cnt FROM creative_constraint WHERE coachee_id=%s AND used=0", (cid,)
-    )
+    c.execute("SELECT COUNT(*) as cnt FROM creative_constraint WHERE coachee_id=%s AND used=0", (cid,))
     writing_pending_constraints = c.fetchone()["cnt"]
     # Get all templates for the planning side panel
     c.execute("SELECT id, title, tags FROM task_template WHERE coach_id=%s ORDER BY title", (session["user_id"],))
@@ -356,16 +397,22 @@ def coach_view_coachee(cid):
         tg_token=tg_token or "",
         coach_tz=session.get("timezone", "Europe/London"),
         all_features=FEATURES,
-        coachee_features=json.loads(coachee.get("features") or "null") if isinstance(coachee.get("features"), str) else (coachee.get("features") or {k: True for k, _ in FEATURES}),
+        coachee_features=json.loads(coachee.get("features") or "null")
+        if isinstance(coachee.get("features"), str)
+        else (coachee.get("features") or {k: True for k, _ in FEATURES}),
         writing_count=writing_count,
         writing_pending_constraints=writing_pending_constraints,
     )
 
 
-
 @bp.route("/coach/coachee/<int:cid>/edit", methods=["POST"])
 @login_required("coach")
 def edit_coachee(cid):
+    """Update coachee settings (contract, safe word, times, timezone, avatar, features); versions changed contract.
+
+    Route POST /coach/coachee/<cid>/edit — no screen; redirects to the coachee detail screen.
+    When: on the edit-coachee form submit within coach_view_coachee.html.
+    """
     c = db()
     new_contract = request.form.get("contract", "")
     # version contract if changed
@@ -400,6 +447,11 @@ def edit_coachee(cid):
 @bp.route("/coach/coachee/<int:cid>/context", methods=["POST"])
 @login_required("coach")
 def save_coachee_context(cid):
+    """Save free-text coach context notes used to seed AI prompts for a coachee.
+
+    Route POST /coach/coachee/<cid>/context — no screen; redirects to the coachee detail screen.
+    When: on the context form submit within coach_view_coachee.html.
+    """
     c = db()
     c.execute(
         "UPDATE coachee SET context_text=%s WHERE id=%s AND coach_id=%s",
@@ -411,6 +463,11 @@ def save_coachee_context(cid):
 @bp.route("/coach/coachee/<int:cid>/profile-prompt")
 @login_required("coach")
 def get_profile_prompt(cid):
+    """Build and return (as JSON) the LLM prompt used for a coachee's psychological profile.
+
+    Route GET /coach/coachee/<cid>/profile-prompt — JSON endpoint; no screen.
+    When: fetched by client-side JS on the coachee detail screen before client-side AI generation.
+    """
     prompt = _build_profile_prompt(cid)
     return json.dumps({"prompt": prompt}), 200, {"Content-Type": "application/json"}
 
@@ -418,7 +475,11 @@ def get_profile_prompt(cid):
 @bp.route("/coach/coachee/<int:cid>/generate-profile", methods=["POST"])
 @login_required("coach")
 def generate_profile(cid):
-    """Server-side AI profile generation via Cloudflare Workers AI."""
+    """Server-side AI profile generation via Cloudflare Workers AI; persists to psychological_profile.
+
+    Route POST /coach/coachee/<cid>/generate-profile — JSON endpoint; no screen.
+    When: on the "Generate profile" button click on the coachee detail screen.
+    """
     prompt = _build_profile_prompt(cid)
     if not prompt:
         return json.dumps({"error": "No data to build profile"}), 400, {"Content-Type": "application/json"}
@@ -439,10 +500,14 @@ def generate_profile(cid):
     return json.dumps({"text": result}), 200, {"Content-Type": "application/json"}
 
 
-
 @bp.route("/coach/coachee/<int:cid>/profile", methods=["POST"])
 @login_required("coach")
 def save_profile(cid):
+    """Upsert manually-edited psychological profile text for a coachee.
+
+    Route POST /coach/coachee/<cid>/profile — JSON body; returns 204, no screen.
+    When: on save of client-side-generated or hand-edited profile text on the coachee detail screen.
+    """
     text_val = request.json.get("text", "") if request.is_json else ""
     if text_val:
         c = db()
@@ -461,12 +526,14 @@ def save_profile(cid):
 @bp.route("/coach/analyze", methods=["GET", "POST"])
 @login_required("coach")
 def analyze_text():
+    """Run an ad-hoc AI psychological analysis of pasted text (conversations, notes, journals).
+
+    Route GET/POST /coach/analyze — GET renders the analyze screen (analyze.html);
+    POST returns the AI result as JSON.
+    When: GET on tool load; POST on analyze form/AJAX submit.
+    """
     if request.method == "POST":
-        input_text = ""
-        if request.is_json:
-            input_text = request.json.get("text", "")
-        else:
-            input_text = request.form.get("text", "")
+        input_text = request.json.get("text", "") if request.is_json else request.form.get("text", "")
         if not input_text:
             return json.dumps({"error": "No text provided"}), 400, {"Content-Type": "application/json"}
         coach_name = session.get("name", "Coach")
@@ -484,10 +551,14 @@ def analyze_text():
     return render_template_string(_tpl("analyze.html"), llm_key=LLM_KEY, coach_name=session.get("name", "Coach"))
 
 
-
 @bp.route("/coach/grading", methods=["GET", "POST"])
 @login_required("coach")
 def bulk_grading():
+    """List all ungraded completed tasks for the coach and apply grades/comments in bulk.
+
+    Route GET/POST /coach/grading — renders the bulk grading screen (bulk_grading.html).
+    When: GET on grading screen load; POST on the bulk-grade form submit.
+    """
     c = db()
     if request.method == "POST":
         for key, val in request.form.items():
@@ -517,14 +588,22 @@ def bulk_grading():
     for task in tasks:
         if task.get("photo_validation_result"):
             try:
-                task["pv_result"] = json.loads(task["photo_validation_result"]) if isinstance(task["photo_validation_result"], str) else task["photo_validation_result"]
+                task["pv_result"] = (
+                    json.loads(task["photo_validation_result"])
+                    if isinstance(task["photo_validation_result"], str)
+                    else task["photo_validation_result"]
+                )
             except (json.JSONDecodeError, TypeError):
                 task["pv_result"] = None
         else:
             task["pv_result"] = None
         if task.get("photo_validation_override"):
             try:
-                task["pv_override"] = json.loads(task["photo_validation_override"]) if isinstance(task["photo_validation_override"], str) else task["photo_validation_override"]
+                task["pv_override"] = (
+                    json.loads(task["photo_validation_override"])
+                    if isinstance(task["photo_validation_override"], str)
+                    else task["photo_validation_override"]
+                )
             except (json.JSONDecodeError, TypeError):
                 task["pv_override"] = None
         else:
@@ -532,10 +611,14 @@ def bulk_grading():
     return render_template_string(_tpl("bulk_grading.html"), tasks=tasks)
 
 
-
 @bp.route("/coach/tasks", methods=["GET", "POST"])
 @login_required("coach")
 def manage_tasks():
+    """List task templates and coachees; create templates and assign tasks (incl. from library).
+
+    Route GET/POST /coach/tasks — renders the task management screen (manage_tasks.html).
+    When: GET on screen load; POST on create-template or assign_library form submit.
+    """
     c = db()
     if request.method == "POST":
         action = request.form.get("action", "create")
@@ -611,10 +694,14 @@ def manage_tasks():
     return render_template_string(_tpl("manage_tasks.html"), templates=templates, coachees=coachees)
 
 
-
 @bp.route("/coach/library-search")
 @login_required("coach")
 def library_search():
+    """Return library task templates with per-coachee usage counts/last-used as JSON.
+
+    Route GET /coach/library-search — JSON endpoint; no screen.
+    When: fetched by JS on the task management screen (manage_tasks.html) when browsing the library.
+    """
     c = db()
     c.execute(
         "SELECT id, title, description, category FROM task_template WHERE coach_id=%s AND in_library=1 ORDER BY title",
@@ -638,6 +725,11 @@ def library_search():
 @bp.route("/coach/conditioning", methods=["GET", "POST"])
 @login_required("coach")
 def manage_conditioning():
+    """List recent mental-conditioning prompts and create new ones (shared or per-coachee).
+
+    Route GET/POST /coach/conditioning — renders the conditioning screen (manage_conditioning.html).
+    When: GET on screen load; POST on the new-prompt form submit.
+    """
     c = db()
     if request.method == "POST":
         target = request.form["target"]
@@ -665,10 +757,14 @@ def manage_conditioning():
     return render_template_string(_tpl("manage_conditioning.html"), prompts=prompts, coachees=coachees)
 
 
-
 @bp.route("/coach/ack/<int:cid>", methods=["POST"])
 @login_required("coach")
 def give_acknowledgement(cid):
+    """Record a positive/negative acknowledgement for a coachee.
+
+    Route POST /coach/ack/<cid> — no screen; redirects to the coachee detail screen.
+    When: on the acknowledgement form submit within coach_view_coachee.html.
+    """
     c = db()
     c.execute(
         "INSERT INTO acknowledgement (coachee_id, coach_id, ack_type, description, notes) VALUES (%s,%s,%s,%s,%s)",
@@ -680,6 +776,11 @@ def give_acknowledgement(cid):
 @bp.route("/coach/task/<int:tid>/review", methods=["POST"])
 @login_required("coach")
 def review_task(tid):
+    """Set a grade and coach comment on a single completed task assignment.
+
+    Route POST /coach/task/<tid>/review — no screen; redirects to the coachee detail screen.
+    When: on the per-task review form submit within coach_view_coachee.html.
+    """
     c = db()
     c.execute(
         """UPDATE task_assignment SET grade=%s, coach_comment=%s
@@ -693,6 +794,11 @@ def review_task(tid):
 @bp.route("/coach/note/<int:cid>", methods=["POST"])
 @login_required("coach")
 def coach_add_note(cid):
+    """Post a coach note to a coachee, optionally scheduled for later delivery.
+
+    Route POST /coach/note/<cid> — no screen; redirects to the coachee detail screen.
+    When: on the add-note form submit within coach_view_coachee.html.
+    """
     c = db()
     scheduled = request.form.get("scheduled_at") or None
     c.execute(
@@ -705,6 +811,11 @@ def coach_add_note(cid):
 @bp.route("/coach/note/<int:nid>/pin", methods=["POST"])
 @login_required("coach")
 def pin_note(nid):
+    """Toggle the pinned flag on a note owned by one of the coach's coachees.
+
+    Route POST /coach/note/<nid>/pin — no screen; redirects back (referrer or coach dashboard).
+    When: on the pin/unpin button submit from the coachee detail screen.
+    """
     c = db()
     c.execute(
         "UPDATE note SET pinned=CASE WHEN pinned=0 THEN 1 ELSE 0 END WHERE id=%s AND coachee_id IN (SELECT id FROM coachee WHERE coach_id=%s)",
@@ -716,6 +827,11 @@ def pin_note(nid):
 @bp.route("/coach/quick-note/<int:cid>", methods=["POST"])
 @login_required("coach")
 def quick_note(cid):
+    """Post a quick coach note to a coachee from the dashboard.
+
+    Route POST /coach/quick-note/<cid> — no screen; redirects to the coach dashboard.
+    When: on the quick-note inline form submit on the coach dashboard (coach_dashboard.html).
+    """
     c = db()
     c.execute(
         "INSERT INTO note (coachee_id, author_role, content) VALUES (%s,'coach',%s)", (cid, request.form["content"])
@@ -726,6 +842,11 @@ def quick_note(cid):
 @bp.route("/coach/quick-ack/<int:cid>", methods=["POST"])
 @login_required("coach")
 def quick_ack(cid):
+    """Record a quick acknowledgement for a coachee from the dashboard.
+
+    Route POST /coach/quick-ack/<cid> — no screen; redirects to the coach dashboard.
+    When: on the quick-ack inline form submit on the coach dashboard (coach_dashboard.html).
+    """
     c = db()
     c.execute(
         "INSERT INTO acknowledgement (coachee_id, coach_id, ack_type, description) VALUES (%s,%s,%s,%s)",
@@ -734,10 +855,14 @@ def quick_ack(cid):
     return redirect(url_for("coach.coach_dashboard"))
 
 
-
 @bp.route("/coach/audit")
 @login_required("coach")
 def audit_log():
+    """List the 100 most recent audit-log entries.
+
+    Route GET /coach/audit — renders the audit log screen (audit_log.html).
+    When: on audit-log screen load from the coach navigation.
+    """
     c = db()
     c.execute("SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 100")
     logs = c.fetchall()
@@ -747,6 +872,11 @@ def audit_log():
 @bp.route("/coach/coachee/<int:cid>/contracts")
 @login_required("coach")
 def contract_history(cid):
+    """List versioned contract snapshots for a coachee.
+
+    Route GET /coach/coachee/<cid>/contracts — renders the contract history screen (contract_history.html).
+    When: on contract-history screen load from the coachee detail screen.
+    """
     c = db()
     c.execute("SELECT * FROM contract_history WHERE coachee_id=%s ORDER BY created_at DESC", (cid,))
     history = c.fetchall()
@@ -758,6 +888,11 @@ def contract_history(cid):
 @bp.route("/coach/coachee/<int:cid>/summary")
 @login_required("coach")
 def weekly_summary(cid):
+    """Compute this week's stats for a coachee (tasks, grades, missed, check-ins, streaks).
+
+    Route GET /coach/coachee/<cid>/summary — renders the weekly summary screen (weekly_summary.html).
+    When: on weekly-summary screen load from the coachee detail screen.
+    """
     c = db()
     c.execute("SELECT name, timezone FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     coachee = c.fetchone()
@@ -808,14 +943,19 @@ def weekly_summary(cid):
     return render_template_string(_tpl("weekly_summary.html"), coachee=coachee, s=summary)
 
 
-
 @bp.route("/coach/coachee/<int:cid>/reset-password", methods=["POST"])
 @login_required("coach")
 def reset_coachee_password(cid):
+    """Set a new password for one of the coach's coachees (audited).
+
+    Route POST /coach/coachee/<cid>/reset-password — no screen; redirects to the coachee detail screen.
+    When: on the reset-password form submit within coach_view_coachee.html.
+    """
     c = db()
     new_pw = request.form["new_password"]
     c.execute(
-        "UPDATE coachee SET password_hash=%s WHERE id=%s AND coach_id=%s", (_hash_password(new_pw), cid, session["user_id"])
+        "UPDATE coachee SET password_hash=%s WHERE id=%s AND coach_id=%s",
+        (_hash_password(new_pw), cid, session["user_id"]),
     )
     _audit(f"reset_password coachee={cid}")
     return redirect(url_for("coach.coach_view_coachee", cid=cid))
@@ -824,6 +964,11 @@ def reset_coachee_password(cid):
 @bp.route("/coach/template/<int:tid>/edit", methods=["POST"])
 @login_required("coach")
 def edit_template(tid):
+    """Update fields of an existing task template owned by the coach.
+
+    Route POST /coach/template/<tid>/edit — no screen; redirects to the task management screen.
+    When: on the edit-template form submit within manage_tasks.html.
+    """
     c = db()
     c.execute(
         """UPDATE task_template SET title=%s, description=%s, category=%s, difficulty=%s,
@@ -850,6 +995,11 @@ def edit_template(tid):
 @bp.route("/coach/template/<int:tid>/delete", methods=["POST"])
 @login_required("coach")
 def delete_template(tid):
+    """Delete a task template owned by the coach.
+
+    Route POST /coach/template/<tid>/delete — no screen; redirects to the task management screen.
+    When: on the delete-template button submit within manage_tasks.html.
+    """
     c = db()
     c.execute("DELETE FROM task_template WHERE id=%s AND coach_id=%s", (tid, session["user_id"]))
     return redirect(url_for("coach.manage_tasks"))
@@ -858,6 +1008,11 @@ def delete_template(tid):
 @bp.route("/coach/voice/<int:cid>", methods=["POST"])
 @login_required("coach")
 def coach_voice_note(cid):
+    """Save a coach-recorded audio (webm) message for a coachee to disk and DB.
+
+    Route POST /coach/voice/<cid> — no screen; redirects to the coachee detail screen.
+    When: on the voice-note recorder submit within coach_view_coachee.html.
+    """
     c = db()
     audio = request.form.get("audio_data")
     if audio and audio.startswith("data:audio"):
@@ -873,10 +1028,14 @@ def coach_voice_note(cid):
     return redirect(url_for("coach.coach_view_coachee", cid=cid))
 
 
-
 @bp.route("/coach/goal/<int:gid>", methods=["POST"])
 @login_required("coach")
 def review_goal(gid):
+    """Approve/reject a coachee-proposed goal and attach coach notes.
+
+    Route POST /coach/goal/<gid> — no screen; redirects back (referrer or coach dashboard).
+    When: on the goal-review form submit from the coachee detail screen.
+    """
     c = db()
     c.execute(
         """UPDATE goal SET status=%s, coach_notes=%s
@@ -889,6 +1048,11 @@ def review_goal(gid):
 @bp.route("/coach/coachee/<int:cid>/heatmap")
 @login_required("coach")
 def compliance_heatmap(cid):
+    """Build a 90-day per-day task compliance map (total/completed/missed) for a coachee.
+
+    Route GET /coach/coachee/<cid>/heatmap — renders the heatmap screen (heatmap.html).
+    When: on heatmap screen load from the coachee detail screen.
+    """
     c = db()
     c.execute("SELECT name FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     coachee = c.fetchone()
@@ -917,6 +1081,11 @@ def compliance_heatmap(cid):
 @bp.route("/coach/coachee/<int:cid>/categories")
 @login_required("coach")
 def category_breakdown(cid):
+    """Aggregate task totals, completion/missed counts, and average grade per category for a coachee.
+
+    Route GET /coach/coachee/<cid>/categories — renders the category breakdown screen (categories.html).
+    When: on category-breakdown screen load from the coachee detail screen.
+    """
     c = db()
     c.execute("SELECT name FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     coachee = c.fetchone()
@@ -935,10 +1104,14 @@ def category_breakdown(cid):
     return render_template_string(_tpl("categories.html"), coachee=coachee, cats=cats)
 
 
-
 @bp.route("/coach/automations", methods=["GET", "POST"])
 @login_required("coach")
 def manage_automations():
+    """List and manage coach automation rules (create/delete/toggle trigger→condition→action).
+
+    Route GET/POST /coach/automations — renders the automations screen (manage_automations.html).
+    When: GET on screen load; POST on the create/delete/toggle rule form submit.
+    """
     c = db()
     if request.method == "POST":
         action = request.form.get("action")
@@ -959,7 +1132,9 @@ def manage_automations():
             )
             flash("Automation rule created.", "success")
         elif action == "delete":
-            c.execute("DELETE FROM auto_rule WHERE id=%s AND coach_id=%s", (request.form["rule_id"], session["user_id"]))
+            c.execute(
+                "DELETE FROM auto_rule WHERE id=%s AND coach_id=%s", (request.form["rule_id"], session["user_id"])
+            )
             flash("Rule deleted.", "success")
         elif action == "toggle":
             c.execute(
@@ -972,10 +1147,14 @@ def manage_automations():
     return render_template_string(_tpl("manage_automations.html"), rules=rules)
 
 
-
 @bp.route("/coach/rituals", methods=["GET", "POST"])
 @login_required("coach")
 def manage_rituals():
+    """List and manage recurring ritual definitions (create/delete, shared or per-coachee).
+
+    Route GET/POST /coach/rituals — renders the rituals screen (manage_rituals.html).
+    When: GET on screen load; POST on the create/delete ritual form submit.
+    """
     c = db()
     if request.method == "POST":
         action = request.form.get("action")
@@ -998,7 +1177,10 @@ def manage_rituals():
             c.execute("DELETE FROM ritual WHERE id=%s AND coach_id=%s", (rid, session["user_id"]))
             flash("Ritual deleted.", "success")
         return redirect(url_for("coach.manage_rituals"))
-    c.execute("SELECT r.*, co.name as coachee_name FROM ritual r LEFT JOIN coachee co ON r.coachee_id=co.id WHERE r.coach_id=%s ORDER BY r.active DESC, r.name", (session["user_id"],))
+    c.execute(
+        "SELECT r.*, co.name as coachee_name FROM ritual r LEFT JOIN coachee co ON r.coachee_id=co.id WHERE r.coach_id=%s ORDER BY r.active DESC, r.name",
+        (session["user_id"],),
+    )
     rituals = c.fetchall()
     c.execute("SELECT id, name FROM coachee WHERE coach_id=%s", (session["user_id"],))
     coachees = c.fetchall()
@@ -1008,21 +1190,34 @@ def manage_rituals():
 @bp.route("/coach/badge/<int:cid>", methods=["POST"])
 @login_required("coach")
 def award_badge(cid):
-    """Coach manually awards a badge."""
+    """Coach manually awards a gamification badge to a coachee.
+
+    Route POST /coach/badge/<cid> — no screen; redirects to the coachee detail screen.
+    When: on the award-badge form submit within coach_view_coachee.html.
+    """
     c = db()
     c.execute(
         "INSERT INTO badge (coachee_id, badge_type, badge_name, description, icon) VALUES (%s,%s,%s,%s,%s)",
-        (cid, "manual_" + str(int(utcnow().timestamp())), request.form["badge_name"], request.form.get("description", ""), request.form.get("icon", "\U0001f3c6")),
+        (
+            cid,
+            "manual_" + str(int(utcnow().timestamp())),
+            request.form["badge_name"],
+            request.form.get("description", ""),
+            request.form.get("icon", "\U0001f3c6"),
+        ),
     )
     flash("Badge awarded.", "success")
     return redirect(url_for("coach.coach_view_coachee", cid=cid))
 
 
-
 @bp.route("/coach/coachee/<int:cid>/ai-digest", methods=["POST"])
 @login_required("coach")
 def ai_weekly_digest(cid):
-    """Generate an AI weekly digest for a coachee."""
+    """Generate an AI weekly digest for a coachee and persist it to weekly_summary.
+
+    Route POST /coach/coachee/<cid>/ai-digest — JSON endpoint; no screen.
+    When: on the "AI weekly digest" button click on the coachee detail screen.
+    """
     c = db()
     week_ago = (date.today() - timedelta(days=7)).isoformat()
 
@@ -1032,11 +1227,19 @@ def ai_weekly_digest(cid):
         return json.dumps({"error": "Coachee not found"}), 404, {"Content-Type": "application/json"}
     name = coachee_row["name"]
 
-    c.execute("SELECT checkin_type, content, created_at FROM checkin WHERE coachee_id=%s AND DATE(created_at) >= %s ORDER BY created_at", (cid, week_ago))
+    c.execute(
+        "SELECT checkin_type, content, created_at FROM checkin WHERE coachee_id=%s AND DATE(created_at) >= %s ORDER BY created_at",
+        (cid, week_ago),
+    )
     checkins = c.fetchall()
-    c.execute("SELECT tt.title, ta.status, ta.grade, ta.response FROM task_assignment ta JOIN task_template tt ON ta.template_id=tt.id WHERE ta.coachee_id=%s AND ta.due_date >= %s", (cid, week_ago))
+    c.execute(
+        "SELECT tt.title, ta.status, ta.grade, ta.response FROM task_assignment ta JOIN task_template tt ON ta.template_id=tt.id WHERE ta.coachee_id=%s AND ta.due_date >= %s",
+        (cid, week_ago),
+    )
     tasks = c.fetchall()
-    c.execute("SELECT category, content FROM tracking_log WHERE coachee_id=%s AND DATE(created_at) >= %s", (cid, week_ago))
+    c.execute(
+        "SELECT category, content FROM tracking_log WHERE coachee_id=%s AND DATE(created_at) >= %s", (cid, week_ago)
+    )
     tracking = c.fetchall()
 
     report = _weekly_report(cid)
@@ -1049,7 +1252,7 @@ def ai_weekly_digest(cid):
 
     prompt = f"""You are a coaching assistant. Write a concise weekly digest (max 250 words) for a coach about their coachee "{name}". Summarize the week factually and highlight patterns, concerns, and wins.
 
-STATS: Grade avg {report['avg_grade']}, Compliance {report['compliance']}%, Check-in rate {report['checkin_rate']}%, {report['tracking_count']} tracking entries.
+STATS: Grade avg {report["avg_grade"]}, Compliance {report["compliance"]}%, Check-in rate {report["checkin_rate"]}%, {report["tracking_count"]} tracking entries.
 
 CHECK-INS ({len(checkins)} this week):
 {checkins_text}
@@ -1073,16 +1276,22 @@ Write a professional summary identifying: 1) Key wins 2) Areas of concern 3) Sug
     if existing:
         c.execute("UPDATE weekly_summary SET summary_text=%s WHERE id=%s", (result, existing["id"]))
     else:
-        c.execute("INSERT INTO weekly_summary (coachee_id, week_start, summary_text) VALUES (%s,%s,%s)", (cid, week_start, result))
+        c.execute(
+            "INSERT INTO weekly_summary (coachee_id, week_start, summary_text) VALUES (%s,%s,%s)",
+            (cid, week_start, result),
+        )
 
     return json.dumps({"text": result}), 200, {"Content-Type": "application/json"}
-
 
 
 @bp.route("/coach/nudge/<int:cid>", methods=["POST"])
 @login_required("coach")
 def nudge_coachee(cid):
-    """Send a nudge note to an inactive coachee."""
+    """Send a nudge note (merge-var templated) to an inactive coachee.
+
+    Route POST /coach/nudge/<cid> — no screen; redirects to the coach dashboard.
+    When: on the nudge button submit for inactive coachees on the coach dashboard.
+    """
     c = db()
     c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     if not c.fetchone():
@@ -1095,14 +1304,18 @@ def nudge_coachee(cid):
         "INSERT INTO note (coachee_id, author_role, content) VALUES (%s,'coach',%s)",
         (cid, text),
     )
-    flash(f"Nudge sent.", "success")
+    flash("Nudge sent.", "success")
     return redirect(url_for("coach.coach_dashboard"))
 
 
 @bp.route("/coach/conditioning/generate/<int:cid>", methods=["POST"])
 @login_required("coach")
 def generate_conditioning(cid):
-    """AI-generate a conditioning prompt for a coachee and save it."""
+    """AI-generate a daily conditioning prompt for a coachee and save it as today's prompt.
+
+    Route POST /coach/conditioning/generate/<cid> — JSON endpoint; no screen.
+    When: on the "Generate conditioning" button click on the coachee detail screen.
+    """
     c = db()
     c.execute("SELECT name FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     coachee_row = c.fetchone()
@@ -1113,17 +1326,20 @@ def generate_conditioning(cid):
     # Get recent context for prompt generation
     c.execute("SELECT content FROM checkin WHERE coachee_id=%s ORDER BY created_at DESC LIMIT 5", (cid,))
     recent_checkins = [r["content"][:200] for r in c.fetchall()]
-    c.execute("SELECT content FROM mental_conditioning_response WHERE coachee_id=%s ORDER BY created_at DESC LIMIT 3", (cid,))
+    c.execute(
+        "SELECT content FROM mental_conditioning_response WHERE coachee_id=%s ORDER BY created_at DESC LIMIT 3", (cid,)
+    )
     recent_responses = [r["content"][:200] for r in c.fetchall()]
 
     from merge import _get_merge_context
+
     ctx = _get_merge_context(cid)
 
-    prompt = f"""You are a dominant coach writing a daily mental conditioning prompt for your submissive coachee "{name}". 
-Their stats: streak {ctx['streak']} days, level {ctx['level']}, grade avg {ctx['grade_avg']}, {ctx['days_active']} days active, {ctx['strikes']} strikes.
+    prompt = f"""You are a dominant coach writing a daily mental conditioning prompt for your submissive coachee "{name}".
+Their stats: streak {ctx["streak"]} days, level {ctx["level"]}, grade avg {ctx["grade_avg"]}, {ctx["days_active"]} days active, {ctx["strikes"]} strikes.
 
-Recent check-ins: {'; '.join(recent_checkins[:3]) if recent_checkins else 'None yet'}
-Recent conditioning responses: {'; '.join(recent_responses[:2]) if recent_responses else 'None yet'}
+Recent check-ins: {"; ".join(recent_checkins[:3]) if recent_checkins else "None yet"}
+Recent conditioning responses: {"; ".join(recent_responses[:2]) if recent_responses else "None yet"}
 
 Write ONE conditioning prompt (2-4 sentences). It should be thought-provoking, push their growth edge, and reinforce the dynamic. Address them by name. Do NOT explain what you're doing — just write the prompt itself."""
 
@@ -1143,7 +1359,11 @@ Write ONE conditioning prompt (2-4 sentences). It should be thought-provoking, p
 @bp.route("/coach/week-plan", methods=["GET", "POST"])
 @login_required("coach")
 def manage_week_plan():
-    """Manage the weekly task plan."""
+    """Manage the weekly recurring task plan (add/delete day→template entries).
+
+    Route GET/POST /coach/week-plan — renders the week plan screen (week_plan.html).
+    When: GET on screen load; POST on the add/delete plan-entry form submit.
+    """
     c = db()
     if request.method == "POST":
         action = request.form.get("action")
@@ -1157,7 +1377,9 @@ def manage_week_plan():
             )
             flash("Plan entry added.", "success")
         elif action == "delete":
-            c.execute("DELETE FROM week_plan WHERE id=%s AND coach_id=%s", (request.form["plan_id"], session["user_id"]))
+            c.execute(
+                "DELETE FROM week_plan WHERE id=%s AND coach_id=%s", (request.form["plan_id"], session["user_id"])
+            )
             flash("Entry removed.", "success")
         return redirect(url_for("coach.manage_week_plan"))
 
@@ -1180,7 +1402,11 @@ def manage_week_plan():
 @bp.route("/coach/onboarding", methods=["GET", "POST"])
 @login_required("coach")
 def manage_onboarding():
-    """Manage onboarding sequence for new coachees."""
+    """Manage the scripted onboarding sequence for new coachees (add/delete day-offset steps).
+
+    Route GET/POST /coach/onboarding — renders the onboarding screen (onboarding.html).
+    When: GET on screen load; POST on the add/delete onboarding-step form submit.
+    """
     c = db()
     if request.method == "POST":
         action = request.form.get("action")
@@ -1196,7 +1422,9 @@ def manage_onboarding():
             )
             flash("Onboarding step added.", "success")
         elif action == "delete":
-            c.execute("DELETE FROM onboarding_step WHERE id=%s AND coach_id=%s", (request.form["step_id"], session["user_id"]))
+            c.execute(
+                "DELETE FROM onboarding_step WHERE id=%s AND coach_id=%s", (request.form["step_id"], session["user_id"])
+            )
             flash("Step removed.", "success")
         return redirect(url_for("coach.manage_onboarding"))
 
@@ -1213,11 +1441,14 @@ def manage_onboarding():
     return render_template_string(_tpl("onboarding.html"), steps=steps, templates=templates)
 
 
-
 @bp.route("/coach/coachee/<int:cid>/task-context/<int:tid>")
 @login_required("coach")
 def task_context(cid, tid):
-    """JSON endpoint: return coachee-specific history for a task template."""
+    """Return coachee-specific history for a task template (last assigned, count, grades, last response) as JSON.
+
+    Route GET /coach/coachee/<cid>/task-context/<tid> — JSON endpoint; no screen.
+    When: fetched by JS on the coachee detail screen's task-planning panel when hovering/selecting a template.
+    """
     c = db()
     # Verify ownership
     c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
@@ -1225,7 +1456,10 @@ def task_context(cid, tid):
         abort(404)
 
     # Template info
-    c.execute("SELECT title, recur_days, recur_approx, category, difficulty, tags FROM task_template WHERE id=%s AND coach_id=%s", (tid, session["user_id"]))
+    c.execute(
+        "SELECT title, recur_days, recur_approx, category, difficulty, tags FROM task_template WHERE id=%s AND coach_id=%s",
+        (tid, session["user_id"]),
+    )
     tmpl = c.fetchone()
     if not tmpl:
         abort(404)
@@ -1247,7 +1481,14 @@ def task_context(cid, tid):
         "SELECT grade, due_date, responded_at FROM task_assignment WHERE template_id=%s AND coachee_id=%s AND grade IS NOT NULL ORDER BY due_date DESC LIMIT 5",
         (tid, cid),
     )
-    grade_history = [{"grade": r["grade"], "date": str(r["due_date"]), "responded": str(r["responded_at"]) if r["responded_at"] else None} for r in c.fetchall()]
+    grade_history = [
+        {
+            "grade": r["grade"],
+            "date": str(r["due_date"]),
+            "responded": str(r["responded_at"]) if r["responded_at"] else None,
+        }
+        for r in c.fetchall()
+    ]
 
     # Average grade for this task
     c.execute(
@@ -1291,11 +1532,14 @@ def task_context(cid, tid):
     return json.dumps(result), 200, {"Content-Type": "application/json"}
 
 
-
 @bp.route("/coach/coachee/<int:cid>/payments", methods=["GET", "POST"])
 @login_required("coach")
 def coachee_payments(cid):
-    """View and manage payments for a coachee."""
+    """View/manage a coachee's payments: confirm payments, set up/deactivate a plan, show compliance.
+
+    Route GET/POST /coach/coachee/<cid>/payments — renders the payments screen (payments.html).
+    When: GET on screen load; POST on confirm_payment / setup_plan / deactivate_plan form submit.
+    """
     c = db()
     c.execute("SELECT id, name FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     coachee = c.fetchone()
@@ -1358,13 +1602,19 @@ def coachee_payments(cid):
     # Compliance
     compliance = _payment_compliance(cid)
 
-    return render_template_string(_tpl("payments.html"), coachee=coachee, plan=plan, payments=payments, compliance=compliance)
+    return render_template_string(
+        _tpl("payments.html"), coachee=coachee, plan=plan, payments=payments, compliance=compliance
+    )
 
 
 @bp.route("/coach/coachee/<int:cid>/quick-pay", methods=["POST"])
 @login_required("coach")
 def quick_confirm_payment(cid):
-    """Quick payment confirmation from dashboard."""
+    """Log a payment for a coachee using their active plan amount (or posted amount).
+
+    Route POST /coach/coachee/<cid>/quick-pay — no screen; redirects to the coach dashboard.
+    When: on the quick-confirm-payment button submit on the coach dashboard.
+    """
     c = db()
     c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     if not c.fetchone():
@@ -1383,18 +1633,26 @@ def quick_confirm_payment(cid):
     return redirect(url_for("coach.coach_dashboard"))
 
 
-
 @bp.route("/coach/help")
 @login_required("coach")
 def coach_help():
-    """In-app navigation guide for coaches."""
+    """Render the in-app navigation guide for coaches.
+
+    Route GET /coach/help — renders the coach help screen (coach_help.html).
+    When: on help screen load from the coach navigation.
+    """
     return render_template_string(_tpl("coach_help.html"))
 
 
 @bp.route("/coach/photo-validation-settings", methods=["GET", "POST"])
 @login_required("coach")
 def photo_validation_settings():
-    """Manage AI photo validation settings at coach level."""
+    """Show/save coach-level AI photo-validation settings (enabled, service, API key) in coach features JSON.
+
+    Route GET/POST /coach/photo-validation-settings — renders the photo validation settings screen
+    (photo_validation_settings.html).
+    When: GET on screen load; POST on the settings form submit.
+    """
     c = db()
     if request.method == "POST":
         enabled = 1 if request.form.get("photo_validation_enabled") else 0
@@ -1403,7 +1661,11 @@ def photo_validation_settings():
         # Store in coach features JSON (extend existing)
         c.execute("SELECT features FROM coach WHERE id=%s", (session["user_id"],))
         row = c.fetchone()
-        features = json.loads(row["features"]) if row and row["features"] and isinstance(row["features"], str) else (row["features"] if row and isinstance(row.get("features"), dict) else {})
+        features = (
+            json.loads(row["features"])
+            if row and row["features"] and isinstance(row["features"], str)
+            else (row["features"] if row and isinstance(row.get("features"), dict) else {})
+        )
         features["photo_validation"] = {
             "enabled": bool(enabled),
             "service": service,
@@ -1414,7 +1676,11 @@ def photo_validation_settings():
         return redirect(url_for("coach.photo_validation_settings"))
     c.execute("SELECT features FROM coach WHERE id=%s", (session["user_id"],))
     row = c.fetchone()
-    features = json.loads(row["features"]) if row and row["features"] and isinstance(row["features"], str) else (row["features"] if row and isinstance(row.get("features"), dict) else {})
+    features = (
+        json.loads(row["features"])
+        if row and row["features"] and isinstance(row["features"], str)
+        else (row["features"] if row and isinstance(row.get("features"), dict) else {})
+    )
     pv = features.get("photo_validation", {"enabled": False, "service": "cloudflare", "api_key": ""})
     return render_template_string(_tpl("photo_validation_settings.html"), pv=pv)
 
@@ -1422,7 +1688,11 @@ def photo_validation_settings():
 @bp.route("/coach/coachee/<int:cid>/photo-validation", methods=["POST"])
 @login_required("coach")
 def update_coachee_photo_validation(cid):
-    """Update per-coachee photo validation percentage."""
+    """Set the per-coachee photo-validation percentage (0–100) in the coachee features JSON.
+
+    Route POST /coach/coachee/<cid>/photo-validation — no screen; redirects to the coachee detail screen.
+    When: on the photo-validation percentage form submit within coach_view_coachee.html.
+    """
     c = db()
     pct = int(request.form.get("photo_validation_pct", 0))
     pct = max(0, min(100, pct))
@@ -1430,7 +1700,11 @@ def update_coachee_photo_validation(cid):
     row = c.fetchone()
     if not row:
         abort(404)
-    features = json.loads(row["features"]) if row["features"] and isinstance(row["features"], str) else (row["features"] if isinstance(row.get("features"), dict) else {})
+    features = (
+        json.loads(row["features"])
+        if row["features"] and isinstance(row["features"], str)
+        else (row["features"] if isinstance(row.get("features"), dict) else {})
+    )
     features["photo_validation_pct"] = pct
     c.execute("UPDATE coachee SET features=%s WHERE id=%s", (json.dumps(features), cid))
     flash(f"Photo validation set to {pct}%.", "success")
@@ -1440,7 +1714,11 @@ def update_coachee_photo_validation(cid):
 @bp.route("/coach/task/<int:tid>/validate-photo", methods=["POST"])
 @login_required("coach")
 def coach_override_photo_validation(tid):
-    """Coach overrides AI photo validation decision."""
+    """Coach overrides the AI photo-validation decision (approve, or reject → task back to pending).
+
+    Route POST /coach/task/<tid>/validate-photo — no screen; redirects back (referrer or coach dashboard).
+    When: on the approve/reject photo-override button submit from the grading or coachee detail screen.
+    """
     c = db()
     decision = request.form.get("decision")  # "approve" or "reject"
     comment = request.form.get("comment", "")
@@ -1460,7 +1738,10 @@ def coach_override_photo_validation(tid):
         (override_data, tid),
     )
     if decision == "reject":
-        c.execute("UPDATE task_assignment SET status='pending', response=NULL, attachment_path=NULL, responded_at=NULL WHERE id=%s", (tid,))
+        c.execute(
+            "UPDATE task_assignment SET status='pending', response=NULL, attachment_path=NULL, responded_at=NULL WHERE id=%s",
+            (tid,),
+        )
         flash("Photo rejected — task returned to pending.", "info")
     else:
         flash("Photo validated.", "success")
@@ -1473,7 +1754,11 @@ def coach_override_photo_validation(tid):
 @bp.route("/coach/coachee/<int:cid>/writing")
 @login_required("coach")
 def coach_view_writing(cid):
-    """View a coachee's creative work collection."""
+    """List a coachee's creative works, constraints, and collections.
+
+    Route GET /coach/coachee/<cid>/writing — renders the coach writing screen (coach_writing.html).
+    When: on the writing screen load from the coachee detail screen.
+    """
     c = db()
     c.execute("SELECT * FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     coachee = c.fetchone()
@@ -1497,7 +1782,11 @@ def coach_view_writing(cid):
 @bp.route("/coach/coachee/<int:cid>/writing/constraint", methods=["POST"])
 @login_required("coach")
 def assign_constraint(cid):
-    """Assign a creative constraint (subject, theme, word, constraint, emotion, style)."""
+    """Assign a creative constraint (subject, theme, word, constraint, emotion, style) to a coachee.
+
+    Route POST /coach/coachee/<cid>/writing/constraint — no screen; redirects to the coach writing screen.
+    When: on the assign-constraint form submit within coach_writing.html.
+    """
     c = db()
     c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     if not c.fetchone():
@@ -1520,7 +1809,11 @@ def assign_constraint(cid):
 @bp.route("/coach/coachee/<int:cid>/writing/collection", methods=["POST"])
 @login_required("coach")
 def create_collection(cid):
-    """Create a named collection for a coachee's works."""
+    """Create a named creative collection for a coachee's works.
+
+    Route POST /coach/coachee/<cid>/writing/collection — no screen; redirects to the coach writing screen.
+    When: on the create-collection form submit within coach_writing.html.
+    """
     c = db()
     c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     if not c.fetchone():
@@ -1541,7 +1834,11 @@ def create_collection(cid):
 @bp.route("/coach/coachee/<int:cid>/writing/<int:wid>/note", methods=["POST"])
 @login_required("coach")
 def annotate_work(wid, cid):
-    """Add coach notes or select a work for the final collection."""
+    """Add coach notes/tags, select a work for the final collection, and set its collection.
+
+    Route POST /coach/coachee/<cid>/writing/<wid>/note — no screen; redirects to the coach writing screen.
+    When: on the annotate-work form submit within coach_writing.html.
+    """
     c = db()
     c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     if not c.fetchone():
@@ -1562,7 +1859,11 @@ def annotate_work(wid, cid):
 @bp.route("/coach/coachee/<int:cid>/writing/export")
 @login_required("coach")
 def export_collection(cid):
-    """Export the coachee's full creative collection as JSON (or selected works only)."""
+    """Export a coachee's full (or selected-only) creative collection as a downloadable JSON file.
+
+    Route GET /coach/coachee/<cid>/writing/export — file download (JSON attachment); no screen.
+    When: on the export button/link click on the coach writing screen (coach_writing.html); ?selected=1 limits to selected works.
+    """
     c = db()
     c.execute("SELECT name FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     coachee = c.fetchone()

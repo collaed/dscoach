@@ -51,8 +51,7 @@
 {% if s.task_title %}<span class="badge info">📋 {{ s.task_title }}</span>{% endif %}
 {% if s.note_text %}<br><span style="font-size:0.82rem;color:var(--text-secondary);font-style:italic">💬 {{ s.note_text[:120] }}{% if s.note_text|length > 120 %}...{% endif %}</span>{% endif %}
 </div>
-<form method="post" style="margin:0"><input type="hidden" name="action" value="delete"><input type="hidden" name="step_id" value="{{ s.id }}"><button type="submit" class="small secondary" style="margin:0">✕</button></form>
-    {{ csrf_field() }}
+<form method="post" style="margin:0"><input type="hidden" name="action" value="delete"><input type="hidden" name="step_id" value="{{ s.id }}"><button type="submit" class="small secondary" style="margin:0">✕</button>{{ csrf_field() }}</form>
 </div>
 {% endfor %}
 </div>
