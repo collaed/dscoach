@@ -364,7 +364,6 @@ unveil.addEventListener('change',update);
 freeze.addEventListener('change',update);
 update();setInterval(update,60000);
 
-const LKEY={{ llm_key|tojson }};
 const CID={{ coachee.id }};
 async function genProfile(){
   const btn=document.getElementById('gen-btn');
@@ -406,13 +405,10 @@ async function genConditioning(){
   btn.disabled=false;btn.textContent='🔄 Generate Today\'s Prompt';
 }
 
-const TG_TOKEN={{ tg_token|tojson }};
-const TG_CHAT={{ (coachee.telegram_chat_id or '')|tojson }};
 function tgSend(msg){
-  if(!TG_TOKEN||!TG_CHAT)return;
-  fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`,{
+  fetch(`/coach/coachee/${CID}/telegram-notify`,{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({chat_id:TG_CHAT,text:msg,parse_mode:'HTML'})
+    body:JSON.stringify({message:msg})
   }).catch(()=>{});
 }
 // hook into review forms

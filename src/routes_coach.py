@@ -6,7 +6,7 @@ import os
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from ai import LLM_KEY, _build_profile_prompt, _cf_ai_complete
+from ai import _build_profile_prompt, _cf_ai_complete
 from auth import login_required
 from automation import _completion_hours, _engagement_score, _payment_compliance, _weekly_report
 from flask import Blueprint, Response, abort, flash, redirect, render_template_string, request, session, url_for
@@ -356,8 +356,6 @@ def coach_view_coachee(cid):
     c.execute("SELECT profile_text FROM psychological_profile WHERE coachee_id=%s", (cid,))
     profile_row = c.fetchone()
     profile_text = profile_row["profile_text"] if profile_row else None
-    c.execute("SELECT telegram_bot_token FROM coach WHERE id=%s", (session["user_id"],))
-    tg_token = (c.fetchone() or {}).get("telegram_bot_token", "")
     c.execute("SELECT * FROM voice_note WHERE coachee_id=%s ORDER BY created_at DESC LIMIT 10", (cid,))
     voice_notes = c.fetchall()
     c.execute("SELECT * FROM goal WHERE coachee_id=%s ORDER BY created_at DESC", (cid,))
@@ -393,8 +391,6 @@ def coach_view_coachee(cid):
         coachee_context=coachee.get("context_text", ""),
         completion_hours=_completion_hours(cid),
         all_templates=all_templates,
-        llm_key=LLM_KEY,
-        tg_token=tg_token or "",
         coach_tz=session.get("timezone", "Europe/London"),
         all_features=FEATURES,
         coachee_features=json.loads(coachee.get("features") or "null")
@@ -523,6 +519,45 @@ def save_profile(cid):
     return "", 204
 
 
+@bp.route("/coach/coachee/<int:cid>/telegram-notify", methods=["POST"])
+@login_required("coach")
+def telegram_notify(cid):
+    """Server-side proxy for Telegram task/ack notifications — keeps the bot token off the client.
+
+    Route POST /coach/coachee/<cid>/telegram-notify — JSON body {"message": "..."}; returns JSON
+    {"sent": bool}, no screen. Fire-and-forget from the caller's perspective (same semantics as the
+    client-side fetch().catch(()=>{}) it replaces — see BUG-019).
+    CALLED BY / SCREEN: coach_view_coachee.html's tgSend() — fired on task-grade and acknowledgement
+    form submits on the coachee detail screen.
+    WHEN: immediately after a coach grades a task or logs an acknowledgement for this coachee.
+    """
+    c = db()
+    c.execute("SELECT telegram_chat_id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    coachee_row = c.fetchone()
+    if not coachee_row:
+        abort(404)
+    chat_id = coachee_row.get("telegram_chat_id")
+    c.execute("SELECT telegram_bot_token FROM coach WHERE id=%s", (session["user_id"],))
+    bot_token = (c.fetchone() or {}).get("telegram_bot_token")
+    message = (request.get_json(silent=True) or {}).get("message", "")
+    if not bot_token or not chat_id or not message:
+        return json.dumps({"sent": False}), 200, {"Content-Type": "application/json"}
+
+    import urllib.error
+    import urllib.request
+
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    payload = json.dumps({"chat_id": chat_id, "text": message, "parse_mode": "HTML"}).encode()
+    req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:  # nosec B310 - fixed Telegram API host; bot_token is a coach-configured server-side setting, not request input
+            resp.read()
+        return json.dumps({"sent": True}), 200, {"Content-Type": "application/json"}
+    except (urllib.error.URLError, urllib.error.HTTPError) as e:
+        print(f"[telegram_notify] send failed for coachee {cid}: {e}")  # at least visible, not swallowed silently
+        return json.dumps({"sent": False}), 200, {"Content-Type": "application/json"}
+
+
 @bp.route("/coach/analyze", methods=["GET", "POST"])
 @login_required("coach")
 def analyze_text():
@@ -548,7 +583,7 @@ def analyze_text():
         if result.startswith("[AI"):
             return json.dumps({"error": result}), 503, {"Content-Type": "application/json"}
         return json.dumps({"result": result}), 200, {"Content-Type": "application/json"}
-    return render_template_string(_tpl("analyze.html"), llm_key=LLM_KEY, coach_name=session.get("name", "Coach"))
+    return render_template_string(_tpl("analyze.html"), coach_name=session.get("name", "Coach"))
 
 
 @bp.route("/coach/grading", methods=["GET", "POST"])

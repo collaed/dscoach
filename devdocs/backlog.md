@@ -14,9 +14,10 @@ next and why. Status mirrors the roadmap (🟢 done · 🟡 partial · 🔴 not 
 | R49 | Points & persisted daily score | Directly requested; self-contained; foundational for R24/R51 | plan-proof-and-scoring.md |
 | R50 | `noir` theme (FetLife-inspired tokens) | Directly requested; opt-in, additive, low risk | plan-aesthetic-noir.md |
 | H1 / BUG-017 | Fix coach-delete cascade to cover all tables — **metadata-driven** (walk FK graph) so future tables auto-covered; test asserts zero orphans generically | Data-integrity bug; worsens as more coach-scoped tables ship (incl. `score_log`) | BUGS.md |
-| H8 | Fix stale `models.py` "20 tables" docstring | 30→31 tables; trivial, do it in schema step | models.py |
+| H8 | ✅ **Done** — fixed stale `models.py` table-count docstring | 30 tables; trivial | models.py |
 | H10 / BUG-018 | ✅ **Done in this PR** — `csrf_field()` moved inside `<form>` in 7 templates (incl. safe-word); generic regression test added | Safety-critical: safe-word/STOP button was CSRF-rejected | BUGS.md |
-| H11 / BUG-019 | **Urgent** — move `llm_key` / Telegram `tg_token` out of client-side JS to a server-side proxy | Secrets exposed in page source | BUGS.md |
+| H11 / BUG-019 | ✅ **Done** — dead `llm_key` deleted; Telegram send moved to a server-side proxy route (`/coach/coachee/<cid>/telegram-notify`); regression test asserts the token never reaches rendered HTML | Secrets exposed in page source | BUGS.md |
+| BUG-020 | **New** — AI-profile routes (`generate-profile`, `save_profile`, `ai-digest`, profile-prompt preview) take `cid` from the URL with no coach-ownership check (IDOR) — found while fixing H11 | Any coach can read/trigger generation for another coach's coachee | BUGS.md |
 
 ## Next (quick wins, low risk)
 
