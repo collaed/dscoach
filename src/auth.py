@@ -67,7 +67,7 @@ def login():
         c = db()
         # Try coach login
         c.execute(
-            "SELECT id, name, timezone, accent_color, bg_color, card_color, is_admin, status, font_pref, password_hash FROM coach WHERE username=%s",
+            "SELECT id, name, timezone, accent_color, bg_color, card_color, is_admin, status, font_pref, theme_pref, password_hash FROM coach WHERE username=%s",
             (username,),
         )
         row = c.fetchone()
@@ -92,12 +92,13 @@ def login():
                         card=row["card_color"] or "#16213e",
                         is_admin=bool(row.get("is_admin")),
                         font_pref=row.get("font_pref") or "clean",
+                        theme_pref=row.get("theme_pref") or "default",
                     )
                     _audit("login", row["id"], "coach")
                     return redirect(url_for("coach.coach_dashboard"))
         # Try coachee login
         c.execute(
-            "SELECT id, name, coach_id, color_scheme, avatar, font_pref, password_hash FROM coachee WHERE username=%s",
+            "SELECT id, name, coach_id, color_scheme, avatar, font_pref, theme_pref, password_hash FROM coachee WHERE username=%s",
             (username,),
         )
         row = c.fetchone()
@@ -126,6 +127,7 @@ def login():
                         card=coach_brand["card_color"] or "#16213e",
                         avatar=row["avatar"] or "\U0001f415",
                         font_pref=row.get("font_pref") or "clean",
+                        theme_pref=row.get("theme_pref") or "default",
                     )
                     _audit("login", row["id"], "coachee")
                     # Track login count for onboarding
@@ -238,4 +240,24 @@ def set_font(font):
             c.execute("UPDATE coach SET font_pref=%s WHERE id=%s", (font, session["user_id"]))
         elif session.get("role") == "coachee":
             c.execute("UPDATE coachee SET font_pref=%s WHERE id=%s", (font, session["user_id"]))
+    return redirect(request.referrer or url_for("auth.index"))
+
+
+THEME_CHOICES = ("default", "noir")
+
+
+@bp.route("/theme/<theme>")
+def set_theme(theme):
+    """PURPOSE: Switch UI theme preference (default/noir, R50) in the session and persist it to the coach/coachee row.
+    CALLED BY: Route GET /theme/<theme> — theme switcher links in page chrome across all screens; redirects back to referrer.
+    WHEN: On clicking a theme toggle."""
+    if theme not in THEME_CHOICES:
+        return redirect(request.referrer or url_for("auth.index"))
+    session["theme_pref"] = theme
+    if "user_id" in session:
+        c = db()
+        if session.get("role") == "coach":
+            c.execute("UPDATE coach SET theme_pref=%s WHERE id=%s", (theme, session["user_id"]))
+        elif session.get("role") == "coachee":
+            c.execute("UPDATE coachee SET theme_pref=%s WHERE id=%s", (theme, session["user_id"]))
     return redirect(request.referrer or url_for("auth.index"))

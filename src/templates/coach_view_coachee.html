@@ -27,7 +27,7 @@
 .grade-dot.E{background:#ef4444;color:#fff}.grade-dot.F{background:#991b1b;color:#fff}
 .last-resp{background:var(--input);border-radius:var(--radius-sm);padding:.5rem;font-size:.8rem;color:var(--text-secondary);margin-top:.4rem;white-space:pre-wrap;max-height:150px;overflow-y:auto;line-height:1.5}
 @media(max-width:900px){.two-col{grid-template-columns:1fr}.side-panel{position:static;order:-1}}
-</style></head><body class="font-{{ font_pref }}">
+</style></head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
 <div class="page">
 <p class="mb-1"><a href="/coach">← Dashboard</a></p>
 <h2>{{ coachee.avatar or '🐕' }} {{ coachee.name }} <span class="status {{ coachee.status }}">{{ coachee.status }}</span>{% if coachee.current_streak %} <span style="font-size:.9rem">🔥{{ coachee.current_streak }}</span>{% endif %}</h2>

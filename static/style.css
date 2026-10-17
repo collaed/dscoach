@@ -43,6 +43,44 @@ body.font-classic { --font: 'Libre Baskerville', 'Georgia', serif; }
 body.font-sharp { --font: 'JetBrains Mono', 'Fira Code', monospace; }
 body.font-modern { --font: 'DM Sans', system-ui, sans-serif; }
 
+/* ── R50: noir theme (FetLife-inspired tokens, independently derived — see
+   devdocs/plan-aesthetic-noir.md §0 for the legal position; nothing here is
+   copied from FetLife's own CSS, which isn't publicly reachable anyway) ── */
+body.theme-noir {
+  /* warm near-black surfaces, not blue-black */
+  --bg: #1a1a1a;
+  --bg-elevated: #202020;
+  --card: #242424;
+  --card-hover: #2b2b2b;
+  --input: #1c1c1c;
+  --input-focus: #262626;
+
+  /* grey text hierarchy */
+  --text: #d8d8d8;
+  --text-secondary: #a9a9a9;
+  --muted: #767676;
+
+  /* single crimson accent, used sparingly (buttons/icons/wordmark, never small body text) */
+  --accent: #b3153a;
+  --accent-hover: #d02348;
+  --accent-subtle: rgba(179, 21, 58, 0.10);
+
+  /* hairline borders, flatter elevation */
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --radius: 8px;
+  --radius-sm: 5px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 3px 8px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* status colours, slightly desaturated to sit on warm black */
+  --ok: #3fa66a;
+  --warn: #d99b2b;
+  --danger: #d0453f;
+}
+
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 16px; scroll-behavior: smooth; }

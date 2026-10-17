@@ -38,7 +38,7 @@
 }
 .reflection-row input[type=radio] { width: auto; margin: 0; }
 </style>
-</head><body class="font-{{ font_pref }}">
+</head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
 <nav>
 {% if session.get('coach_id') %}<img src="/coach/logo" style="max-height:26px;border-radius:4px" onerror="this.style.display='none'" alt="">{% endif %}
 <span class="title">{{ session.get('avatar','🌟') }} {{ coachee.name }}{% if coachee.current_streak %} <span class="streak-display">🔥 {{ coachee.current_streak }}</span>{% endif %}</span>
@@ -425,6 +425,13 @@ Close with your sign-off..."></textarea>
 <a href="/font/classic" style="padding:.4rem .7rem;border-radius:var(--radius-sm);border:1px solid {% if font_pref == 'classic' %}var(--accent){% else %}var(--border){% endif %};text-decoration:none;color:var(--text);font-family:'Libre Baskerville',serif;font-size:.85rem">Classic</a>
 <a href="/font/sharp" style="padding:.4rem .7rem;border-radius:var(--radius-sm);border:1px solid {% if font_pref == 'sharp' %}var(--accent){% else %}var(--border){% endif %};text-decoration:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.85rem">Sharp</a>
 <a href="/font/modern" style="padding:.4rem .7rem;border-radius:var(--radius-sm);border:1px solid {% if font_pref == 'modern' %}var(--accent){% else %}var(--border){% endif %};text-decoration:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.85rem">Modern</a>
+</div>
+</div>
+<div class="section">
+<h3>{% if lang == 'fr' %}Thème{% else %}Theme{% endif %}</h3>
+<div style="display:flex;flex-wrap:wrap;gap:.5rem">
+<a href="/theme/default" style="padding:.4rem .7rem;border-radius:var(--radius-sm);border:1px solid {% if theme_pref == 'default' %}var(--accent){% else %}var(--border){% endif %};text-decoration:none;color:var(--text);font-size:.85rem">Default</a>
+<a href="/theme/noir" style="padding:.4rem .7rem;border-radius:var(--radius-sm);border:1px solid {% if theme_pref == 'noir' %}var(--accent){% else %}var(--border){% endif %};text-decoration:none;color:var(--text);font-size:.85rem">Noir</a>
 </div>
 </div>
 </div>

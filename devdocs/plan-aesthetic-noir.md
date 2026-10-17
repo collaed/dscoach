@@ -1,6 +1,11 @@
 # Plan — FetLife-Inspired Aesthetic (Design Tokens)
 
-Status: **Proposed** (for review) — 2026-09-30
+Status: **Implemented** (2026-10-17) — `body.theme-noir` CSS block, `theme_pref`
+on `coach`/`coachee` mirroring the existing `font_pref` pattern exactly
+(`migrations/versions/005_r50_noir_theme.py`), `/theme/<theme>` route, toggles
+on both settings screens, and the one-click branding preset in
+`/coach/branding`. 8 tests (`tests/test_theme.py`), manually verified
+end-to-end against the real local Postgres-backed app.
 Roadmap ID: **R50** (Aesthetic alignment)
 
 ## 0. Legal position (read first)

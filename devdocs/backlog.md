@@ -12,7 +12,7 @@ next and why. Status mirrors the roadmap (🟢 done · 🟡 partial · 🔴 not 
 | Commit refactor | Land the large uncommitted modular refactor as its own commit (81 tests green) | Keeps the feature diffs reviewable; unversioned work is a risk | project.md |
 | R48 | ✅ **Done** — probabilistic proof demand, all 5 assignment sites + completion enforcement + UI disclosure | Directly requested; low schema cost; big workload/UX win on recurring tasks | plan-proof-and-scoring.md |
 | R49 | ✅ **Done** — points, score_log ledger, rollups, excuse-reverses-penalty, week_start preference | Directly requested; self-contained; foundational for R24/R51 | plan-proof-and-scoring.md |
-| R50 | `noir` theme (FetLife-inspired tokens) | Directly requested; opt-in, additive, low risk | plan-aesthetic-noir.md |
+| R50 | ✅ **Done** — noir theme, toggles on both settings screens, branding preset | Directly requested; opt-in, additive, low risk | plan-aesthetic-noir.md |
 | H1 / BUG-017 | Fix coach-delete cascade to cover all tables — **metadata-driven** (walk FK graph) so future tables auto-covered; test asserts zero orphans generically | Data-integrity bug; worsens as more coach-scoped tables ship (incl. `score_log`) | BUGS.md |
 | H8 | ✅ **Done** — fixed stale `models.py` table-count docstring | 30 tables; trivial | models.py |
 | H10 / BUG-018 | ✅ **Done in this PR** — `csrf_field()` moved inside `<form>` in 7 templates (incl. safe-word); generic regression test added | Safety-critical: safe-word/STOP button was CSRF-rejected | BUGS.md |

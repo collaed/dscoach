@@ -44,6 +44,7 @@ coach = Table(
     Column("email", String(200)),
     Column("features", JSON),
     Column("font_pref", String(20), server_default="clean"),
+    Column("theme_pref", String(20), server_default="default"),  # R50: 'default' | 'noir'
     Column("created_at", DateTime, server_default=func.now()),
 )
 
@@ -73,6 +74,7 @@ coachee = Table(
     Column("last_streak_date", Date),
     Column("login_count", Integer, server_default="0"),
     Column("font_pref", String(20), server_default="clean"),
+    Column("theme_pref", String(20), server_default="default"),  # R50: 'default' | 'noir'
     Column("created_at", DateTime, server_default=func.now()),
 )
 

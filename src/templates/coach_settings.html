@@ -7,7 +7,7 @@
 .feature-item{display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:var(--input);border-radius:var(--radius-sm);font-size:.9rem}
 .feature-item input{width:auto}
 @media(max-width:600px){.feature-grid{grid-template-columns:1fr}}
-</style></head><body class="font-{{ font_pref }}">
+</style></head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
 {{ flash_block }}
 <nav><span class="title">DSCoaching</span><a href="/coach">&larr; Dashboard</a></nav>
 <div class="page">
@@ -57,6 +57,15 @@
 <a href="/font/classic" class="btn{% if font_pref == 'classic' %} active{% endif %}" style="font-family:'Libre Baskerville',serif;{% if font_pref == 'classic' %}border-color:var(--accent){% endif %}">Classic</a>
 <a href="/font/sharp" class="btn{% if font_pref == 'sharp' %} active{% endif %}" style="font-family:'JetBrains Mono',monospace;{% if font_pref == 'sharp' %}border-color:var(--accent){% endif %}">Sharp</a>
 <a href="/font/modern" class="btn{% if font_pref == 'modern' %} active{% endif %}" style="font-family:'DM Sans',sans-serif;{% if font_pref == 'modern' %}border-color:var(--accent){% endif %}">Modern</a>
+</div>
+</div>
+
+<div class="section" style="max-width:600px;margin:0 auto 1rem">
+<h3>{% if lang == 'fr' %}Thème{% else %}Theme{% endif %}</h3>
+<p class="muted" style="margin-bottom:.5rem">{% if lang == 'fr' %}Choisissez l'ambiance visuelle.{% else %}Choose the visual theme.{% endif %}</p>
+<div style="display:flex;flex-wrap:wrap;gap:.5rem">
+<a href="/theme/default" class="btn{% if theme_pref == 'default' %} active{% endif %}" style="{% if theme_pref == 'default' %}border-color:var(--accent){% endif %}">Default</a>
+<a href="/theme/noir" class="btn{% if theme_pref == 'noir' %} active{% endif %}" style="{% if theme_pref == 'noir' %}border-color:var(--accent){% endif %}">Noir</a>
 </div>
 </div>
 
