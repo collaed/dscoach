@@ -109,7 +109,9 @@ def login():
                     "SELECT accent_color, bg_color, card_color, status FROM coach WHERE id=%s", (row["coach_id"],)
                 )
                 coach_brand = c.fetchone()
-                if coach_brand.get("status") == "frozen":
+                if not coach_brand:
+                    err = "Your coach's account is no longer available."
+                elif coach_brand.get("status") == "frozen":
                     err = "Your coach's account is frozen."
                 else:
                     # Transparent rehash to argon2 if still on SHA-256
@@ -133,9 +135,11 @@ def login():
                     # Track login count for onboarding
                     c.execute("UPDATE coachee SET login_count=COALESCE(login_count,0)+1 WHERE id=%s", (row["id"],))
                     return redirect(url_for("coachee.coachee_dashboard"))
-        # Failed login
-        record_failed_attempt(ip)
-        err = "Invalid credentials"
+        # Failed login — but only overwrite err with the generic message if a
+        # more specific one (frozen / orphaned coach) wasn't already set above.
+        if not err:
+            record_failed_attempt(ip)
+            err = "Invalid credentials"
     return render_template_string(_tpl("login.html"), error=err)
 
 

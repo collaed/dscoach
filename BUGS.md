@@ -22,7 +22,7 @@
 | BUG-006 | low | `admin_delete_coach` uses bare `except Exception: pass` for cascade deletions | `src/routes_admin.py` | **resolved by BUG-017** | The metadata-driven cascade rewrite (BUG-017) replaced the per-table try/except entirely - deletes now run directly and a real failure propagates rather than being caught. No separate action needed. |
 | BUG-007 | low | `forgotPw()` in login template hardcodes `papillon.severin@gmail.com` | `src/templates/login.html` line 33 | **fixed** | Replaced with `SUPPORT_EMAIL` env var (`helpers.py`, same pattern as `ATTACHMENTS_DIR`), injected into every template via `inject_helpers()`. Link and `mailto:` are omitted entirely from the login page when unset (the default), so no address ships unconfigured. `tests/test_forgot_password.py`. |
 | BUG-008 | low | No HTTP error handlers (404, 500, 403) — errors return bare strings | `src/app.py` (missing) | **fixed** | Added styled error handlers in Task 9. |
-| BUG-009 | low | `coach_brand = c.fetchone()` could return `None` if coach deleted mid-session | `src/app.py` line 265 (login flow) | open | Race condition: coachee logs in, coach is deleted between queries. |
+| BUG-009 | low | `coach_brand = c.fetchone()` could return `None` if coach deleted mid-session | `src/auth.py` (login flow) | **fixed** | Added a `not coach_brand` guard returning a clean "no longer available" message. Also found and fixed a second bug while here: the login route's bottom fallthrough unconditionally overwrote `err` with "Invalid credentials", clobbering this message *and* the pre-existing "Account frozen" message for a correct password — now guarded with `if not err:`. `tests/test_orphaned_coachee_login.py`. |
 | BUG-010 | low | No input length validation — form values could exceed VARCHAR column limits | Various routes | open | Truncation or DB error on oversized input. |
 | BUG-011 | low | `_auto_assign_reserves` runs on every coachee dashboard load (N+1 queries) | `src/app.py` line 82 | open | Performance concern at scale; acceptable for personal use. |
 | BUG-012 | low | `c.lastrowid` is pymysql-specific; not available on psycopg2 | `src/app.py` lines 320, 700 | **fixed** | Handled by _SAConn wrapper with fallback to inserted_primary_key. |
@@ -55,3 +55,4 @@
 | BUG-018 | this PR | `csrf_field()` moved inside `<form>` in 7 templates (incl. safe-word buttons); generic regression test added |
 | BUG-017 | this PR | metadata-driven cascade in `admin_delete_coach` (fixes prod 500 on coach delete); generic zero-orphan regression test added |
 | BUG-007 | this PR | hardcoded forgot-password address → `SUPPORT_EMAIL` env var, link hidden when unset |
+| BUG-009 | this PR | orphaned-coach login guard + login error-message fallthrough fix |
