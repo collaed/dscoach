@@ -199,12 +199,15 @@ def _freeze_overdue(coachee_id, tz):
 
     c = db()
     local_now = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+    # Select the affected rows (not just a count) - needed both for R49's
+    # per-assignment penalty award and for REQ-49.9's idempotency key.
     c.execute(
-        """SELECT COUNT(*) as cnt FROM task_assignment
-                 WHERE coachee_id=%s AND status='pending' AND frozen_after IS NOT NULL AND frozen_after < %s""",
+        """SELECT ta.id, tt.points FROM task_assignment ta JOIN task_template tt ON ta.template_id=tt.id
+                 WHERE ta.coachee_id=%s AND ta.status='pending' AND ta.frozen_after IS NOT NULL AND ta.frozen_after < %s""",
         (coachee_id, local_now),
     )
-    missed = c.fetchone()["cnt"]
+    missed_rows = c.fetchall()
+    missed = len(missed_rows)
     if missed:
         c.execute(
             """UPDATE task_assignment SET status='missed'
@@ -212,6 +215,13 @@ def _freeze_overdue(coachee_id, tz):
             (coachee_id, local_now),
         )
         c.execute("UPDATE coachee SET strikes=strikes+%s, current_streak=0 WHERE id=%s", (missed, coachee_id))
+        # R49: a configurable miss penalty per assignment - default is the
+        # template's own points value, negated (0 if the template has none).
+        from scoring import award_points
+
+        for mrow in missed_rows:
+            penalty = -(mrow.get("points") or 0)
+            award_points(coachee_id, penalty, "task_missed", task_assignment_id=mrow["id"])
         # Auto-escalation note
         _auto_escalation_note(coachee_id, missed)
         # Run automation rules for task_missed trigger

@@ -374,9 +374,14 @@ def coach_view_coachee(cid):
     # Get all templates for the planning side panel
     c.execute("SELECT id, title, tags FROM task_template WHERE coach_id=%s ORDER BY title", (session["user_id"],))
     all_templates = c.fetchall()
+
+    from scoring import score_history, score_summary
+
     return render_template_string(
         _tpl("coach_view_coachee.html"),
         coachee=coachee,
+        score=score_summary(cid, session["user_id"]),
+        score_rows=score_history(cid),
         tasks=tasks,
         checkins=checkins,
         acks=acks,
@@ -418,7 +423,21 @@ def edit_coachee(cid):
         c.execute(
             "INSERT INTO contract_history (coachee_id, contract_text) VALUES (%s,%s)", (cid, old["contract_text"])
         )
-    coachee_features = {k: k in request.form.getlist("coachee_features") for k, _ in FEATURES}
+    # Merge into the existing features JSON rather than replacing it wholesale - it also
+    # holds photo_validation_pct and (R49) week_start, neither of which this form edits.
+    # BUG-021: this used to overwrite the whole dict with just the feature-flag booleans,
+    # silently wiping those other keys on every coachee-settings save.
+    c.execute("SELECT features FROM coachee WHERE id=%s", (cid,))
+    existing_row = c.fetchone()
+    existing_features = existing_row.get("features") if existing_row else None
+    if isinstance(existing_features, str):
+        try:
+            existing_features = json.loads(existing_features)
+        except (json.JSONDecodeError, TypeError):
+            existing_features = {}
+    existing_features = dict(existing_features or {})
+    existing_features.update({k: k in request.form.getlist("coachee_features") for k, _ in FEATURES})
+    coachee_features = existing_features
     c.execute(
         """UPDATE coachee SET contract_text=%s, safe_word=%s, task_unveil_time=%s, task_freeze_time=%s,
                  timezone=%s, avatar=%s, color_scheme=%s, telegram_chat_id=%s, features=%s
@@ -683,9 +702,10 @@ def manage_tasks():
         recur_days = int(request.form.get("recur_days") or 0) or None
         recur_approx = 1 if request.form.get("recur_approx") else 0
         proof_pct = max(0, min(100, int(request.form.get("proof_pct") or 0)))
+        points = int(request.form.get("points") or 0)
         c.execute(
-            """INSERT INTO task_template (coach_id, title, description, recurrence, category, difficulty, is_reserve, recur_days, recur_approx, in_library, auto_grade, photo_validate, tags, proof_pct)
-                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            """INSERT INTO task_template (coach_id, title, description, recurrence, category, difficulty, is_reserve, recur_days, recur_approx, in_library, auto_grade, photo_validate, tags, proof_pct, points)
+                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             (
                 session["user_id"],
                 request.form["title"],
@@ -701,6 +721,7 @@ def manage_tasks():
                 photo_validate,
                 tags or None,
                 proof_pct,
+                points,
             ),
         )
         tmpl_id = c.lastrowid
@@ -826,6 +847,67 @@ def review_task(tid):
                  WHERE id=%s AND coachee_id IN (SELECT id FROM coachee WHERE coach_id=%s)""",
         (request.form.get("grade"), request.form.get("coach_comment", ""), tid, session["user_id"]),
     )
+    cid = request.form.get("coachee_id")
+    return redirect(url_for("coach.coach_view_coachee", cid=cid))
+
+
+@bp.route("/coach/coachee/<int:cid>/week-start", methods=["POST"])
+@login_required("coach")
+def set_week_start(cid):
+    """Set the Sun-Sat vs Mon-Sun week-boundary preference for a coachee's score rollups (REQ-49.6).
+
+    Route POST /coach/coachee/<cid>/week-start — no screen; redirects to the coachee detail screen.
+    When: on the week-boundary toggle in the Score section of coach_view_coachee.html.
+    """
+    c = db()
+    c.execute("SELECT features FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    row = c.fetchone()
+    if not row:
+        abort(404)
+    features = row.get("features")
+    if isinstance(features, str):
+        try:
+            features = json.loads(features)
+        except (json.JSONDecodeError, TypeError):
+            features = {}
+    features = dict(features or {})
+    features["week_start"] = "sun" if request.form.get("week_start") == "sun" else "mon"
+    c.execute("UPDATE coachee SET features=%s WHERE id=%s", (json.dumps(features), cid))
+    return redirect(url_for("coach.coach_view_coachee", cid=cid))
+
+
+@bp.route("/coach/task/<int:tid>/excuse", methods=["POST"])
+@login_required("coach")
+def excuse_task(tid):
+    """Transition a 'missed' assignment to 'excused' and reverse its R49 miss penalty.
+
+    Route POST /coach/task/<tid>/excuse — no screen; redirects to the coachee detail screen.
+    When: on the "Excuse" button next to a missed task on coach_view_coachee.html.
+    Charter principle 5 (consequences stay coach-overridable): excusing a miss must not
+    leave a stale penalty on the score ledger (REQ-49.2b) - this appends a compensating
+    +penalty row rather than editing the original, keeping score_log append-only.
+    """
+    c = db()
+    c.execute(
+        """SELECT ta.id, ta.coachee_id FROM task_assignment ta
+                 WHERE ta.id=%s AND ta.status='missed'
+                 AND ta.coachee_id IN (SELECT id FROM coachee WHERE coach_id=%s)""",
+        (tid, session["user_id"]),
+    )
+    row = c.fetchone()
+    if row:
+        c.execute("UPDATE task_assignment SET status='excused' WHERE id=%s", (tid,))
+        c.execute("SELECT points FROM score_log WHERE task_assignment_id=%s AND reason='task_missed'", (tid,))
+        penalty_row = c.fetchone()
+        if penalty_row:
+            from scoring import award_points
+
+            award_points(
+                row["coachee_id"],
+                -penalty_row["points"],
+                "miss_reversed",
+                task_assignment_id=tid,
+            )
     cid = request.form.get("coachee_id")
     return redirect(url_for("coach.coach_view_coachee", cid=cid))
 

@@ -1,4 +1,4 @@
-"""SQLAlchemy Core table definitions for DSCoaching (30 tables).
+"""SQLAlchemy Core table definitions for DSCoaching (31 tables).
 
 Used by: database.py::init_db() (metadata.create_all — this is what
 provisions a fresh DB) and migrations/env.py (Alembic target_metadata).
@@ -95,6 +95,7 @@ task_template = Table(
     Column("photo_validate", SmallInteger, server_default="0"),
     Column("tags", String(500)),
     Column("proof_pct", SmallInteger, server_default="0"),  # R48: chance (0-100) this occurrence demands a photo
+    Column("points", SmallInteger, server_default="0"),  # R49: signed; negative = a penalty/avoid-this task
     Column("created_at", DateTime, server_default=func.now()),
 )
 
@@ -121,6 +122,26 @@ task_assignment = Table(
     Column("photo_validation_override", Text),
     Column("proof_required", SmallInteger, server_default="0"),  # R48: rolled once at creation, persisted
     Column("created_at", DateTime, server_default=func.now()),
+)
+
+# R49: append-only score ledger, never an in-place counter (same philosophy as checkin) -
+# every rollup is a pure aggregation over these rows, auditable and recomputable. Written by:
+# src/scoring.py::award_points(), called from routes_coachee.py (task completion, proof bonus),
+# tasks.py (missed-task penalty), and routes_coach.py (missed->excused reversal, manual award).
+# Read by: src/scoring.py's rollup functions, feeding the score widget on coachee_dashboard.html
+# and the score history section on coach_view_coachee.html.
+score_log = Table(
+    "score_log",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("coachee_id", Integer, ForeignKey("coachee.id"), nullable=False),
+    Column("points", SmallInteger, nullable=False),
+    Column("reason", String(40), nullable=False),  # task_completed | task_missed | miss_reversed | proof_bonus | manual
+    Column("task_assignment_id", Integer, ForeignKey("task_assignment.id"), nullable=True),
+    Column("score_date", Date, nullable=False),  # coachee-local date, not server UTC (REQ-49.4)
+    Column("note", String(200)),
+    Column("created_at", DateTime, server_default=func.now()),
+    UniqueConstraint("task_assignment_id", "reason"),  # idempotency (REQ-49.9); NULLs don't collide
 )
 
 # Immutable morning/evening/weekly check-in log. Written by: routes_coachee.py (coachee submits from /me). Read by: routes_coach.py (coach_view_coachee.html history) and automation.py (engagement scoring).

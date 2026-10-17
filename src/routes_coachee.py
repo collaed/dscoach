@@ -152,8 +152,13 @@ def coachee_dashboard():
     c.execute("SELECT COUNT(*) as cnt FROM creative_constraint WHERE coachee_id=%s AND used=0", (cid,))
     writing_pending_constraints = c.fetchone()["cnt"]
 
+    from scoring import score_summary
+
+    score = score_summary(cid, coachee["coach_id"])
+
     return render_template_string(
         _tpl("coachee_dashboard.html"),
+        score=score,
         coachee=coachee,
         tasks=tasks,
         conditioning=[{**mc, "prompt_text": _merge_vars(mc.get("prompt_text", ""), cid)} for mc in conditioning],
@@ -263,6 +268,20 @@ def complete_task(tid):
     )
     flash("Task submitted!", "success")
     _run_auto_rules(session["user_id"], "task_completed")
+
+    # R49: award points on completion, plus a proof bonus if this occurrence
+    # required proof and a photo was actually attached.
+    if status == "completed":
+        from scoring import award_points, get_proof_bonus
+
+        c.execute("SELECT points FROM task_template WHERE id=%s", (template_id,))
+        tmpl_pts = c.fetchone()
+        points = (tmpl_pts and tmpl_pts.get("points")) or 0
+        award_points(session["user_id"], points, "task_completed", task_assignment_id=tid)
+        if row.get("proof_required") and att_path:
+            coach_id = session.get("coach_id")
+            bonus = get_proof_bonus(coach_id) if coach_id else 0
+            award_points(session["user_id"], bonus, "proof_bonus", task_assignment_id=tid)
 
     # Photo validation: run AI check if enabled and photo attached
     if att_path and status == "completed":

@@ -99,6 +99,28 @@
 {% endif %}
 </div>
 
+<div class="section">
+<h3>⭐ Score</h3>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:0.5rem">
+<div style="text-align:center;padding:0.6rem;background:var(--input);border-radius:var(--radius-sm)">
+<div style="font-size:1.3rem;font-weight:700;color:var(--text)">{{ score.today }}</div>
+<div style="font-size:0.75rem;color:var(--muted)">Today</div>
+</div>
+<div style="text-align:center;padding:0.6rem;background:var(--input);border-radius:var(--radius-sm)">
+<div style="font-size:1.3rem;font-weight:700;color:var(--text)">{{ score.this_week }}</div>
+<div style="font-size:0.75rem;color:var(--muted)">This Week</div>
+</div>
+<div style="text-align:center;padding:0.6rem;background:var(--input);border-radius:var(--radius-sm)">
+<div style="font-size:1.3rem;font-weight:700;color:var(--text)">{{ score.this_month }}</div>
+<div style="font-size:0.75rem;color:var(--muted)">This Month</div>
+</div>
+<div style="text-align:center;padding:0.6rem;background:var(--input);border-radius:var(--radius-sm)">
+<div style="font-size:1.3rem;font-weight:700;color:var(--text)">{{ score.best_week }}</div>
+<div style="font-size:0.75rem;color:var(--muted)">Best Week</div>
+</div>
+</div>
+</div>
+
 {% if earned_badges %}
 <div class="section">
 <h3>🏆 Badges</h3>

@@ -1,6 +1,6 @@
 # Plan — Probabilistic Proof + Points & Daily Score
 
-Status: **R48 implemented** (2026-10-17) — R49 still proposed, see roadmap.md
+Status: **R48 and R49 both implemented** (2026-10-17) — see roadmap.md
 Author: Eddy Collart (drafted with Kiro)
 Roadmap IDs: **R48** (Probabilistic proof), **R49** (Points & daily score)
 
@@ -18,7 +18,20 @@ migration's own content). The schema change itself (two nullable
 `create_all()`, so the actual columns/behavior are fully covered — only the
 Alembic *migration file's own execution* is unverified. Run `alembic upgrade
 head` against a real scratch Postgres before relying on it in a production
-deploy that still has the old schema.
+deploy that still has the old schema. **Manually verified end-to-end against
+the real local Docker Postgres stack** (not just SQLite tests): created a
+task with `points=9` via the real `/coach/tasks` form, completed it as the
+real coachee, and confirmed `score_log` got exactly one `+9 task_completed`
+row and the dashboard's Today/Week/Month/Best-week widgets all read 9.
+
+**R49 implementation note:** `migrations/versions/004_r49_scoring.py` has
+the same alembic-execution caveat as 003 above, for the same sandbox reason.
+Also found and fixed in passing (not part of either plan originally):
+**BUG-021** — `edit_coachee` was replacing `coachee.features` wholesale
+instead of merging into it, silently wiping `photo_validation_pct` (a
+pre-existing bug) and would have immediately wiped the new `week_start`
+preference on the very next coachee-settings save. Fixed to merge; see
+`tests/test_scoring.py::test_editing_coachee_settings_preserves_week_start_preference`.
 
 ---
 

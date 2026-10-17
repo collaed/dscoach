@@ -88,6 +88,8 @@
 <input type="range" name="proof_pct" id="proof_pct" min="0" max="100" value="0" step="5"
   oninput="document.getElementById('proof_pct_val').textContent=this.value+'%'">
 <span id="proof_pct_val" class="muted small">0%</span>
+<label for="points">Points <span class="muted small">(may be negative, for a task you're meant to avoid)</span></label>
+<input type="number" name="points" id="points" value="0" step="1">
 <label>Tags <span class="muted small">(comma-separated, e.g. morning,mindset,discipline)</span></label>
 <input type="text" name="tags" placeholder="morning, mindset, discipline">
 <div id="assign-section">
@@ -156,6 +158,7 @@
 {% if t.auto_grade %}<span class="tag" style="background:var(--ok-subtle);color:var(--ok)">auto</span>{% endif %}
 {% if t.photo_validate %}<span class="tag" style="background:rgba(233,69,96,0.1);color:var(--accent)">📷 validate</span>{% endif %}
 {% if t.proof_pct %}<span class="tag" style="background:rgba(233,69,96,0.1);color:var(--accent)">📷 proof {{ t.proof_pct }}%</span>{% endif %}
+{% if t.points %}<span class="tag" style="background:{% if t.points > 0 %}var(--ok-subtle){% else %}rgba(239,68,68,0.1){% endif %};color:{% if t.points > 0 %}var(--ok){% else %}var(--danger){% endif %}">⭐ {{ '%+d'|format(t.points) }}</span>{% endif %}
 {% if t.tags %}{% for tag in t.tags.split(',') %}<span class="tag" style="background:rgba(59,130,246,0.1);color:#60a5fa">{{ tag.strip() }}</span> {% endfor %}{% endif %}
 {% if t.description %}<br><span class="muted">{{ t.description }}</span>{% endif %}
 <details style="margin-top:.3rem"><summary>Edit / Delete</summary>

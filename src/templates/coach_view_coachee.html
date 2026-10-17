@@ -191,6 +191,37 @@
 </div>
 
 <div class="section">
+<h3>⭐ Score</h3>
+<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:.6rem">
+<div>Today: <strong>{{ score.today }}</strong></div>
+<div>This week: <strong>{{ score.this_week }}</strong></div>
+<div>This month: <strong>{{ score.this_month }}</strong></div>
+<div>Best week: <strong>{{ score.best_week }}</strong></div>
+<div>All-time: <strong>{{ score.all_time }}</strong></div>
+</div>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/week-start" style="margin-bottom:.6rem">
+    {{ csrf_field() }}
+<label style="font-size:.85rem">Week boundary:
+<select name="week_start" onchange="this.form.submit()">
+<option value="mon"{% if score.week_start == 'mon' %} selected{% endif %}>Mon–Sun</option>
+<option value="sun"{% if score.week_start == 'sun' %} selected{% endif %}>Sun–Sat</option>
+</select>
+</label>
+</form>
+{% if score_rows %}
+<details><summary class="muted small">Line-item history ({{ score_rows|length }})</summary>
+{% for s in score_rows %}
+<div class="entry" style="padding:.3rem 0">
+<span style="color:{% if s.points >= 0 %}var(--ok){% else %}var(--danger){% endif %}">{{ '%+d'|format(s.points) }}</span>
+{{ s.reason }}{% if s.note %} — {{ s.note }}{% endif %}
+<span class="time">{{ s.score_date }}</span>
+</div>
+{% endfor %}
+</details>
+{% endif %}
+</div>
+
+<div class="section">
 <h3>📋 Recent Tasks</h3>
 {% for t in tasks %}
 <div class="entry">
@@ -207,6 +238,13 @@
 <select name="grade" style="width:60px"><option value="">—</option>{% for g in ['A','B','C','D','E','F'] %}<option{% if t.grade==g %} selected{% endif %}>{{ g }}</option>{% endfor %}</select>
 <input type="text" name="coach_comment" placeholder="Comment..." value="{{ t.coach_comment or '' }}" style="flex:1">
 <button type="submit" style="margin:0">Save</button>
+</form>
+{% elif t.status == 'missed' %}
+<form method="post" action="/coach/task/{{ t.id }}/excuse" style="margin-top:.3rem">
+    {{ csrf_field() }}
+<input type="hidden" name="coachee_id" value="{{ coachee.id }}">
+<button type="submit" class="secondary" style="margin:0">Excuse this miss</button>
+<span class="muted small">Reverses the score penalty too.</span>
 </form>
 {% endif %}
 <div class="time">{{ t.created_at }}</div>
