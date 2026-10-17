@@ -20,7 +20,7 @@
 | BUG-004 | medium | `INTERVAL 90 DAY` / `INTERVAL 7 DAY` — MySQL syntax; PG uses `INTERVAL '90 days'` | `src/app.py` lines 1224, 1272, 1276 | **fixed** | Replaced with Python date arithmetic in Task 2. |
 | BUG-005 | low | `_audit()` silently swallows all exceptions with bare `except Exception: pass` | `src/helpers.py::_audit` | **fixed** | Added `print(f"[_audit] write failed for action={action!r}: {e}")` - still never raises (auditing must not break a request), but no longer invisible. `tests/test_h3_logging.py` covers it. |
 | BUG-006 | low | `admin_delete_coach` uses bare `except Exception: pass` for cascade deletions | `src/routes_admin.py` | **resolved by BUG-017** | The metadata-driven cascade rewrite (BUG-017) replaced the per-table try/except entirely - deletes now run directly and a real failure propagates rather than being caught. No separate action needed. |
-| BUG-007 | low | `forgotPw()` in login template hardcodes `papillon.severin@gmail.com` | `src/templates/login.html` line 33 | open | Should be configurable per-deployment or removed. |
+| BUG-007 | low | `forgotPw()` in login template hardcodes `papillon.severin@gmail.com` | `src/templates/login.html` line 33 | **fixed** | Replaced with `SUPPORT_EMAIL` env var (`helpers.py`, same pattern as `ATTACHMENTS_DIR`), injected into every template via `inject_helpers()`. Link and `mailto:` are omitted entirely from the login page when unset (the default), so no address ships unconfigured. `tests/test_forgot_password.py`. |
 | BUG-008 | low | No HTTP error handlers (404, 500, 403) — errors return bare strings | `src/app.py` (missing) | **fixed** | Added styled error handlers in Task 9. |
 | BUG-009 | low | `coach_brand = c.fetchone()` could return `None` if coach deleted mid-session | `src/app.py` line 265 (login flow) | open | Race condition: coachee logs in, coach is deleted between queries. |
 | BUG-010 | low | No input length validation — form values could exceed VARCHAR column limits | Various routes | open | Truncation or DB error on oversized input. |
@@ -54,3 +54,4 @@
 | BUG-016 | Task 2 | `GREATEST()` → `CASE WHEN` for SQLite compat |
 | BUG-018 | this PR | `csrf_field()` moved inside `<form>` in 7 templates (incl. safe-word buttons); generic regression test added |
 | BUG-017 | this PR | metadata-driven cascade in `admin_delete_coach` (fixes prod 500 on coach delete); generic zero-orphan regression test added |
+| BUG-007 | this PR | hardcoded forgot-password address → `SUPPORT_EMAIL` env var, link hidden when unset |

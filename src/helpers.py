@@ -11,6 +11,7 @@ from sqlalchemy import text
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 ATTACHMENTS_DIR = os.environ.get("ATTACHMENTS_DIR", "/data/attachments")
+SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "")  # BUG-007: per-deployment, no hardcoded address
 
 FLASH_STYLE = "<style>.flash{padding:.6rem 1rem;border-radius:6px;margin:.5rem 1rem;font-size:.9rem;text-align:center}.flash-success{background:#2d6a4f;color:#fff}.flash-error{background:#e94560;color:#fff}.flash-info{background:#16213e;color:#e0e0e0;border:1px solid #333}</style>"
 
@@ -18,7 +19,7 @@ FLASH_STYLE = "<style>.flash{padding:.6rem 1rem;border-radius:6px;margin:.5rem 1
 def inject_helpers():
     """Make flash rendering and i18n available in all templates.
 
-    PURPOSE: Build the {flash_block, t, lang, font_pref, theme_pref} context injected into every rendered template.
+    PURPOSE: Build the {flash_block, t, lang, font_pref, theme_pref, support_email} context injected into every rendered template.
     CALLED BY: Registered as a Flask context_processor in app.py (create_app), so it runs for all screens (coach, coachee, admin, public).
     WHEN: On every template render, before Jinja evaluates the template.
     """
@@ -32,7 +33,14 @@ def inject_helpers():
         html = ""
     font_pref = session.get("font_pref", "clean")
     theme_pref = session.get("theme_pref", "default")  # R50: 'default' | 'noir'
-    return {"flash_block": html, "t": t, "lang": get_lang(), "font_pref": font_pref, "theme_pref": theme_pref}
+    return {
+        "flash_block": html,
+        "t": t,
+        "lang": get_lang(),
+        "font_pref": font_pref,
+        "theme_pref": theme_pref,
+        "support_email": SUPPORT_EMAIL,
+    }
 
 
 def _real_ip():
