@@ -13,11 +13,11 @@ next and why. Status mirrors the roadmap (🟢 done · 🟡 partial · 🔴 not 
 | R48 | ✅ **Done** — probabilistic proof demand, all 5 assignment sites + completion enforcement + UI disclosure | Directly requested; low schema cost; big workload/UX win on recurring tasks | plan-proof-and-scoring.md |
 | R49 | ✅ **Done** — points, score_log ledger, rollups, excuse-reverses-penalty, week_start preference | Directly requested; self-contained; foundational for R24/R51 | plan-proof-and-scoring.md |
 | R50 | ✅ **Done** — noir theme, toggles on both settings screens, branding preset | Directly requested; opt-in, additive, low risk | plan-aesthetic-noir.md |
-| H1 / BUG-017 | Fix coach-delete cascade to cover all tables — **metadata-driven** (walk FK graph) so future tables auto-covered; test asserts zero orphans generically | Data-integrity bug; worsens as more coach-scoped tables ship (incl. `score_log`) | BUGS.md |
+| H1 / BUG-017 | ✅ **Done** — metadata-driven cascade (walks the FK graph), generic zero-orphans test | Data-integrity bug; worsens as more coach-scoped tables ship (incl. `score_log`) | BUGS.md |
 | H8 | ✅ **Done** — fixed stale `models.py` table-count docstring | 30 tables; trivial | models.py |
 | H10 / BUG-018 | ✅ **Done in this PR** — `csrf_field()` moved inside `<form>` in 7 templates (incl. safe-word); generic regression test added | Safety-critical: safe-word/STOP button was CSRF-rejected | BUGS.md |
 | H11 / BUG-019 | ✅ **Done** — dead `llm_key` deleted; Telegram send moved to a server-side proxy route (`/coach/coachee/<cid>/telegram-notify`); regression test asserts the token never reaches rendered HTML | Secrets exposed in page source | BUGS.md |
-| BUG-020 | **New** — AI-profile routes (`generate-profile`, `save_profile`, `ai-digest`, profile-prompt preview) take `cid` from the URL with no coach-ownership check (IDOR) — found while fixing H11 | Any coach can read/trigger generation for another coach's coachee | BUGS.md |
+| BUG-020 | ✅ **Done** — ownership check added to the 3 routes that actually lacked it (`ai-digest`/`conditioning/generate` already had it) | Any coach can read/trigger generation for another coach's coachee | BUGS.md |
 
 ## Next (quick wins, low risk)
 

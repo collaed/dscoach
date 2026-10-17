@@ -483,6 +483,10 @@ def get_profile_prompt(cid):
     Route GET /coach/coachee/<cid>/profile-prompt — JSON endpoint; no screen.
     When: fetched by client-side JS on the coachee detail screen before client-side AI generation.
     """
+    c = db()
+    c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    if not c.fetchone():
+        return json.dumps({"error": "Coachee not found"}), 404, {"Content-Type": "application/json"}
     prompt = _build_profile_prompt(cid)
     return json.dumps({"prompt": prompt}), 200, {"Content-Type": "application/json"}
 
@@ -495,6 +499,10 @@ def generate_profile(cid):
     Route POST /coach/coachee/<cid>/generate-profile — JSON endpoint; no screen.
     When: on the "Generate profile" button click on the coachee detail screen.
     """
+    c = db()
+    c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    if not c.fetchone():
+        return json.dumps({"error": "Coachee not found"}), 404, {"Content-Type": "application/json"}
     prompt = _build_profile_prompt(cid)
     if not prompt:
         return json.dumps({"error": "No data to build profile"}), 400, {"Content-Type": "application/json"}
@@ -502,7 +510,6 @@ def generate_profile(cid):
     if result.startswith("[AI"):
         return json.dumps({"error": result}), 503, {"Content-Type": "application/json"}
     # Save to DB
-    c = db()
     c.execute("SELECT id FROM psychological_profile WHERE coachee_id=%s", (cid,))
     existing = c.fetchone()
     if existing:
@@ -526,6 +533,9 @@ def save_profile(cid):
     text_val = request.json.get("text", "") if request.is_json else ""
     if text_val:
         c = db()
+        c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+        if not c.fetchone():
+            abort(404)
         c.execute("SELECT id FROM psychological_profile WHERE coachee_id=%s", (cid,))
         existing = c.fetchone()
         if existing:
