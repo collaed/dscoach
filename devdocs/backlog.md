@@ -23,7 +23,7 @@ next and why. Status mirrors the roadmap (🟢 done · 🟡 partial · 🔴 not 
 
 | Item | What | Ref |
 |------|------|-----|
-| H3 | Log instead of silently swallowing exceptions (`_audit`, cascade, `init_db`) | BUG-005/006/015 |
+| H3 | ✅ **Done** — `_audit`/`_mood_sparkline`/photo-validation now print on failure; cascade (006) resolved by BUG-017's rewrite; `init_db` (015) was already non-silent on inspection | BUG-005/006/015, +022/023 found in the same pass |
 | H4 | Remove/configure hardcoded forgot-password email | BUG-007 |
 | H7 | Guard `None` coach in login flow (delete-mid-session race) | BUG-009 |
 | H5 | Input length validation on write paths | BUG-010 |

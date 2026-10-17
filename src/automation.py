@@ -247,7 +247,8 @@ def _mood_sparkline(coachee_id):
             (coachee_id, fourteen_ago),
         )
         return c.fetchall()
-    except Exception:
+    except Exception as e:
+        print(f"[_mood_sparkline] query failed for coachee {coachee_id}: {e}")  # H3: visible, not swallowed silently
         return []
 
 

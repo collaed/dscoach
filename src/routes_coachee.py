@@ -294,8 +294,9 @@ def complete_task(tid):
             if tmpl:
                 try:
                     validate_photo_proof(tid, att_path, tmpl["title"], tmpl.get("description", ""), coach_id)
-                except Exception:
-                    pass  # Non-blocking: validation failure doesn't affect submission
+                except Exception as e:
+                    # H3: non-blocking (validation failure doesn't affect submission) but visible, not silent
+                    print(f"[complete_task] photo validation failed for assignment {tid}: {e}")
 
     # Auto-grading: if template is marked auto_grade, grade immediately
     if status == "completed":

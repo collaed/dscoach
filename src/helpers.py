@@ -54,7 +54,8 @@ def _audit(action, user_id=None, role=None):
 
     PURPOSE: Record who did what, with IP and user-agent, for security/traceability.
     CALLED BY: Route handlers in auth.py (login/logout), routes_coach.py, and routes_admin.py (add/freeze/delete coach, password resets) — logs actions across coach and admin screens.
-    WHEN: On form submit / privileged action; failures are silently swallowed so auditing never breaks a request.
+    WHEN: On form submit / privileged action; failures never raise (auditing must not break a
+    request) but are printed (H3/BUG-005) rather than silently swallowed.
     """
     try:
         conn = db()
@@ -68,8 +69,8 @@ def _audit(action, user_id=None, role=None):
             )
         )
         conn.commit()
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[_audit] write failed for action={action!r}: {e}")  # H3: visible, not swallowed silently
 
 
 def _hash(pw):
