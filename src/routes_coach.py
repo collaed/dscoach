@@ -12,7 +12,7 @@ from automation import _completion_hours, _engagement_score, _payment_compliance
 from flask import Blueprint, Response, abort, flash, redirect, render_template_string, request, session, url_for
 from helpers import ATTACHMENTS_DIR, _audit, _hash_password, _tpl, _verify_password, db, utcnow
 from merge import _merge_vars
-from tasks import FEATURES
+from tasks import FEATURES, _proof_required_for_template, _roll_proof_required
 
 bp = Blueprint("coach", __name__)
 
@@ -668,9 +668,10 @@ def manage_tasks():
                 d = due or date.today().isoformat()
                 vis = f"{d} {cc['task_unveil_time']}" if cc and cc["task_unveil_time"] else None
                 frz = f"{d} {cc['task_freeze_time']}" if cc and cc["task_freeze_time"] else None
+                proof_required = _proof_required_for_template(tmpl_id)
                 c.execute(
-                    "INSERT INTO task_assignment (template_id, coachee_id, due_date, visible_after, frozen_after) VALUES (%s,%s,%s,%s,%s)",
-                    (tmpl_id, cid, d, vis, frz),
+                    "INSERT INTO task_assignment (template_id, coachee_id, due_date, visible_after, frozen_after, proof_required) VALUES (%s,%s,%s,%s,%s,%s)",
+                    (tmpl_id, cid, d, vis, frz, proof_required),
                 )
             return redirect(url_for("coach.manage_tasks"))
         # create new
@@ -681,9 +682,10 @@ def manage_tasks():
         tags = request.form.get("tags", "").strip()
         recur_days = int(request.form.get("recur_days") or 0) or None
         recur_approx = 1 if request.form.get("recur_approx") else 0
+        proof_pct = max(0, min(100, int(request.form.get("proof_pct") or 0)))
         c.execute(
-            """INSERT INTO task_template (coach_id, title, description, recurrence, category, difficulty, is_reserve, recur_days, recur_approx, in_library, auto_grade, photo_validate, tags)
-                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            """INSERT INTO task_template (coach_id, title, description, recurrence, category, difficulty, is_reserve, recur_days, recur_approx, in_library, auto_grade, photo_validate, tags, proof_pct)
+                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             (
                 session["user_id"],
                 request.form["title"],
@@ -698,6 +700,7 @@ def manage_tasks():
                 auto_grade,
                 photo_validate,
                 tags or None,
+                proof_pct,
             ),
         )
         tmpl_id = c.lastrowid
@@ -717,9 +720,10 @@ def manage_tasks():
                 if due:
                     vis = f"{due} {cc['task_unveil_time']}" if cc and cc["task_unveil_time"] else None
                     frz = f"{due} {cc['task_freeze_time']}" if cc and cc["task_freeze_time"] else None
+                proof_required = _roll_proof_required(proof_pct)
                 c.execute(
-                    "INSERT INTO task_assignment (template_id, coachee_id, due_date, visible_after, frozen_after) VALUES (%s,%s,%s,%s,%s)",
-                    (tmpl_id, cid, due or today, vis, frz),
+                    "INSERT INTO task_assignment (template_id, coachee_id, due_date, visible_after, frozen_after, proof_required) VALUES (%s,%s,%s,%s,%s,%s)",
+                    (tmpl_id, cid, due or today, vis, frz, proof_required),
                 )
         return redirect(url_for("coach.manage_tasks"))
     c.execute("SELECT * FROM task_template WHERE coach_id=%s ORDER BY created_at DESC", (session["user_id"],))

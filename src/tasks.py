@@ -59,6 +59,43 @@ def _features_for(coach_id, coachee_id=None):
     return {k: coach_f.get(k, True) and coachee_f.get(k, True) for k, _ in FEATURES}
 
 
+_proof_rng = random.Random()  # noqa: S311 - not security-sensitive; separate instance so tests can seed it deterministically without touching global random state
+
+
+def _roll_proof_required(proof_pct) -> int:
+    """Roll whether a task occurrence demands photo proof. Pure, no DB access.
+
+    Called by: _proof_required_for_template() below (the only caller) - never
+    call this directly from a route; always go through that wrapper or an
+    equivalent explicit lookup so the roll is tied to a real template's
+    current proof_pct. Rolled ONCE per assignment, at creation time, and
+    persisted on task_assignment.proof_required - re-rolling on display
+    would let a coachee reload /me until the roll is favorable (R48 REQ-48.3).
+    """
+    pct = proof_pct or 0
+    if pct <= 0:
+        return 0
+    if pct >= 100:
+        return 1
+    return 1 if _proof_rng.randint(1, 100) <= pct else 0
+
+
+def _proof_required_for_template(template_id) -> int:
+    """Look up a template's proof_pct and roll proof_required for a new assignment.
+
+    Called by: every task_assignment creation path - _auto_assign_reserves()'s
+    _assign() helper, _run_onboarding(), automation.py::_run_auto_rules()'s
+    assign_task action, and routes_coach.py's manual-assign and
+    assign-from-library handlers. This is the single place the roll happens;
+    wire any NEW assignment path through this too (R48 REQ-48.6) rather than
+    inserting into task_assignment directly.
+    """
+    c = db()
+    c.execute("SELECT proof_pct FROM task_template WHERE id=%s", (template_id,))
+    row = c.fetchone()
+    return _roll_proof_required(row["proof_pct"] if row else 0)
+
+
 def _auto_assign_reserves(coachee_id, coach_id):
     """If no task was manually assigned today for this coachee, pick one reserve task.
 
@@ -77,9 +114,10 @@ def _auto_assign_reserves(coachee_id, coach_id):
     def _assign(tmpl_id, due):
         vis = f"{due} {cc['task_unveil_time']}" if cc["task_unveil_time"] else None
         frz = f"{due} {cc['task_freeze_time']}" if cc["task_freeze_time"] else None
+        proof_required = _proof_required_for_template(tmpl_id)
         c.execute(
-            "INSERT INTO task_assignment (template_id, coachee_id, due_date, visible_after, frozen_after) VALUES (%s,%s,%s,%s,%s)",
-            (tmpl_id, coachee_id, due, vis, frz),
+            "INSERT INTO task_assignment (template_id, coachee_id, due_date, visible_after, frozen_after, proof_required) VALUES (%s,%s,%s,%s,%s,%s)",
+            (tmpl_id, coachee_id, due, vis, frz, proof_required),
         )
 
     # recurring tasks: auto-assign if due
@@ -235,7 +273,7 @@ def _visible_tasks(coachee_id, tz):
     c = db()
     local_now = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
     c.execute(
-        """SELECT ta.*, tt.title, tt.description as task_desc, tt.category, tt.difficulty
+        """SELECT ta.*, tt.title, tt.description as task_desc, tt.category, tt.difficulty, tt.proof_pct
                  FROM task_assignment ta JOIN task_template tt ON ta.template_id=tt.id
                  WHERE ta.coachee_id=%s AND ta.status IN ('pending','partial')
                  AND (ta.visible_after IS NULL OR ta.visible_after <= %s)
@@ -284,9 +322,10 @@ def _run_onboarding(coachee_id, coach_id, days_active):
                 cc = c.fetchone()
                 vis = f"{local_today} {cc['task_unveil_time']}" if cc and cc["task_unveil_time"] else None
                 frz = f"{local_today} {cc['task_freeze_time']}" if cc and cc["task_freeze_time"] else None
+                proof_required = _proof_required_for_template(step["template_id"])
                 c.execute(
-                    "INSERT INTO task_assignment (template_id, coachee_id, due_date, visible_after, frozen_after) VALUES (%s,%s,%s,%s,%s)",
-                    (step["template_id"], coachee_id, local_today, vis, frz),
+                    "INSERT INTO task_assignment (template_id, coachee_id, due_date, visible_after, frozen_after, proof_required) VALUES (%s,%s,%s,%s,%s,%s)",
+                    (step["template_id"], coachee_id, local_today, vis, frz, proof_required),
                 )
         # Send note if note_text is set
         if step.get("note_text"):

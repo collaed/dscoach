@@ -1,6 +1,6 @@
 # Plan — Probabilistic Proof + Points & Daily Score
 
-Status: **Proposed** (for review) — 2026-09-30
+Status: **R48 implemented** (2026-10-17) — R49 still proposed, see roadmap.md
 Author: Eddy Collart (drafted with Kiro)
 Roadmap IDs: **R48** (Probabilistic proof), **R49** (Points & daily score)
 
@@ -8,6 +8,17 @@ This document is a full technical plan for two related features requested for
 DSCoaching, written to be assessed before any code is merged. It follows the
 project documentation standard: every design decision links back to a numbered
 requirement, and state/flow diagrams are included.
+
+**R48 implementation note:** `migrations/versions/003_r48_proof_pct.py` follows
+the same `batch_alter_table` pattern as `002` and is syntactically verified,
+but `alembic upgrade head` could not be run end-to-end in the sandbox that
+built this (a vendored-lib/pip-installed-package conflict unrelated to the
+migration's own content). The schema change itself (two nullable
+`SmallInteger` columns) is exercised by all 103 tests via `models.py` +
+`create_all()`, so the actual columns/behavior are fully covered — only the
+Alembic *migration file's own execution* is unverified. Run `alembic upgrade
+head` against a real scratch Postgres before relying on it in a production
+deploy that still has the old schema.
 
 ---
 

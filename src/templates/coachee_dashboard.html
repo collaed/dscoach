@@ -275,13 +275,15 @@ Close with your sign-off..."></textarea>
 <div class="task-meta">
 {% if t.due_date %}Due: {{ t.due_date }}{% endif %}
 {% if t.frozen_after %} · <span style="color:var(--warn)">⏰ Freezes {{ t.frozen_after }}</span>{% endif %}
+{% if t.proof_required %} · <span class="tag" style="background:rgba(233,69,96,0.15);color:var(--accent)">📷 Proof required</span>
+{% elif t.proof_pct %} · <span class="muted small" title="This task type may randomly require photo proof (agreed with your coach)">📷 may require photo (~{{ t.proof_pct }}% of the time)</span>{% endif %}
 </div>
 {% if t.task_desc %}<p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.6rem">{{ t.task_desc }}</p>{% endif %}
 <form method="post" action="/me/task/{{ t.id }}" enctype="multipart/form-data">
     {{ csrf_field() }}
 <textarea name="response" required placeholder="Report on this task..."></textarea>
-<details style="margin-top:0.5rem">
-<summary>Attach photo & self-reflection (optional)</summary>
+<details style="margin-top:0.5rem"{% if t.proof_required %} open{% endif %}>
+<summary>Attach photo & self-reflection{% if t.proof_required %} <strong style="color:var(--accent)">(photo required)</strong>{% else %} (optional){% endif %}</summary>
 <div style="margin-top:0.5rem">
 <label>📎 Attach photo (auto-resized)</label>
 <input type="file" accept="image/*" onchange="resizeImg(this)" style="font-size:0.85rem">

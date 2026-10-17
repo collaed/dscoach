@@ -91,9 +91,12 @@ def _run_auto_rules(coachee_id, trigger, context=None):
                     (tmpl_id, coachee_id, today),
                 )
                 if not c.fetchone():
+                    from tasks import _proof_required_for_template
+
+                    proof_required = _proof_required_for_template(tmpl_id)
                     c.execute(
-                        "INSERT INTO task_assignment (template_id, coachee_id, due_date) VALUES (%s,%s,%s)",
-                        (tmpl_id, coachee_id, today),
+                        "INSERT INTO task_assignment (template_id, coachee_id, due_date, proof_required) VALUES (%s,%s,%s,%s)",
+                        (tmpl_id, coachee_id, today, proof_required),
                     )
             except (ValueError, TypeError):
                 pass

@@ -94,6 +94,7 @@ task_template = Table(
     Column("auto_grade", SmallInteger, server_default="0"),
     Column("photo_validate", SmallInteger, server_default="0"),
     Column("tags", String(500)),
+    Column("proof_pct", SmallInteger, server_default="0"),  # R48: chance (0-100) this occurrence demands a photo
     Column("created_at", DateTime, server_default=func.now()),
 )
 
@@ -118,6 +119,7 @@ task_assignment = Table(
     Column("depends_on", Integer),
     Column("photo_validation_result", Text),
     Column("photo_validation_override", Text),
+    Column("proof_required", SmallInteger, server_default="0"),  # R48: rolled once at creation, persisted
     Column("created_at", DateTime, server_default=func.now()),
 )
 

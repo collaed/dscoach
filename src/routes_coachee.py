@@ -220,7 +220,8 @@ def complete_task(tid):
     WHEN: On submitting a task response."""
     c = db()
     c.execute(
-        "SELECT frozen_after, template_id FROM task_assignment WHERE id=%s AND coachee_id=%s", (tid, session["user_id"])
+        "SELECT frozen_after, template_id, proof_required FROM task_assignment WHERE id=%s AND coachee_id=%s",
+        (tid, session["user_id"]),
     )
     row = c.fetchone()
     if not row:
@@ -240,6 +241,11 @@ def complete_task(tid):
     status = request.form.get("status", "completed")
     if status not in ("completed", "partial"):
         status = "completed"
+    # R48: a required-proof task can't be marked completed without a photo. A partial
+    # submission is still allowed without one (coachee signalling "not done yet").
+    if status == "completed" and row.get("proof_required") and not att_path:
+        flash("This task requires a photo as proof.", "error")
+        return redirect(url_for("coachee.coachee_dashboard"))
     c.execute(
         """UPDATE task_assignment SET status=%s, response=%s, attachment_path=%s, responded_at=%s,
                  reflection_rating=%s, reflection_text=%s
