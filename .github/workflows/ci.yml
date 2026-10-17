@@ -40,6 +40,9 @@ jobs:
 
       - name: Upload coverage to SonarCloud
         if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true # SonarCloud Automatic Analysis vs CI analysis conflict - needs
+        # disabling on the SonarCloud project side (Administration > Analysis Method); doesn't
+        # block merges on an external dashboard toggle in the meantime.
         uses: SonarSource/sonarcloud-github-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
