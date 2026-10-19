@@ -36,7 +36,7 @@ next and why. Status mirrors the roadmap (🟢 done · 🟡 partial · 🔴 not 
 
 | Item | What | Ref |
 |------|------|-----|
-| R51 | Make R24 rewards spend the R49 score | roadmap R51 |
+| R51 | ✅ **Done** — built together with R24 (reward catalog + redemption); `score_summary` all_time IS the balance, approval re-checks it and debits via `score_log` | roadmap R51 |
 | R52 | Section-based contract drafting (clause library + sample-task association) | plan-contract-drafting.md |
 | R6 → H2 | LLM auto-rating to replace the gameable length-based auto-grade | roadmap R6, H2 |
 | R1 → R4 → R5 | Late check-in marking → compliance dashboard → timeliness | roadmap R1/R4/R5 |

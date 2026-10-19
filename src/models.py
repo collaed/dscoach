@@ -1,4 +1,4 @@
-"""SQLAlchemy Core table definitions for DSCoaching (32 tables; R47 adds 3 columns, no new table).
+"""SQLAlchemy Core table definitions for DSCoaching (34 tables).
 
 Used by: database.py::init_db() (metadata.create_all — this is what
 provisions a fresh DB) and migrations/env.py (Alembic target_metadata).
@@ -145,12 +145,42 @@ score_log = Table(
     Column("points", SmallInteger, nullable=False),
     Column(
         "reason", String(40), nullable=False
-    ),  # task_completed | task_missed | miss_reversed | proof_bonus | manual | checkin | checkin_missed
+    ),  # task_completed | task_missed | miss_reversed | proof_bonus | manual | checkin | checkin_missed | reward_redeemed
     Column("task_assignment_id", Integer, ForeignKey("task_assignment.id"), nullable=True),
     Column("score_date", Date, nullable=False),  # coachee-local date, not server UTC (REQ-49.4)
     Column("note", String(200)),
     Column("created_at", DateTime, server_default=func.now()),
     UniqueConstraint("task_assignment_id", "reason"),  # idempotency (REQ-49.9); NULLs don't collide
+)
+
+# R24/R51: coach-defined catalog of redeemable rewards, priced in points (the R49 score
+# IS the currency - no separate balance column). Written/read by: routes_coach.py (manage_rewards.html).
+reward_catalog = Table(
+    "reward_catalog",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("coach_id", Integer, ForeignKey("coach.id"), nullable=False),
+    Column("title", String(200), nullable=False),
+    Column("description", String(500)),
+    Column("point_cost", SmallInteger, nullable=False),
+    Column("active", SmallInteger, server_default="1"),
+    Column("created_at", DateTime, server_default=func.now()),
+)
+
+# R24/R51: a coachee's redemption request against the catalog above. Approval appends a
+# negative score_log row (reason='reward_redeemed') - the only place points actually leave
+# the ledger; a denied or still-pending request never touches score_log.
+reward_redemption = Table(
+    "reward_redemption",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("coachee_id", Integer, ForeignKey("coachee.id"), nullable=False),
+    Column("reward_catalog_id", Integer, ForeignKey("reward_catalog.id"), nullable=False),
+    Column("point_cost", SmallInteger, nullable=False),  # snapshot at request time
+    Column("status", String(20), server_default="pending"),  # pending | approved | denied
+    Column("requested_at", DateTime, server_default=func.now()),
+    Column("decided_at", DateTime),
+    Column("decided_by_coach_id", Integer, ForeignKey("coach.id")),
 )
 
 # Immutable morning/evening/weekly check-in log. Written by: routes_coachee.py (coachee submits from /me). Read by: routes_coach.py (coach_view_coachee.html history) and automation.py (engagement scoring).

@@ -273,6 +273,27 @@
 </div>
 
 <div class="section">
+<h3>🎁 Rewards</h3>
+{% set pending = redemptions|selectattr('status','equalto','pending')|list %}
+{% if pending %}
+{% for r in pending %}
+<div class="entry">
+<strong>{{ r.title }}</strong> — {{ r.point_cost }} pts <span class="badge pending">pending</span>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/reward-redemption/{{ r.id }}/approve" style="display:inline">{{ csrf_field() }}<button type="submit" class="small" style="margin:0">Approve</button></form>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/reward-redemption/{{ r.id }}/deny" style="display:inline">{{ csrf_field() }}<button type="submit" class="small secondary" style="margin:0">Deny</button></form>
+</div>
+{% endfor %}
+{% else %}<p class="muted small">No pending requests.</p>{% endif %}
+{% if redemptions %}
+<details><summary class="muted small">History ({{ redemptions|length }})</summary>
+{% for r in redemptions %}
+<div class="entry" style="padding:.3rem 0">{{ r.title }} — {{ r.point_cost }} pts <span class="badge {{ r.status }}">{{ r.status }}</span> <span class="time">{{ r.requested_at }}</span></div>
+{% endfor %}
+</details>
+{% endif %}
+</div>
+
+<div class="section">
 <h3>📋 Recent Tasks</h3>
 {% for t in tasks %}
 <div class="entry">

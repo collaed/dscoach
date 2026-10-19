@@ -1,4 +1,4 @@
-# data-model.md — Database Schema (32 tables, SQLAlchemy Core)
+# data-model.md — Database Schema (34 tables, SQLAlchemy Core)
 
 ## Schema Management
 
@@ -215,6 +215,38 @@ as `proof_bonus`/`week_start` — no new columns needed for those. `score_log` g
 `'checkin_missed'` (required-mode penalty, at most one row per coachee per missed calendar day).
 
 Migration: Alembic `008_r40_checkin_mode` (`batch_alter_table` for SQLite).
+
+**`reward_catalog`** (new table, R24): coach-defined, point-priced rewards.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | Integer PK | Auto-increment |
+| coach_id | Integer FK coach.id | NOT NULL |
+| title | String(200) | NOT NULL |
+| description | String(500) | Nullable |
+| point_cost | SmallInteger | NOT NULL |
+| active | SmallInteger | Default 1; deactivated rewards are hidden from the coachee, never hard-deleted |
+| created_at | DateTime | Auto-set |
+
+**`reward_redemption`** (new table, R24/R51): a coachee's request against the catalog above.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | Integer PK | Auto-increment |
+| coachee_id | Integer FK coachee.id | NOT NULL |
+| reward_catalog_id | Integer FK reward_catalog.id | NOT NULL |
+| point_cost | SmallInteger | Snapshot at request time (survives a later catalog price change) |
+| status | String(20) | 'pending' \| 'approved' \| 'denied' |
+| requested_at | DateTime | Auto-set |
+| decided_at | DateTime | Nullable |
+| decided_by_coach_id | Integer FK coach.id | Nullable |
+
+Approval appends a negative `score_log` row (`reason='reward_redeemed'`) - the R49 running
+score **is** the balance (`score_summary(...)["all_time"]`), there is no separate counter.
+Requesting never spends anything by itself; only an approval does, and only if the balance is
+still sufficient at that moment (re-checked, since it may have changed since the request).
+
+Migration: Alembic `009_r24_r51_rewards` (plain `create_table`, no existing-table changes).
 
 ## Cascade Delete Order
 

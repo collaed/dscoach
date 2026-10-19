@@ -135,8 +135,34 @@ Tasks are paused and nothing will be marked missed while this is active.
 <div style="font-size:1.3rem;font-weight:700;color:var(--text)">{{ score.best_week }}</div>
 <div style="font-size:0.75rem;color:var(--muted)">Best Week</div>
 </div>
+<div style="text-align:center;padding:0.6rem;background:var(--input);border-radius:var(--radius-sm)">
+<div style="font-size:1.3rem;font-weight:700;color:var(--accent)">{{ score.all_time }}</div>
+<div style="font-size:0.75rem;color:var(--muted)">Balance</div>
 </div>
 </div>
+</div>
+
+{% if rewards %}
+<div class="section">
+<h3>🎁 Rewards</h3>
+{% for r in rewards %}
+<div class="entry">
+<strong>{{ r.title }}</strong> — {{ r.point_cost }} pts
+{% if r.description %}<br><span class="muted small">{{ r.description }}</span>{% endif %}
+<form method="post" action="/me/reward/{{ r.id }}/redeem" style="display:inline">{{ csrf_field() }}
+<button type="submit" class="small" style="margin:0"{% if score.all_time < r.point_cost %} disabled title="Not enough points yet"{% endif %}>Redeem</button>
+</form>
+</div>
+{% endfor %}
+{% if my_redemptions %}
+<details><summary class="muted small">My requests ({{ my_redemptions|length }})</summary>
+{% for r in my_redemptions %}
+<div class="entry" style="padding:.3rem 0">{{ r.title }} — {{ r.point_cost }} pts <span class="badge {{ r.status }}">{{ r.status }}</span></div>
+{% endfor %}
+</details>
+{% endif %}
+</div>
+{% endif %}
 
 {% if earned_badges %}
 <div class="section">

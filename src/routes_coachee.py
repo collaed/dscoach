@@ -161,9 +161,20 @@ def coachee_dashboard():
 
     score = score_summary(cid, coachee["coach_id"])
 
+    c.execute("SELECT * FROM reward_catalog WHERE coach_id=%s AND active=1 ORDER BY point_cost", (coachee["coach_id"],))
+    rewards = c.fetchall()
+    c.execute(
+        """SELECT rr.*, rc.title FROM reward_redemption rr JOIN reward_catalog rc ON rr.reward_catalog_id=rc.id
+                 WHERE rr.coachee_id=%s ORDER BY rr.requested_at DESC LIMIT 10""",
+        (cid,),
+    )
+    my_redemptions = c.fetchall()
+
     return render_template_string(
         _tpl("coachee_dashboard.html"),
         score=score,
+        rewards=rewards,
+        my_redemptions=my_redemptions,
         coachee=coachee,
         unavailable=unavailable,
         tasks=tasks,
@@ -426,6 +437,38 @@ def declare_available():
         "UPDATE coachee SET unavailable_since=NULL, unavailable_until=NULL, unavailable_note=NULL WHERE id=%s",
         (session["user_id"],),
     )
+    return redirect(url_for("coachee.coachee_dashboard"))
+
+
+@bp.route("/me/reward/<int:rid>/redeem", methods=["POST"])
+@login_required("coachee")
+def redeem_reward(rid):
+    """Request redemption of a catalog reward, spending the R49 score as currency (R24/R51).
+
+    PURPOSE: Create a pending reward_redemption for the coach to approve/deny. Nothing is
+    deducted from the score yet - that only happens on coach approval (routes_coach.py).
+    CALLED BY: Route POST /me/reward/<rid>/redeem — redeem button on coachee_dashboard.html.
+    WHEN: On the coachee requesting a reward."""
+    c = db()
+    cid = session["user_id"]
+    c.execute("SELECT coach_id FROM coachee WHERE id=%s", (cid,))
+    coach_id = c.fetchone()["coach_id"]
+    c.execute("SELECT * FROM reward_catalog WHERE id=%s AND coach_id=%s AND active=1", (rid, coach_id))
+    reward = c.fetchone()
+    if not reward:
+        abort(404)
+
+    from scoring import score_summary
+
+    balance = score_summary(cid, coach_id)["all_time"]
+    if balance < reward["point_cost"]:
+        flash("Not enough points for this reward yet.", "error")
+        return redirect(url_for("coachee.coachee_dashboard"))
+    c.execute(
+        "INSERT INTO reward_redemption (coachee_id, reward_catalog_id, point_cost) VALUES (%s,%s,%s)",
+        (cid, rid, reward["point_cost"]),
+    )
+    flash("Reward requested - waiting on your coach's approval.", "success")
     return redirect(url_for("coachee.coachee_dashboard"))
 
 

@@ -384,6 +384,12 @@ def coach_view_coachee(cid):
     all_templates = c.fetchall()
     c.execute("SELECT * FROM protocol_mode_log WHERE coachee_id=%s ORDER BY created_at DESC LIMIT 5", (cid,))
     protocol_mode_history = c.fetchall()
+    c.execute(
+        """SELECT rr.*, rc.title FROM reward_redemption rr JOIN reward_catalog rc ON rr.reward_catalog_id=rc.id
+                 WHERE rr.coachee_id=%s ORDER BY rr.requested_at DESC LIMIT 20""",
+        (cid,),
+    )
+    redemptions = c.fetchall()
 
     from scoring import score_history, score_summary
 
@@ -394,6 +400,7 @@ def coach_view_coachee(cid):
         score=score_summary(cid, session["user_id"]),
         score_rows=score_history(cid),
         protocol_mode_history=protocol_mode_history,
+        redemptions=redemptions,
         tasks=tasks,
         checkins=checkins,
         acks=acks,
@@ -774,6 +781,94 @@ def manage_tasks():
     c.execute("SELECT id, name FROM coachee WHERE coach_id=%s ORDER BY name", (session["user_id"],))
     coachees = c.fetchall()
     return render_template_string(_tpl("manage_tasks.html"), templates=templates, coachees=coachees)
+
+
+@bp.route("/coach/rewards", methods=["GET", "POST"])
+@login_required("coach")
+def manage_rewards():
+    """List this coach's reward catalog; create new rewards and toggle active/inactive (R24).
+
+    Route GET/POST /coach/rewards — renders the reward-catalog screen (manage_rewards.html).
+    When: GET on screen load; POST on create-reward or toggle-active form submit.
+    """
+    c = db()
+    if request.method == "POST":
+        action = request.form.get("action", "create")
+        if action == "toggle":
+            rid = int(request.form["reward_id"])
+            c.execute(
+                "UPDATE reward_catalog SET active=CASE WHEN active=1 THEN 0 ELSE 1 END WHERE id=%s AND coach_id=%s",
+                (rid, session["user_id"]),
+            )
+        else:
+            cost = max(1, int(request.form.get("point_cost") or 1))
+            c.execute(
+                "INSERT INTO reward_catalog (coach_id, title, description, point_cost) VALUES (%s,%s,%s,%s)",
+                (session["user_id"], request.form["title"], request.form.get("description", ""), cost),
+            )
+        return redirect(url_for("coach.manage_rewards"))
+    c.execute("SELECT * FROM reward_catalog WHERE coach_id=%s ORDER BY created_at DESC", (session["user_id"],))
+    rewards = c.fetchall()
+    return render_template_string(_tpl("manage_rewards.html"), rewards=rewards)
+
+
+@bp.route("/coach/coachee/<int:cid>/reward-redemption/<int:rrid>/approve", methods=["POST"])
+@login_required("coach")
+def approve_redemption(cid, rrid):
+    """Approve a pending reward redemption, spending the R49 score as currency (R51).
+
+    Route POST /coach/coachee/<cid>/reward-redemption/<rrid>/approve — no screen; redirects to
+    the coachee detail screen. Re-checks the balance at approval time (it may have changed
+    since the request), not just at request time - rejects rather than letting it go negative.
+    When: on the approve button in coach_view_coachee.html's Rewards section.
+    """
+    c = db()
+    c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    if not c.fetchone():
+        abort(404)
+    c.execute("SELECT * FROM reward_redemption WHERE id=%s AND coachee_id=%s AND status='pending'", (rrid, cid))
+    redemption = c.fetchone()
+    if not redemption:
+        abort(404)
+    from scoring import score_summary
+
+    balance = score_summary(cid, session["user_id"])["all_time"]
+    if balance < redemption["point_cost"]:
+        flash("Balance is no longer sufficient for this reward - cannot approve.", "error")
+        return redirect(url_for("coach.coach_view_coachee", cid=cid))
+    c.execute("SELECT title FROM reward_catalog WHERE id=%s", (redemption["reward_catalog_id"],))
+    reward = c.fetchone()
+    c.execute(
+        "INSERT INTO score_log (coachee_id, points, reason, score_date, note) VALUES (%s,%s,'reward_redeemed',%s,%s)",
+        (cid, -redemption["point_cost"], date.today().isoformat(), f"Redeemed: {reward['title'] if reward else ''}"),
+    )
+    c.execute(
+        "UPDATE reward_redemption SET status='approved', decided_at=%s, decided_by_coach_id=%s WHERE id=%s",
+        (utcnow(), session["user_id"], rrid),
+    )
+    flash("Redemption approved.", "success")
+    return redirect(url_for("coach.coach_view_coachee", cid=cid))
+
+
+@bp.route("/coach/coachee/<int:cid>/reward-redemption/<int:rrid>/deny", methods=["POST"])
+@login_required("coach")
+def deny_redemption(cid, rrid):
+    """Deny a pending reward redemption. No score_log row is ever written for a denial.
+
+    Route POST /coach/coachee/<cid>/reward-redemption/<rrid>/deny — no screen; redirects to
+    the coachee detail screen.
+    When: on the deny button in coach_view_coachee.html's Rewards section.
+    """
+    c = db()
+    c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    if not c.fetchone():
+        abort(404)
+    c.execute(
+        "UPDATE reward_redemption SET status='denied', decided_at=%s, decided_by_coach_id=%s "
+        "WHERE id=%s AND coachee_id=%s AND status='pending'",
+        (utcnow(), session["user_id"], rrid, cid),
+    )
+    return redirect(url_for("coach.coach_view_coachee", cid=cid))
 
 
 @bp.route("/coach/library-search")
