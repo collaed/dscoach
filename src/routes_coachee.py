@@ -24,6 +24,7 @@ from tasks import (
     _auto_assign_reserves,
     _features_for,
     _freeze_overdue,
+    _is_unavailable,
     _run_onboarding,
     _update_streak,
     _visible_tasks,
@@ -47,8 +48,9 @@ def coachee_dashboard():
     tz = ZoneInfo(coachee["timezone"] or "UTC")
     local_now = datetime.now(tz)
     current_time = local_now.time()
+    unavailable = _is_unavailable(coachee, local_now.date())  # R47: pause assignment + freeze
     unveil = coachee["task_unveil_time"]
-    if unveil:
+    if unveil and not unavailable:
         if isinstance(unveil, timedelta):
             unveil_hour = int(unveil.total_seconds()) // 3600
             unveil_min = (int(unveil.total_seconds()) % 3600) // 60
@@ -62,7 +64,8 @@ def coachee_dashboard():
         if current_time >= _time(unveil_hour, unveil_min):
             _auto_assign_reserves(cid, coachee["coach_id"])
 
-    _freeze_overdue(cid, tz)
+    if not unavailable:
+        _freeze_overdue(cid, tz)
     _update_streak(cid, tz)
     _check_and_award_badges(cid)
 
@@ -160,6 +163,7 @@ def coachee_dashboard():
         _tpl("coachee_dashboard.html"),
         score=score,
         coachee=coachee,
+        unavailable=unavailable,
         tasks=tasks,
         conditioning=[{**mc, "prompt_text": _merge_vars(mc.get("prompt_text", ""), cid)} for mc in conditioning],
         today_checkins=today_checkins,
@@ -379,6 +383,39 @@ def trigger_pause():
     word = request.form.get("word", "pause")
     use_safeword = word.upper() == session.get("safe_word", "RED") or word.upper() == "RED"
     activate(session["user_id"], initiated_by="coachee", use_safeword=use_safeword)
+    return redirect(url_for("coachee.coachee_dashboard"))
+
+
+@bp.route("/me/unavailable", methods=["POST"])
+@login_required("coachee")
+def declare_unavailable():
+    """R47: self-declare unavailability (travel/illness/etc.) with an optional expected return date.
+
+    PURPOSE: Pause task auto-assignment and miss-detection without touching the safeword/freeze status.
+    CALLED BY: Route POST /me/unavailable — unavailability form on coachee_dashboard.html.
+    WHEN: On the coachee declaring themselves unavailable."""
+    c = db()
+    until = request.form.get("until") or None
+    note = (request.form.get("note") or "").strip()[:300]
+    c.execute(
+        "UPDATE coachee SET unavailable_since=%s, unavailable_until=%s, unavailable_note=%s WHERE id=%s",
+        (utcnow(), until, note or None, session["user_id"]),
+    )
+    return redirect(url_for("coachee.coachee_dashboard"))
+
+
+@bp.route("/me/available", methods=["POST"])
+@login_required("coachee")
+def declare_available():
+    """R47: end a self-declared unavailability early.
+
+    CALLED BY: Route POST /me/available — "I'm back" button on coachee_dashboard.html.
+    WHEN: On the coachee ending their unavailability."""
+    c = db()
+    c.execute(
+        "UPDATE coachee SET unavailable_since=NULL, unavailable_until=NULL, unavailable_note=NULL WHERE id=%s",
+        (session["user_id"],),
+    )
     return redirect(url_for("coachee.coachee_dashboard"))
 
 

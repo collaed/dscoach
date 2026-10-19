@@ -12,7 +12,7 @@ from automation import _completion_hours, _engagement_score, _payment_compliance
 from flask import Blueprint, Response, abort, flash, redirect, render_template_string, request, session, url_for
 from helpers import ATTACHMENTS_DIR, _audit, _hash_password, _length_error, _tpl, _verify_password, db, utcnow
 from merge import _merge_vars
-from tasks import FEATURES, _proof_required_for_template, _roll_proof_required
+from tasks import FEATURES, _is_unavailable, _proof_required_for_template, _roll_proof_required
 
 bp = Blueprint("coach", __name__)
 
@@ -329,6 +329,7 @@ def coach_view_coachee(cid):
     coachee = c.fetchone()
     if not coachee:
         abort(404)
+    unavailable = _is_unavailable(coachee, datetime.now(ZoneInfo(coachee["timezone"] or "UTC")).date())
     # format timedelta TIME columns for HTML time inputs
     for k in ("task_unveil_time", "task_freeze_time"):
         v = coachee[k]
@@ -389,6 +390,7 @@ def coach_view_coachee(cid):
     return render_template_string(
         _tpl("coach_view_coachee.html"),
         coachee=coachee,
+        unavailable=unavailable,
         score=score_summary(cid, session["user_id"]),
         score_rows=score_history(cid),
         protocol_mode_history=protocol_mode_history,
@@ -914,6 +916,46 @@ def set_protocol_mode(cid):
     c.execute(
         "INSERT INTO protocol_mode_log (coachee_id, mode, changed_by_coach_id) VALUES (%s,%s,%s)",
         (cid, mode, session["user_id"]),
+    )
+    return redirect(url_for("coach.coach_view_coachee", cid=cid))
+
+
+@bp.route("/coach/coachee/<int:cid>/unavailable", methods=["POST"])
+@login_required("coach")
+def coach_declare_unavailable(cid):
+    """R47: coach declares unavailability on behalf of a coachee (async-first principle).
+
+    Route POST /coach/coachee/<cid>/unavailable — no screen; redirects to the coachee detail screen.
+    When: on the unavailability form in coach_view_coachee.html.
+    """
+    c = db()
+    c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    if not c.fetchone():
+        abort(404)
+    until = request.form.get("until") or None
+    note = (request.form.get("note") or "").strip()[:300]
+    c.execute(
+        "UPDATE coachee SET unavailable_since=%s, unavailable_until=%s, unavailable_note=%s WHERE id=%s",
+        (utcnow(), until, note or None, cid),
+    )
+    return redirect(url_for("coach.coach_view_coachee", cid=cid))
+
+
+@bp.route("/coach/coachee/<int:cid>/available", methods=["POST"])
+@login_required("coach")
+def coach_declare_available(cid):
+    """R47: coach ends a coachee's unavailability early.
+
+    Route POST /coach/coachee/<cid>/available — no screen; redirects to the coachee detail screen.
+    When: on the "end unavailability" button in coach_view_coachee.html.
+    """
+    c = db()
+    c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    if not c.fetchone():
+        abort(404)
+    c.execute(
+        "UPDATE coachee SET unavailable_since=NULL, unavailable_until=NULL, unavailable_note=NULL WHERE id=%s",
+        (cid,),
     )
     return redirect(url_for("coach.coach_view_coachee", cid=cid))
 

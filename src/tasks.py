@@ -96,6 +96,27 @@ def _proof_required_for_template(template_id) -> int:
     return _roll_proof_required(row["proof_pct"] if row else 0)
 
 
+def _is_unavailable(coachee, local_today) -> bool:
+    """R47: True while a coachee's declared unavailability is still in effect.
+
+    Called by: routes_coachee.py::coachee_dashboard(), to skip
+    _auto_assign_reserves() and _freeze_overdue() for the duration (no new
+    tasks, no miss penalties, but the absence itself isn't hidden). A
+    declaration with no unavailable_until is indefinite; one with a past
+    unavailable_until has simply expired - no sweep needed to "end" it.
+    """
+    since = coachee.get("unavailable_since")
+    if not since:
+        return False
+    until = coachee.get("unavailable_until")
+    if until is None:
+        return True
+    if isinstance(until, str):
+        until = datetime.strptime(until, "%Y-%m-%d").date()
+    still_active: bool = until >= local_today
+    return still_active
+
+
 def _auto_assign_reserves(coachee_id, coach_id):
     """If no task was manually assigned today for this coachee, pick one reserve task.
 

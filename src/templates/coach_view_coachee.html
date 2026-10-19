@@ -242,6 +242,23 @@
 </div>
 
 <div class="section">
+<h3>🌙 Availability</h3>
+{% if unavailable %}
+<p><strong>Currently unavailable</strong>{% if coachee.unavailable_until %} until {{ coachee.unavailable_until }}{% endif %}{% if coachee.unavailable_note %} — {{ coachee.unavailable_note }}{% endif %}. Tasks are paused, nothing is being marked missed.</p>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/available">{{ csrf_field() }}<button type="submit" class="secondary" style="margin:0">End unavailability</button></form>
+{% else %}
+<details><summary class="muted small">Declare unavailable on their behalf</summary>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/unavailable" style="margin-top:.6rem">
+{{ csrf_field() }}
+<label>Expected return date (optional)</label><input type="date" name="until">
+<label>Note (optional)</label><input type="text" name="note" maxlength="300">
+<button type="submit">Mark unavailable</button>
+</form>
+</details>
+{% endif %}
+</div>
+
+<div class="section">
 <h3>📋 Recent Tasks</h3>
 {% for t in tasks %}
 <div class="entry">

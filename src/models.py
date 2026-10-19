@@ -1,4 +1,4 @@
-"""SQLAlchemy Core table definitions for DSCoaching (32 tables).
+"""SQLAlchemy Core table definitions for DSCoaching (32 tables; R47 adds 3 columns, no new table).
 
 Used by: database.py::init_db() (metadata.create_all — this is what
 provisions a fresh DB) and migrations/env.py (Alembic target_metadata).
@@ -76,6 +76,9 @@ coachee = Table(
     Column("font_pref", String(20), server_default="clean"),
     Column("theme_pref", String(20), server_default="default"),  # R50: 'default' | 'noir'
     Column("protocol_mode", String(20), server_default="relaxed"),  # R42: 'relaxed' | 'formal'
+    Column("unavailable_since", DateTime),  # R47: set when a declaration is active, else NULL
+    Column("unavailable_until", Date),  # R47: expected return date; NULL = indefinite
+    Column("unavailable_note", String(300)),  # R47
     Column("created_at", DateTime, server_default=func.now()),
 )
 

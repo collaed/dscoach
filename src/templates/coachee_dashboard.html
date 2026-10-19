@@ -53,6 +53,23 @@
 
 {{ flash_block }}
 
+{% if unavailable %}
+<div class="section" style="border:1px solid var(--accent);background:var(--accent-subtle)">
+<strong>🌙 You're marked unavailable</strong>{% if coachee.unavailable_until %} until {{ coachee.unavailable_until }}{% endif %}{% if coachee.unavailable_note %} — {{ coachee.unavailable_note }}{% endif %}.
+Tasks are paused and nothing will be marked missed while this is active.
+<form method="post" action="/me/available" style="display:inline;margin-left:.5rem">{{ csrf_field() }}<button type="submit" class="secondary" style="margin:0">I'm back</button></form>
+</div>
+{% else %}
+<details class="section"><summary>🌙 Declare unavailability</summary>
+<form method="post" action="/me/unavailable" style="margin-top:.6rem">
+{{ csrf_field() }}
+<label>Expected return date (optional)</label><input type="date" name="until">
+<label>Note (optional)</label><input type="text" name="note" maxlength="300" placeholder="e.g. traveling, will check in when back">
+<button type="submit">Mark unavailable</button>
+</form>
+</details>
+{% endif %}
+
 {% if coachee.login_count is defined and coachee.login_count and coachee.login_count <= 3 %}
 <div style="margin:1rem 1.5rem">
 <div class="section" style="border-left:3px solid var(--accent);background:rgba(233,69,96,0.04)">

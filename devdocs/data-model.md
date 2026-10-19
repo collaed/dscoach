@@ -200,6 +200,13 @@ at submission time, stamped only on coachee-authored notes.
 
 Migration: Alembic `006_r42_protocol_mode` (`batch_alter_table` for SQLite).
 
+**`coachee`** (3 new columns, R47): `unavailable_since` (DateTime, nullable - set when a
+declaration is active), `unavailable_until` (Date, nullable - NULL means indefinite),
+`unavailable_note` (String(300), nullable). Ending an unavailability clears all three; an expired
+`unavailable_until` is detected by comparison in `tasks._is_unavailable()`, no sweep needed.
+
+Migration: Alembic `007_r47_unavailability` (`batch_alter_table` for SQLite).
+
 ## Cascade Delete Order
 
 > ⚠️ **BUG-017 / H1 (open):** the cascade below does **not** include the 11
