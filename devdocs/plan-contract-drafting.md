@@ -29,10 +29,23 @@ are authored together, not separately.
 
 The starter library is extracted and name-genericized from an actual,
 currently-used 20-chapter contract and its 23 real tasks (see
-[`contract-library-seed.json`](contract-library-seed.json) for the full
+[`src/seed_data/contract_library_seed.json`](../src/seed_data/contract_library_seed.json) for the full
 data). `Madame V`/`Mme V` → `{{coach_name}}`, `eddy` → `{{coachee_name}}`,
-`(the overthinker)` → `({{coachee_archetype}})`; verified zero leftover real
-names in the output. This matters for two reasons beyond "it's more
+`(the overthinker)` → `({{coachee_archetype}})`. **Correction (2026-10-19):**
+this claim was wrong as originally written - re-scanning before implementation
+found 2 section titles and 1 signature-block line still saying "MADAME V"
+literally (the body-genericization pass had missed the heading lines
+duplicated at the top of each section's `content_template`, and a
+signature-block label), plus 11 literal references to "Kneel" (the
+originating third-party app) scattered across 5 sections and 3 sample
+tasks - a real functional bug too, since a DSCoaching user would get
+contract text instructing their coachee to use a different app. All now
+fixed directly in `src/seed_data/contract_library_seed.json` (names → `{{coach_name}}`/
+generic labels, "Kneel" → "this app"/"the app"/"in-app" as grammar required).
+Verified clean by scanning `contract_sections` + `sample_tasks` only - the
+`_meta.source` field intentionally still names the real origin, since it's
+a developer-facing provenance note, never seeded into the app. This matters
+for two reasons beyond "it's more
 authentic than an invented example set":
 
 - **The default `proof_pct`/`points` values aren't guesses.** The real task
@@ -54,7 +67,7 @@ authentic than an invented example set":
 and "Alcohol Protocol" — are tied to this specific relationship's real
 circumstances (marriage, specific triggers) rather than generically
 transferable, and retain fixed gendered pronouns throughout (name-only
-genericization, not a pronoun rewrite — see `contract-library-seed.json`'s
+genericization, not a pronoun rewrite — see `src/seed_data/contract_library_seed.json`'s
 `_meta` note). These are tagged `reusability: adapt_heavily` in the schema
 below, versus `reusable_boilerplate` for the other 18, and the section-picker
 UI must surface that distinction rather than let a coach silently import
@@ -248,7 +261,7 @@ sequenceDiagram
    referencing the coach by name can render correctly.
 2. Schema: `contract_section`, `contract_section_task` in `models.py`;
    Alembic migration after R48/R49's `003` → `004`.
-3. Seed the real starter library (from `contract-library-seed.json`) in
+3. Seed the real starter library (from `src/seed_data/contract_library_seed.json`) in
    `database.py`, idempotent, `coach_id NULL`, tagging `reusable_boilerplate`
    vs `adapt_heavily` per §2.
 4. Coach routes + templates: `/coach/contract-sections` (manage),

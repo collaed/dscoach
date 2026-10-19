@@ -5,11 +5,14 @@ Backend is selected via DATABASE_URL env var or constructed from DB_* vars.
 """
 
 import hashlib
+import json
 import os
 
-from models import coach, metadata
+from models import coach, contract_section, contract_section_task, metadata
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
+
+SEED_DATA_DIR = os.path.join(os.path.dirname(__file__), "seed_data")
 
 # --- Engine construction ---
 
@@ -86,6 +89,7 @@ def init_db():
     engine = get_engine()
     metadata.create_all(engine)
     _seed_admin(engine)
+    _seed_contract_library(engine)
 
 
 def _seed_admin(engine: Engine):
@@ -123,6 +127,90 @@ def _seed_admin(engine: Engine):
     url = _build_url()
     if not url.startswith("sqlite://") and not os.environ.get("SKIP_DEMO_SEED"):
         _seed_demo_users(engine)
+
+
+def _seed_contract_library(engine: Engine):
+    """R52: seed the system-default (coach_id=NULL) contract section library once.
+
+    Called by: init_db() only, on every startup - idempotent (a no-op once any
+    coach_id=NULL section exists, so a coach's own edits/deletes of their private
+    sections are never touched and this never re-seeds on restart). Source data:
+    seed_data/contract_library_seed.json, genericized from a real contract (see
+    devdocs/plan-contract-drafting.md §2). Each sample task is attached to the
+    FIRST of its linked_contract_sections only - the schema (and REQ-52.3) models
+    one section per task; the source data's few multi-section tasks lose that
+    extra association, not the task itself. The one task with no link at all
+    is homed under section 0 (overview) rather than dropped.
+    """
+    with engine.begin() as conn:
+        already_seeded = conn.execute(text("SELECT 1 FROM contract_section WHERE coach_id IS NULL LIMIT 1")).fetchone()
+        if already_seeded:
+            return
+
+        seed_path = os.path.join(SEED_DATA_DIR, "contract_library_seed.json")
+        with open(seed_path, encoding="utf-8") as f:
+            data = json.load(f)
+
+        # Best-effort category per section (the source data carries no category field -
+        # see devdocs/plan-contract-drafting.md). Anything not listed falls back to 'custom'.
+        category_by_order = {
+            0: "foundation",
+            1: "roles",
+            2: "roles",
+            3: "consent",
+            4: "time",
+            5: "ritual",
+            6: "ritual",
+            8: "service",
+            10: "ritual",
+            12: "evaluation",
+            13: "rewards",
+            14: "physical",
+            15: "physical",
+            16: "evaluation",
+            17: "evaluation",
+            18: "ritual",
+            19: "dissolution",
+        }
+
+        # The source JSON's placeholder is {{coachee_name}}; merge.py's actual
+        # vocabulary (merge.py::_get_merge_context) calls the same value {{name}}.
+        # Rewrite at seed time rather than teach merge.py a second name for one thing.
+        def _to_merge_vocab(text):
+            return text.replace("{{coachee_name}}", "{{name}}")
+
+        order_to_id = {}
+        for section in data["contract_sections"]:
+            result = conn.execute(
+                contract_section.insert().values(
+                    coach_id=None,
+                    title=section["title"],
+                    category=category_by_order.get(section["order"], "custom"),
+                    body=_to_merge_vocab(section["content_template"]),
+                    reusability=section["reusability"],
+                    sort_hint=section["order"],
+                )
+            )
+            order_to_id[section["order"]] = result.inserted_primary_key[0]
+
+        for task in data["sample_tasks"]:
+            # Tasks link to 1+ sections in the source data; the schema (REQ-52.3) models
+            # one section per task, so take the first. A few carry no link at all - home
+            # those under section 0 (overview) rather than silently dropping a real task.
+            linked = task.get("linked_contract_sections") or [0]
+            section_id = order_to_id.get(linked[0])
+            if section_id is None:
+                continue
+            conn.execute(
+                contract_section_task.insert().values(
+                    section_id=section_id,
+                    title=task["title"],
+                    description=_to_merge_vocab(task.get("description_template", "")),
+                    recurrence=task.get("recurrence", "once"),
+                    proof_pct=task.get("suggested_proof_pct", 0),
+                    points=task.get("suggested_points", 0),
+                )
+            )
 
 
 def _seed_demo_users(engine: Engine):

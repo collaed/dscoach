@@ -220,8 +220,18 @@ def test_delete_coach_leaves_zero_orphans_in_every_table(client):
     resp = client.post("/admin/coach/2/delete", follow_redirects=False)
     assert resp.status_code == 302
 
-    # No orphans anywhere.
+    # No orphans anywhere. coachee_id is never nullable, so "zero total rows" and
+    # "zero rows for this coachee" are equivalent there. coach_id CAN be nullable
+    # (R52's contract_section: NULL = shared system default, not any one coach's
+    # data, and must survive this - so coach_tables checks "zero rows for THIS
+    # coach_id" specifically, which is equivalent to the total-count check for
+    # every table that doesn't have that shared-default pattern).
     assert _count_rows("coachee") == 0
-    for tbl in coachee_tables + coach_tables:
+    for tbl in coachee_tables:
         assert _count_rows(tbl.name) == 0, f"orphaned rows left in {tbl.name} (BUG-017 regression)"
+    engine = get_engine()
+    with engine.connect() as conn:
+        for tbl in coach_tables:
+            remaining = conn.execute(text(f"SELECT COUNT(*) FROM {tbl.name} WHERE coach_id=2")).scalar()  # nosec B608 - tbl.name from metadata, not user input
+            assert remaining == 0, f"orphaned rows left in {tbl.name} (BUG-017 regression)"
     assert _count_rows("coach") == 1  # only admin ecb remains

@@ -1,4 +1,4 @@
-# data-model.md — Database Schema (34 tables, SQLAlchemy Core)
+# data-model.md — Database Schema (36 tables, SQLAlchemy Core)
 
 ## Schema Management
 
@@ -247,6 +247,42 @@ Requesting never spends anything by itself; only an approval does, and only if t
 still sufficient at that moment (re-checked, since it may have changed since the request).
 
 Migration: Alembic `009_r24_r51_rewards` (plain `create_table`, no existing-table changes).
+
+**`contract_section`** (new table, R52): a reusable contract clause. `coach_id` NULL means a
+system default (shared, read-only, cloneable); non-NULL means private to that coach.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | Integer PK | Auto-increment |
+| coach_id | Integer FK coach.id | **Nullable** - NULL = system default. The only nullable `coach_id` in the schema; see BUG-024 for the cascade-delete implication. |
+| title | String(200) | NOT NULL |
+| category | String(40) | 'foundation'\|'roles'\|'consent'\|'time'\|'ritual'\|'service'\|'rewards'\|'physical'\|'evaluation'\|'dissolution'\|'custom' |
+| body | Text | NOT NULL; may contain `{{coach_name}}`/`{{name}}`/other `merge.py` vars |
+| reusability | String(20) | 'reusable_boilerplate'\|'adapt_heavily'\|'custom' - `adapt_heavily` renders a warning wherever shown |
+| sort_hint | SmallInteger | Default library order |
+| active | SmallInteger | Default 1 |
+| created_at | DateTime | Auto-set |
+
+**`contract_section_task`** (new table, R52): a sample task offered (never forced) when a
+section is included in a drafted contract.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | Integer PK | Auto-increment |
+| section_id | Integer FK contract_section.id | NOT NULL - one section per task (the source data's few multi-section tasks keep only their first link) |
+| title | String(300) | NOT NULL |
+| description | Text | May contain merge vars |
+| category / difficulty / recurrence / recur_days / is_reserve / tags | — | Same shape as `task_template`, copied into a real `task_template` row only if the coach checks this task when saving a draft |
+| proof_pct | SmallInteger | R48 |
+| points | SmallInteger | R49 |
+| created_at | DateTime | Auto-set |
+
+Seeded once (idempotent) by `database.py::_seed_contract_library()` from
+`src/seed_data/contract_library_seed.json` - 20 sections, 23 tasks, genericized from a real
+contract. `coachee.contract_text`/`contract_history` are unchanged by this feature (REQ-52.5):
+drafting just produces the same free text through a scaffold, not a new storage mechanism.
+
+Migration: Alembic `010_r52_contract_sections` (plain `create_table`, no existing-table changes).
 
 ## Cascade Delete Order
 

@@ -140,6 +140,17 @@ def admin_delete_coach(coid):
         )
     # 2. Delete the coachees themselves.
     c.execute("DELETE FROM coachee WHERE coach_id=%s", (coid,))
+    # 2.5. contract_section_task (R52) has no coach_id/coachee_id column of its own -
+    # it hangs off contract_section.id one hop further out, so _cascade_tables()'s
+    # direct-column scan can't see it. Without this, deleting a coach with private
+    # sections that have sample tasks would leave those task rows referencing a
+    # contract_section row about to be deleted in step 3 - an FK violation on
+    # Postgres (500), a silent orphan on SQLite. Any FUTURE table one hop removed
+    # from coach_id/coachee_id needs the same explicit treatment (see BUGS.md).
+    c.execute(
+        "DELETE FROM contract_section_task WHERE section_id IN (SELECT id FROM contract_section WHERE coach_id=%s)",
+        (coid,),
+    )
     # 3. Delete every coach-scoped row (excluding the coachee table, handled above).
     for tbl in coach_tables:
         c.execute(f"DELETE FROM {tbl} WHERE coach_id=%s", (coid,))  # nosec B608 - tbl from metadata

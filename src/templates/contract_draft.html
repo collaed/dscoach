@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Draft Contract</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.warn-adapt{background:var(--danger-subtle);color:var(--danger);border:1px solid var(--danger);border-radius:var(--radius-sm);padding:.3rem .5rem;font-size:.78rem;margin:.2rem 0 .5rem}
+.sec-row{display:flex;align-items:center;gap:.5rem;padding:.4rem 0;border-bottom:1px solid var(--border)}
+.sec-row input[type=text]{width:50px;flex:none}
+</style></head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
+<nav><span class="title">DSCoaching</span><a href="/coach/coachee/{{ coachee.id }}">&larr; {{ coachee.name }}</a></nav>
+<div class="page">
+<h2>🧩 Draft Contract — {{ coachee.name }}</h2>
+{{ flash_block }}
+
+<div class="section" style="max-width:800px">
+<h3>1. Pick Sections</h3>
+<p class="muted small">Check the sections to include. The number box sets assembly order (lower first) — leave blank to use library order.</p>
+<form method="post">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="assemble">
+{% for s in sections %}
+<div class="sec-row">
+<input type="checkbox" name="section_ids" value="{{ s.id }}"{% if s.id in selected_ids %} checked{% endif %}>
+<input type="text" name="order_{{ s.id }}" placeholder="{{ s.sort_hint }}">
+<span><strong>{{ s.title }}</strong> <span class="badge">{{ s.category }}</span>{% if not s.coach_id %} <span class="badge">default</span>{% endif %}
+{% if s.reusability == 'adapt_heavily' %}<br><span class="warn-adapt">⚠ Drawn from a real personal example — read and rewrite before using.</span>{% endif %}
+</span>
+</div>
+{% endfor %}
+<button type="submit" style="margin-top:.8rem">Assemble Preview</button>
+</form>
+</div>
+
+{% if assembled is not none %}
+<div class="section" style="max-width:800px">
+<h3>2. Edit & Save</h3>
+<form method="post">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="save">
+{% for sid in selected_ids %}<input type="hidden" name="section_ids" value="{{ sid }}">{% endfor %}
+<label>Assembled text <span class="muted small">(fully editable — any remaining {{ '{{placeholder}}' }} can be filled in by hand)</span></label>
+<textarea name="assembled_text" rows="22" style="font-family:monospace;font-size:.85rem">{{ assembled }}</textarea>
+
+{% if section_tasks %}
+<h4>Sample tasks from the selected sections</h4>
+<p class="muted small">Nothing here is created unless checked (REQ-52.6).</p>
+{% for t in section_tasks %}
+<label class="check"><input type="checkbox" name="task_ids" value="{{ t.id }}"> <strong>{{ t.title }}</strong> — proof {{ t.proof_pct }}%, {{ t.points }} pts, {{ t.recurrence }}</label>
+{% endfor %}
+{% endif %}
+
+<button type="submit" style="margin-top:.8rem">Save Contract</button>
+</form>
+</div>
+{% endif %}
+</div>
+</body></html>

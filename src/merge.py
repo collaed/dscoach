@@ -11,9 +11,10 @@ _merge_cache: dict[
 
 def _get_merge_context(coachee_id):
     """PURPOSE: Build the mail-merge variable dict for a coachee (name, streak, level, grade_avg,
-    days_active, strikes, date, avatar, safe_word, etc.), cached per coachee within a request.
+    days_active, strikes, date, avatar, safe_word, coach_name, etc.), cached per coachee within a request.
     CALLED BY / SCREEN: _merge_vars() here and automation.py — feeds coachee dashboard/tasks/notes/
-    conditioning/rituals text (/me screens) and coach automation actions.
+    conditioning/rituals text (/me screens) and coach automation actions; coach_name (R52) feeds
+    assembled contract-section preview text (/coach/coachee/<cid>/contract/draft).
     WHEN: on first merge for a coachee during a request (e.g. coachee dashboard load, task render)."""
     now_ts = int(utcnow().timestamp())
     cached = _merge_cache.get(coachee_id)
@@ -25,6 +26,9 @@ def _get_merge_context(coachee_id):
     row = c.fetchone()
     if not row:
         return {}
+
+    c.execute("SELECT name FROM coach WHERE id=%s", (row.get("coach_id"),))
+    coach_row = c.fetchone()
 
     # Compute grade average
     c.execute(
@@ -80,6 +84,7 @@ def _get_merge_context(coachee_id):
         "day_of_week": today.strftime("%A"),
         "avatar": row.get("avatar") or "\U0001f415",
         "safe_word": row.get("safe_word") or "RED",
+        "coach_name": (coach_row and coach_row.get("name")) or "",  # R52
     }
     _merge_cache[coachee_id] = (now_ts, ctx)
     return ctx

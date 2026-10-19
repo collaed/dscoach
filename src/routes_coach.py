@@ -812,6 +812,161 @@ def manage_rewards():
     return render_template_string(_tpl("manage_rewards.html"), rewards=rewards)
 
 
+@bp.route("/coach/contract-sections", methods=["GET", "POST"])
+@login_required("coach")
+def manage_contract_sections():
+    """Browse the system-default + this coach's own contract-section library (R52).
+
+    Route GET/POST /coach/contract-sections — renders manage_contract_sections.html.
+    'clone' copies a system default (coach_id NULL) into this coach's own, editable copy.
+    'create'/'update' write a coach-owned section directly. 'delete' only ever touches a
+    section this coach owns - system defaults are read-only and never deletable.
+    When: GET on screen load; POST on create/update/clone/delete form submit.
+    """
+    c = db()
+    if request.method == "POST":
+        action = request.form.get("action", "create")
+        if action == "clone":
+            sid = int(request.form["section_id"])
+            c.execute("SELECT * FROM contract_section WHERE id=%s AND coach_id IS NULL", (sid,))
+            src = c.fetchone()
+            if src:
+                c.execute(
+                    "INSERT INTO contract_section (coach_id, title, category, body, reusability, sort_hint) "
+                    "VALUES (%s,%s,%s,%s,%s,%s)",
+                    (session["user_id"], f"{src['title']} (copy)", src["category"], src["body"], "custom", 0),
+                )
+        elif action == "delete":
+            sid = int(request.form["section_id"])
+            c.execute("DELETE FROM contract_section_task WHERE section_id=%s", (sid,))
+            c.execute("DELETE FROM contract_section WHERE id=%s AND coach_id=%s", (sid, session["user_id"]))
+        elif action == "update":
+            sid = int(request.form["section_id"])
+            c.execute(
+                "UPDATE contract_section SET title=%s, category=%s, body=%s WHERE id=%s AND coach_id=%s",
+                (
+                    request.form["title"],
+                    request.form.get("category", "custom"),
+                    request.form["body"],
+                    sid,
+                    session["user_id"],
+                ),
+            )
+        else:
+            c.execute(
+                "INSERT INTO contract_section (coach_id, title, category, body, reusability) VALUES (%s,%s,%s,%s,'custom')",
+                (
+                    session["user_id"],
+                    request.form["title"],
+                    request.form.get("category", "custom"),
+                    request.form["body"],
+                ),
+            )
+        return redirect(url_for("coach.manage_contract_sections"))
+    c.execute(
+        "SELECT * FROM contract_section WHERE coach_id IS NULL OR coach_id=%s ORDER BY coach_id IS NULL DESC, sort_hint, title",
+        (session["user_id"],),
+    )
+    sections = c.fetchall()
+    return render_template_string(_tpl("manage_contract_sections.html"), sections=sections)
+
+
+@bp.route("/coach/coachee/<int:cid>/contract/draft", methods=["GET", "POST"])
+@login_required("coach")
+def draft_contract(cid):
+    """Assemble a contract from the section library for one coachee, then save it (R52).
+
+    Route GET/POST /coach/coachee/<cid>/contract/draft — renders contract_draft.html.
+    Two-step flow, same page both times: 'assemble' builds a merged preview from the
+    checked sections (in the order given) and shows it in an editable textarea plus
+    the sample tasks of whichever sections were selected; 'save' writes whatever is in
+    that textarea (coach-edited or not - REQ-52.8, sections are a scaffold not a schema)
+    to coachee.contract_text/contract_history exactly like the existing edit-coachee
+    flow, and creates a task_template per checked sample task (REQ-52.6 - nothing is
+    created without explicit coach action).
+    When: GET on screen load; POST on "Assemble Preview" or "Save Contract" submit.
+    """
+    c = db()
+    c.execute("SELECT id, name, contract_text FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    coachee = c.fetchone()
+    if not coachee:
+        abort(404)
+    c.execute(
+        "SELECT * FROM contract_section WHERE coach_id IS NULL OR coach_id=%s ORDER BY coach_id IS NULL DESC, sort_hint, title",
+        (session["user_id"],),
+    )
+    sections = c.fetchall()
+
+    assembled = None
+    selected_ids: list[int] = []
+    section_tasks = []
+    if request.method == "POST":
+        action = request.form.get("action")
+        selected_ids = [int(x) for x in request.form.getlist("section_ids")]
+        if action == "assemble":
+
+            def _order_key(sid):
+                raw = request.form.get(f"order_{sid}", "").strip()
+                return int(raw) if raw.lstrip("-").isdigit() else 9999
+
+            selected_ids.sort(key=_order_key)
+            bodies = []
+            for sid in selected_ids:
+                c.execute("SELECT body FROM contract_section WHERE id=%s", (sid,))
+                row = c.fetchone()
+                if row:
+                    bodies.append(_merge_vars(row["body"], cid))
+            assembled = "\n\n".join(bodies)
+            if selected_ids:
+                c.execute(
+                    f"SELECT * FROM contract_section_task WHERE section_id IN ({','.join(['%s'] * len(selected_ids))})",  # nosec B608 - placeholders only, values bound below
+                    tuple(selected_ids),
+                )
+                section_tasks = c.fetchall()
+        elif action == "save":
+            new_text = request.form.get("assembled_text", "")
+            if coachee["contract_text"] and coachee["contract_text"] != new_text:
+                c.execute(
+                    "INSERT INTO contract_history (coachee_id, contract_text) VALUES (%s,%s)",
+                    (cid, coachee["contract_text"]),
+                )
+            c.execute("UPDATE coachee SET contract_text=%s WHERE id=%s", (new_text, cid))
+            for tid_str in request.form.getlist("task_ids"):
+                c.execute("SELECT * FROM contract_section_task WHERE id=%s", (int(tid_str),))
+                st = c.fetchone()
+                if not st:
+                    continue
+                c.execute(
+                    """INSERT INTO task_template (coach_id, title, description, recurrence, category, difficulty,
+                             recur_days, is_reserve, proof_pct, points, tags)
+                             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    (
+                        session["user_id"],
+                        st["title"],
+                        _merge_vars(st.get("description") or "", cid),
+                        st["recurrence"],
+                        st["category"],
+                        st["difficulty"],
+                        st["recur_days"],
+                        st["is_reserve"],
+                        st["proof_pct"],
+                        st["points"],
+                        st["tags"],
+                    ),
+                )
+            flash("Contract saved.", "success")
+            return redirect(url_for("coach.coach_view_coachee", cid=cid))
+
+    return render_template_string(
+        _tpl("contract_draft.html"),
+        coachee=coachee,
+        sections=sections,
+        assembled=assembled,
+        selected_ids=selected_ids,
+        section_tasks=section_tasks,
+    )
+
+
 @bp.route("/coach/coachee/<int:cid>/reward-redemption/<int:rrid>/approve", methods=["POST"])
 @login_required("coach")
 def approve_redemption(cid, rrid):

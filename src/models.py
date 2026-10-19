@@ -1,4 +1,4 @@
-"""SQLAlchemy Core table definitions for DSCoaching (34 tables).
+"""SQLAlchemy Core table definitions for DSCoaching (36 tables).
 
 Used by: database.py::init_db() (metadata.create_all — this is what
 provisions a fresh DB) and migrations/env.py (Alembic target_metadata).
@@ -286,6 +286,42 @@ contract_history = Table(
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("coachee_id", Integer, ForeignKey("coachee.id"), nullable=False),
     Column("contract_text", Text, nullable=False),
+    Column("created_at", DateTime, server_default=func.now()),
+)
+
+# R52: a reusable contract clause. coach_id=NULL means a system default (shared, read-only,
+# cloneable); seeded from devdocs/contract-library-seed.json by database.py::_seed_contract_library().
+contract_section = Table(
+    "contract_section",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("coach_id", Integer, ForeignKey("coach.id"), nullable=True),
+    Column("title", String(200), nullable=False),
+    Column("category", String(40)),
+    Column("body", Text, nullable=False),
+    Column("reusability", String(20), server_default="custom"),  # reusable_boilerplate|adapt_heavily|custom
+    Column("sort_hint", SmallInteger, server_default="0"),
+    Column("active", SmallInteger, server_default="1"),
+    Column("created_at", DateTime, server_default=func.now()),
+)
+
+# R52: a sample task template attached to a contract_section, offered (not forced - REQ-52.6)
+# to the coach when drafting a contract that includes the section.
+contract_section_task = Table(
+    "contract_section_task",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("section_id", Integer, ForeignKey("contract_section.id"), nullable=False),
+    Column("title", String(300), nullable=False),
+    Column("description", Text),
+    Column("category", String(20), server_default="mental"),
+    Column("difficulty", String(20), server_default="medium"),
+    Column("recurrence", String(20), server_default="once"),
+    Column("recur_days", Integer, nullable=True),
+    Column("is_reserve", SmallInteger, server_default="0"),
+    Column("proof_pct", SmallInteger, server_default="0"),
+    Column("points", SmallInteger, server_default="0"),
+    Column("tags", String(500)),
     Column("created_at", DateTime, server_default=func.now()),
 )
 
