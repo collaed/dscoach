@@ -10,6 +10,7 @@ from auth import login_required
 from automation import (
     _check_and_award_badges,
     _compute_level,
+    _detect_ritual_misses,
     _get_badges,
     _get_rituals,
     _mood_sparkline,
@@ -68,6 +69,7 @@ def coachee_dashboard():
     if not unavailable:
         _freeze_overdue(cid, tz)
         _check_required_checkin(cid, coachee["coach_id"], tz)
+        _detect_ritual_misses(cid, coachee["coach_id"], local_now.date() - timedelta(days=1))
     _update_streak(cid, tz)
     _check_and_award_badges(cid)
 

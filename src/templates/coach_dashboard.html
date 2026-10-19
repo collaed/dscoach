@@ -97,6 +97,7 @@
 <span class="badge {% if cc.avg_grade in ['A','B'] %}ok{% elif cc.avg_grade in ['C','D'] %}warn{% else %}danger{% endif %}">avg {{ cc.avg_grade }}</span>
 {% if cc.ungraded %}<span class="badge warn">{{ cc.ungraded }} ungraded</span>{% endif %}
 {% if cc.strikes %}<span class="badge danger">{{ cc.strikes }} strikes</span>{% endif %}
+{% if cc.rituals_missed %}<span class="badge warn">{{ cc.rituals_missed }} rituals missed (7d)</span>{% endif %}
 <span class="badge {% if cc.checkins_today > 0 %}ok{% else %}info{% endif %}">{{ cc.checkins_today }} check-ins</span>
 <span class="badge {% if cc.engagement >= 70 %}ok{% elif cc.engagement >= 40 %}warn{% else %}danger{% endif %}">{{ cc.engagement }}% engaged</span>
 {% if cc.days_inactive >= 3 %}<span class="badge danger">{{ cc.days_inactive }}d inactive</span>{% endif %}

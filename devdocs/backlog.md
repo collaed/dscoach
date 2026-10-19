@@ -40,7 +40,7 @@ next and why. Status mirrors the roadmap (🟢 done · 🟡 partial · 🔴 not 
 | R52 | ✅ **Done (MVP)** — section library + draft/assemble/save flow + sample-task creation; propose/sign loop deferred to R2/R22 | plan-contract-drafting.md |
 | R6 → H2 | LLM auto-rating to replace the gameable length-based auto-grade | roadmap R6, H2 |
 | R1 → R4 → R5 | Late check-in marking → compliance dashboard → timeliness | roadmap R1/R4/R5 |
-| R18 | Automatic ritual-miss detection | roadmap R18 |
+| R18 | ✅ **Done** — `ritual_log.status`, detected on `/me` load (skipped during R47 unavailability), surfaced on coach dashboard, fires `ritual_missed` auto-rules | roadmap R18 |
 | R38 → R39 | Ritual categories/scheduling depth → completion calendar | roadmap R38/R39 |
 | R43 | ✅ **Done** — `weekly_summary.designation`, coach sets it on the weekly-summary screen, coachee sees it prominently on `/me`, history visible on the coach's weekly-summary screen | roadmap R43 |
 | R15 → R17 → R27 | Timed consequences → auto-triggers → graduated ladder | roadmap R15/R17/R27 |

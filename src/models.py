@@ -450,6 +450,7 @@ ritual_log = Table(
     Column("ritual_id", Integer, ForeignKey("ritual.id"), nullable=False),
     Column("coachee_id", Integer, ForeignKey("coachee.id"), nullable=False),
     Column("completed_date", Date, nullable=False),
+    Column("status", String(10), server_default="completed"),  # R18: 'completed' | 'missed'
     Column("created_at", DateTime, server_default=func.now()),
     UniqueConstraint("ritual_id", "coachee_id", "completed_date"),
 )

@@ -290,6 +290,14 @@ route). Not every week gets one.
 
 Migration: Alembic `011_r43_weekly_designation` (`batch_alter_table` for SQLite).
 
+**`ritual_log`** (new column, R18): `status` String(10), default `'completed'` —
+`'completed' | 'missed'`. A miss is now a row under the *same* `(ritual_id, coachee_id,
+completed_date)` unique constraint that already existed, so a given ritual on a given day is
+one or the other, never both — no new constraint needed. `automation._detect_ritual_misses()`
+inserts a `'missed'` row for yesterday when a due ritual has no row at all for that date yet.
+
+Migration: Alembic `012_r18_ritual_miss_detection` (`batch_alter_table` for SQLite).
+
 ## Cascade Delete Order
 
 > ⚠️ **BUG-017 / H1 (open):** the cascade below does **not** include the 11

@@ -335,18 +335,78 @@ def _ritual_status_today(coachee_id, rituals, today_str):
     """Check which rituals are completed today.
 
     Called by: routes_coachee.py::coachee_dashboard() to mark each ritual
-    card on /me as done/not-done for the coachee's local "today." (Ritual
-    *misses* aren't auto-detected yet — R18 in the roadmap.)
+    card on /me as done/not-done for the coachee's local "today."
     """
     c = db()
     completed_ids = set()
     if rituals:
         c.execute(
-            "SELECT ritual_id FROM ritual_log WHERE coachee_id=%s AND completed_date=%s",
+            "SELECT ritual_id FROM ritual_log WHERE coachee_id=%s AND completed_date=%s AND status='completed'",
             (coachee_id, today_str),
         )
         completed_ids = {r["ritual_id"] for r in c.fetchall()}
     return completed_ids
+
+
+def _ritual_due_on(ritual, weekday_num) -> bool:
+    """R18: True if `ritual`'s schedule calls for it on a day with this weekday number
+    (date.weekday(): 0=Monday..6=Sunday).
+
+    Called by: _detect_ritual_misses() below.
+    """
+    schedule = ritual.get("schedule") or "daily"
+    if schedule == "daily":
+        return True
+    if schedule == "weekdays":
+        is_weekday: bool = weekday_num < 5
+        return is_weekday
+    if schedule == "weekends":
+        is_weekend: bool = weekday_num >= 5
+        return is_weekend
+    if schedule == "custom":
+        day_abbrs = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+        days = [d.strip().lower() for d in (ritual.get("schedule_days") or "").split(",")]
+        return day_abbrs[weekday_num] in days
+    return False
+
+
+def _detect_ritual_misses(coachee_id, coach_id, yesterday):
+    """R18: mark yesterday's due-but-not-logged rituals as missed, once each.
+
+    Called by: routes_coachee.py::coachee_dashboard(), right after
+    _check_required_checkin() and skipped during R47 unavailability, same
+    pattern as task freezing and the required-checkin check - checks
+    *yesterday* (not today, which isn't over yet) and is idempotent: a
+    ritual_log row (completed OR missed) already existing for that date
+    is left alone, so this never double-fires _run_auto_rules for the
+    same miss across repeated dashboard loads.
+    """
+    c = db()
+    c.execute(
+        "SELECT * FROM ritual WHERE (coachee_id=%s OR coachee_id IS NULL) AND coach_id=%s AND active=1",
+        (coachee_id, coach_id),
+    )
+    rituals = c.fetchall()
+    if not rituals:
+        return
+    weekday_num = yesterday.weekday()
+    any_missed = False
+    for ritual in rituals:
+        if not _ritual_due_on(ritual, weekday_num):
+            continue
+        c.execute(
+            "SELECT 1 FROM ritual_log WHERE ritual_id=%s AND coachee_id=%s AND completed_date=%s",
+            (ritual["id"], coachee_id, yesterday.isoformat()),
+        )
+        if c.fetchone():
+            continue
+        c.execute(
+            "INSERT INTO ritual_log (ritual_id, coachee_id, completed_date, status) VALUES (%s,%s,%s,'missed')",
+            (ritual["id"], coachee_id, yesterday.isoformat()),
+        )
+        any_missed = True
+    if any_missed:
+        _run_auto_rules(coachee_id, "ritual_missed")
 
 
 def _compute_level(coachee_id, coach_id):

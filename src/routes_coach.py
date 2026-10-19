@@ -55,6 +55,12 @@ def coach_dashboard():
             (cc["id"], datetime.now(ZoneInfo(cc["timezone"] or "UTC")).date().isoformat()),
         )
         cc["checkins_today"] = c.fetchone()["cnt"]
+        c.execute(
+            "SELECT COUNT(*) as cnt FROM ritual_log WHERE coachee_id=%s AND status='missed' "
+            "AND completed_date >= %s",
+            (cc["id"], (date.today() - timedelta(days=7)).isoformat()),
+        )
+        cc["rituals_missed"] = c.fetchone()["cnt"]  # R18
         cc["engagement"] = _engagement_score(cc["id"])
         # Inactivity detection: days since last check-in
         c.execute("SELECT MAX(created_at) as last_checkin FROM checkin WHERE coachee_id=%s", (cc["id"],))
