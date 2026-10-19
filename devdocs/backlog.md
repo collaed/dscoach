@@ -28,7 +28,7 @@ next and why. Status mirrors the roadmap (🟢 done · 🟡 partial · 🔴 not 
 | H7 | ✅ **Done** — guarded `None` coach in login flow; also fixed error-message fallthrough bug found along the way | BUG-009 |
 | H5 | ✅ **Done** — shared length-validation helper wired into register + add_coachee (the two unvalidated account-creation paths) | BUG-010 |
 | R26 | ✅ **Done** — idle timeout (default 30 min, `SESSION_TIMEOUT_MINUTES`), HSTS + no-store on every response, `Clear-Site-Data` on logout | roadmap R26 |
-| R42 | Protocol mode toggle (formal/relaxed) | roadmap R42 |
+| R42 | ✅ **Done** — `protocol_mode` on coachee, coach toggle + mode-history log, dashboard badge, coachee-note tagging | roadmap R42 |
 | R47 | Unavailability protocol (pause miss-detection) | roadmap R47 |
 | R40 | Check-in modes (optional/rewarded/required) — "rewarded" ties into R49 | roadmap R40 |
 

@@ -1,4 +1,4 @@
-"""SQLAlchemy Core table definitions for DSCoaching (31 tables).
+"""SQLAlchemy Core table definitions for DSCoaching (32 tables).
 
 Used by: database.py::init_db() (metadata.create_all — this is what
 provisions a fresh DB) and migrations/env.py (Alembic target_metadata).
@@ -75,6 +75,7 @@ coachee = Table(
     Column("login_count", Integer, server_default="0"),
     Column("font_pref", String(20), server_default="clean"),
     Column("theme_pref", String(20), server_default="default"),  # R50: 'default' | 'noir'
+    Column("protocol_mode", String(20), server_default="relaxed"),  # R42: 'relaxed' | 'formal'
     Column("created_at", DateTime, server_default=func.now()),
 )
 
@@ -192,6 +193,19 @@ note = Table(
     Column("pinned", SmallInteger, server_default="0"),
     Column("scheduled_at", DateTime),
     Column("read_at", DateTime),
+    Column("tagged_mode", String(20)),  # R42: coachee's protocol_mode at submission time, if coachee-authored
+    Column("created_at", DateTime, server_default=func.now()),
+)
+
+# R42: append-only log of protocol-mode changes, for coach review. Written by: routes_coach.py
+# (/coach/coachee/<cid>/protocol-mode). Read by: coach_view_coachee.html's mode-history list.
+protocol_mode_log = Table(
+    "protocol_mode_log",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("coachee_id", Integer, ForeignKey("coachee.id"), nullable=False),
+    Column("mode", String(20), nullable=False),
+    Column("changed_by_coach_id", Integer, ForeignKey("coach.id"), nullable=False),
     Column("created_at", DateTime, server_default=func.now()),
 )
 

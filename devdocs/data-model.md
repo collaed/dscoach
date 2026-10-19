@@ -1,4 +1,4 @@
-# data-model.md — Database Schema (30 tables, SQLAlchemy Core)
+# data-model.md — Database Schema (32 tables, SQLAlchemy Core)
 
 ## Schema Management
 
@@ -182,6 +182,23 @@ Not yet implemented; documented here for the review of the planning batch.
 Index: `ix_score_log_coachee_date` on `(coachee_id, score_date)` for rollups.
 
 Migration: Alembic `003_proof_and_scoring` (`batch_alter_table` for SQLite).
+
+**`coachee`** (new column, R42): `protocol_mode` String(20), default `'relaxed'` — `'relaxed' | 'formal'`.
+
+**`note`** (new column, R42): `tagged_mode` String(20), nullable — the coachee's `protocol_mode`
+at submission time, stamped only on coachee-authored notes.
+
+**`protocol_mode_log`** (new table, append-only, R42):
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | Integer PK | Auto-increment |
+| coachee_id | Integer FK coachee.id | NOT NULL |
+| mode | String(20) | 'relaxed' \| 'formal' |
+| changed_by_coach_id | Integer FK coach.id | NOT NULL |
+| created_at | DateTime | Auto-set |
+
+Migration: Alembic `006_r42_protocol_mode` (`batch_alter_table` for SQLite).
 
 ## Cascade Delete Order
 

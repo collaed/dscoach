@@ -222,6 +222,26 @@
 </div>
 
 <div class="section">
+<h3>⚜ Protocol</h3>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/protocol-mode" style="margin-bottom:.6rem">
+    {{ csrf_field() }}
+<label style="font-size:.85rem">Mode:
+<select name="mode" onchange="this.form.submit()">
+<option value="relaxed"{% if coachee.protocol_mode != 'formal' %} selected{% endif %}>Relaxed</option>
+<option value="formal"{% if coachee.protocol_mode == 'formal' %} selected{% endif %}>Formal</option>
+</select>
+</label>
+</form>
+{% if protocol_mode_history %}
+<details><summary class="muted small">Mode history ({{ protocol_mode_history|length }})</summary>
+{% for h in protocol_mode_history %}
+<div class="entry" style="padding:.3rem 0">{{ h.mode }} <span class="time">{{ h.created_at }}</span></div>
+{% endfor %}
+</details>
+{% endif %}
+</div>
+
+<div class="section">
 <h3>📋 Recent Tasks</h3>
 {% for t in tasks %}
 <div class="entry">
@@ -298,7 +318,7 @@
 <h3>💬 Notes</h3>
 {% for n in notes %}
 <div class="entry">
-<span class="type">{{ n.author_role }}</span>{% if n.pinned %} 📌{% endif %}{% if n.scheduled_at and not n.read_at %} ⏰{% endif %} {{ n.content }}
+<span class="type">{{ n.author_role }}</span>{% if n.tagged_mode == 'formal' %} <span title="Submitted under formal protocol" style="font-size:.7rem;color:var(--accent)">⚜ formal</span>{% endif %}{% if n.pinned %} 📌{% endif %}{% if n.scheduled_at and not n.read_at %} ⏰{% endif %} {{ n.content }}
 <div class="time">{{ n.created_at }}
 {% if n.author_role=='coach' %}{% if n.read_at %}<span style="color:#2d6a4f"> ✓ read {{ n.read_at }}</span>{% else %}<span style="color:#888"> · unread</span>{% endif %}{% endif %}
 <form method="post" action="/coach/note/{{ n.id }}/pin" style="display:inline"><button type="submit" style="background:none;border:none;color:#888;cursor:pointer;font-size:.75rem;padding:0;margin:0">{% if n.pinned %}unpin{% else %}📌 pin{% endif %}</button>{{ csrf_field() }}</form>

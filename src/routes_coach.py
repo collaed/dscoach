@@ -381,6 +381,8 @@ def coach_view_coachee(cid):
     # Get all templates for the planning side panel
     c.execute("SELECT id, title, tags FROM task_template WHERE coach_id=%s ORDER BY title", (session["user_id"],))
     all_templates = c.fetchall()
+    c.execute("SELECT * FROM protocol_mode_log WHERE coachee_id=%s ORDER BY created_at DESC LIMIT 5", (cid,))
+    protocol_mode_history = c.fetchall()
 
     from scoring import score_history, score_summary
 
@@ -389,6 +391,7 @@ def coach_view_coachee(cid):
         coachee=coachee,
         score=score_summary(cid, session["user_id"]),
         score_rows=score_history(cid),
+        protocol_mode_history=protocol_mode_history,
         tasks=tasks,
         checkins=checkins,
         acks=acks,
@@ -890,6 +893,28 @@ def set_week_start(cid):
     features = dict(features or {})
     features["week_start"] = "sun" if request.form.get("week_start") == "sun" else "mon"
     c.execute("UPDATE coachee SET features=%s WHERE id=%s", (json.dumps(features), cid))
+    return redirect(url_for("coach.coach_view_coachee", cid=cid))
+
+
+@bp.route("/coach/coachee/<int:cid>/protocol-mode", methods=["POST"])
+@login_required("coach")
+def set_protocol_mode(cid):
+    """Set the coachee's real-time protocol mode (R42): 'formal' or 'relaxed'.
+
+    Route POST /coach/coachee/<cid>/protocol-mode — no screen; redirects to the coachee
+    detail screen. Logs every change to protocol_mode_log for review.
+    When: on the protocol-mode toggle in coach_view_coachee.html.
+    """
+    c = db()
+    c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    if not c.fetchone():
+        abort(404)
+    mode = "formal" if request.form.get("mode") == "formal" else "relaxed"
+    c.execute("UPDATE coachee SET protocol_mode=%s WHERE id=%s", (mode, cid))
+    c.execute(
+        "INSERT INTO protocol_mode_log (coachee_id, mode, changed_by_coach_id) VALUES (%s,%s,%s)",
+        (cid, mode, session["user_id"]),
+    )
     return redirect(url_for("coach.coach_view_coachee", cid=cid))
 
 

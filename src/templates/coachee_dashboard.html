@@ -41,7 +41,7 @@
 </head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
 <nav>
 {% if session.get('coach_id') %}<img src="/coach/logo" style="max-height:26px;border-radius:4px" onerror="this.style.display='none'" alt="">{% endif %}
-<span class="title">{{ session.get('avatar','🌟') }} {{ coachee.name }}{% if coachee.current_streak %} <span class="streak-display">🔥 {{ coachee.current_streak }}</span>{% endif %}</span>
+<span class="title">{{ session.get('avatar','🌟') }} {{ coachee.name }}{% if coachee.current_streak %} <span class="streak-display">🔥 {{ coachee.current_streak }}</span>{% endif %}{% if coachee.protocol_mode == 'formal' %} <span title="Formal protocol active" style="font-size:.75rem;padding:.15rem .5rem;border-radius:999px;background:var(--accent-subtle);color:var(--accent);border:1px solid var(--accent)">⚜ Formal</span>{% endif %}</span>
 <div class="menu-bar">
 <a href="/me/history">📖 {{ t('nav.history') }}</a>
 <a href="/me/help">❓ {{ t('nav.help') }}</a>

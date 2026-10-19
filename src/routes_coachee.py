@@ -358,9 +358,12 @@ def coachee_add_note():
     CALLED BY: Route POST /me/note — note form on coachee_dashboard.html; redirects back to the dashboard.
     WHEN: On sending a note to the coach."""
     c = db()
+    c.execute("SELECT protocol_mode FROM coachee WHERE id=%s", (session["user_id"],))
+    mode_row = c.fetchone()
+    tagged_mode = mode_row.get("protocol_mode") if mode_row else None  # R42
     c.execute(
-        "INSERT INTO note (coachee_id, author_role, content) VALUES (%s,'coachee',%s)",
-        (session["user_id"], request.form["content"]),
+        "INSERT INTO note (coachee_id, author_role, content, tagged_mode) VALUES (%s,'coachee',%s,%s)",
+        (session["user_id"], request.form["content"], tagged_mode),
     )
     return redirect(url_for("coachee.coachee_dashboard"))
 
