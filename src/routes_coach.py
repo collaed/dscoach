@@ -1377,7 +1377,7 @@ def weekly_summary(cid):
     When: on weekly-summary screen load from the coachee detail screen.
     """
     c = db()
-    c.execute("SELECT name, timezone FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    c.execute("SELECT id, name, timezone FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
     coachee = c.fetchone()
     if not coachee:
         abort(404)

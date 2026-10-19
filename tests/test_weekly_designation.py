@@ -106,6 +106,19 @@ def test_coachee_dashboard_shows_nothing_when_undesignated(client):
     assert b"This week:" not in resp.data
 
 
+def test_weekly_summary_screen_renders_a_working_designation_form_action(client):
+    """Regression test: the weekly_summary() route's SELECT originally fetched only
+    `name, timezone` (not `id`), so the rendered page's {{ coachee.id }} in the
+    designation form's action URL was empty - a POST-based API test can't catch
+    this since it bypasses the template entirely, found only by driving the real
+    rendered form (caught via a Playwright walkthrough).
+    """
+    client.post("/login", data={"username": "ecb", "password": "ecbF3T"})
+    cid = _add_coachee(client)
+    resp = client.get(f"/coach/coachee/{cid}/summary")
+    assert f'action="/coach/coachee/{cid}/weekly-designation"'.encode() in resp.data
+
+
 def test_weekly_summary_screen_shows_history(client):
     client.post("/login", data={"username": "ecb", "password": "ecbF3T"})
     cid = _add_coachee(client)
