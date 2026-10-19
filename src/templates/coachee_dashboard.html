@@ -53,6 +53,12 @@
 
 {{ flash_block }}
 
+{% if weekly_designation %}
+<div class="section" style="border:1px solid {% if weekly_designation=='green' %}#2d6a4f{% elif weekly_designation=='yellow' %}#997404{% else %}#842029{% endif %};background:{% if weekly_designation=='green' %}#1b4332{% elif weekly_designation=='yellow' %}#664d03{% else %}#4a1515{% endif %};color:{% if weekly_designation=='green' %}#95d5b2{% elif weekly_designation=='yellow' %}#ffe69c{% else %}#ffb3b3{% endif %}">
+<strong>This week: {% if weekly_designation=='green' %}🟢 GREEN — Advance{% elif weekly_designation=='yellow' %}🟡 YELLOW — Develop{% else %}🔴 RED — Hold{% endif %}</strong>
+</div>
+{% endif %}
+
 {% if unavailable %}
 <div class="section" style="border:1px solid var(--accent);background:var(--accent-subtle)">
 <strong>🌙 You're marked unavailable</strong>{% if coachee.unavailable_until %} until {{ coachee.unavailable_until }}{% endif %}{% if coachee.unavailable_note %} — {{ coachee.unavailable_note }}{% endif %}.

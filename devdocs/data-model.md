@@ -284,6 +284,12 @@ drafting just produces the same free text through a scaffold, not a new storage 
 
 Migration: Alembic `010_r52_contract_sections` (plain `create_table`, no existing-table changes).
 
+**`weekly_summary`** (new column, R43): `designation` String(10), nullable — `'green' | 'yellow' | 'red'`,
+coach-assigned per calendar week (Monday-aligned, same convention as the existing weekly-stats
+route). Not every week gets one.
+
+Migration: Alembic `011_r43_weekly_designation` (`batch_alter_table` for SQLite).
+
 ## Cascade Delete Order
 
 > ⚠️ **BUG-017 / H1 (open):** the cascade below does **not** include the 11

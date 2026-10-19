@@ -346,6 +346,7 @@ weekly_summary = Table(
     Column("coachee_id", Integer, ForeignKey("coachee.id"), nullable=False),
     Column("week_start", Date, nullable=False),
     Column("summary_text", Text),
+    Column("designation", String(10)),  # R43: 'green' | 'yellow' | 'red', coach-assigned
     Column("created_at", DateTime, server_default=func.now()),
     UniqueConstraint("coachee_id", "week_start"),
 )

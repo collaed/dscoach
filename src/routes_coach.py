@@ -1417,7 +1417,51 @@ def weekly_summary(cid):
         "checkins": checkins,
         **streaks,
     }
-    return render_template_string(_tpl("weekly_summary.html"), coachee=coachee, s=summary)
+    c.execute("SELECT designation FROM weekly_summary WHERE coachee_id=%s AND week_start=%s", (cid, week_start))
+    current_row = c.fetchone()
+    summary["designation"] = current_row["designation"] if current_row else None
+    c.execute(
+        "SELECT week_start, designation FROM weekly_summary WHERE coachee_id=%s AND designation IS NOT NULL "
+        "ORDER BY week_start DESC LIMIT 8",
+        (cid,),
+    )
+    designation_history = c.fetchall()
+    return render_template_string(
+        _tpl("weekly_summary.html"), coachee=coachee, s=summary, designation_history=designation_history
+    )
+
+
+@bp.route("/coach/coachee/<int:cid>/weekly-designation", methods=["POST"])
+@login_required("coach")
+def set_weekly_designation(cid):
+    """Assign this calendar week's GREEN/YELLOW/RED development status for a coachee (R43).
+
+    Route POST /coach/coachee/<cid>/weekly-designation — no screen; redirects back to the
+    weekly summary screen. Finds-or-creates the weekly_summary row for the current
+    (Monday-aligned) week, same week-boundary convention as the GET /summary stats above.
+    When: on the designation form in weekly_summary.html.
+    """
+    c = db()
+    c.execute("SELECT timezone FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    coachee = c.fetchone()
+    if not coachee:
+        abort(404)
+    designation = request.form.get("designation")
+    if designation not in ("green", "yellow", "red"):
+        return redirect(url_for("coach.weekly_summary", cid=cid))
+    tz = ZoneInfo(coachee["timezone"] or "UTC")
+    today = datetime.now(tz).date()
+    week_start = (today - timedelta(days=today.weekday())).isoformat()
+    c.execute("SELECT id FROM weekly_summary WHERE coachee_id=%s AND week_start=%s", (cid, week_start))
+    existing = c.fetchone()
+    if existing:
+        c.execute("UPDATE weekly_summary SET designation=%s WHERE id=%s", (designation, existing["id"]))
+    else:
+        c.execute(
+            "INSERT INTO weekly_summary (coachee_id, week_start, designation) VALUES (%s,%s,%s)",
+            (cid, week_start, designation),
+        )
+    return redirect(url_for("coach.weekly_summary", cid=cid))
 
 
 @bp.route("/coach/coachee/<int:cid>/reset-password", methods=["POST"])

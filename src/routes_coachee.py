@@ -170,11 +170,17 @@ def coachee_dashboard():
     )
     my_redemptions = c.fetchall()
 
+    this_week_start = (local_now.date() - timedelta(days=local_now.date().weekday())).isoformat()  # R43
+    c.execute("SELECT designation FROM weekly_summary WHERE coachee_id=%s AND week_start=%s", (cid, this_week_start))
+    designation_row = c.fetchone()
+    weekly_designation = designation_row["designation"] if designation_row else None
+
     return render_template_string(
         _tpl("coachee_dashboard.html"),
         score=score,
         rewards=rewards,
         my_redemptions=my_redemptions,
+        weekly_designation=weekly_designation,
         coachee=coachee,
         unavailable=unavailable,
         tasks=tasks,

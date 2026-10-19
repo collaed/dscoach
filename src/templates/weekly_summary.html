@@ -10,6 +10,10 @@
 .good{color:var(--ok)}
 .warn{color:var(--warn)}
 .bad{color:var(--accent)}
+.designation-badge{display:inline-block;padding:.2rem .6rem;border-radius:999px;font-weight:bold;font-size:.8rem}
+.designation-green{background:#1b4332;color:#95d5b2}
+.designation-yellow{background:#664d03;color:#ffe69c}
+.designation-red{background:#4a1515;color:#ffb3b3}
 </style></head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
 <nav><span class="title">DSCoaching</span><a href="/coach">&larr; Dashboard</a></nav>
 <div class="page">
@@ -24,6 +28,31 @@
 <div class="stat"><span class="label">Current streak</span><span class="value {% if s.current_streak > 3 %}good{% endif %}">{{ s.current_streak }} days</span></div>
 <div class="stat"><span class="label">Best streak</span><span class="value">{{ s.best_streak }} days</span></div>
 <div class="stat"><span class="label">Total strikes</span><span class="value {% if s.strikes %}bad{% else %}good{% endif %}">{{ s.strikes }}</span></div>
+</div>
+
+<div class="section" style="max-width:500px">
+<h3>Weekly Designation</h3>
+{% if s.designation %}
+<p>Current: <span class="designation-badge designation-{{ s.designation }}">{{ s.designation|upper }}</span></p>
+{% else %}
+<p class="muted">Not yet designated for this week.</p>
+{% endif %}
+<form method="post" action="/coach/coachee/{{ coachee.id }}/weekly-designation">
+    {{ csrf_field() }}
+<select name="designation" onchange="this.form.submit()">
+<option value="" disabled {% if not s.designation %}selected{% endif %}>Choose…</option>
+<option value="green" {% if s.designation=='green' %}selected{% endif %}>🟢 GREEN — Advance</option>
+<option value="yellow" {% if s.designation=='yellow' %}selected{% endif %}>🟡 YELLOW — Develop</option>
+<option value="red" {% if s.designation=='red' %}selected{% endif %}>🔴 RED — Hold</option>
+</select>
+</form>
+{% if designation_history %}
+<details style="margin-top:.8rem"><summary class="muted small">History ({{ designation_history|length }})</summary>
+{% for h in designation_history %}
+<div class="entry" style="padding:.3rem 0"><span class="designation-badge designation-{{ h.designation }}">{{ h.designation|upper }}</span> <span class="time">week of {{ h.week_start }}</span></div>
+{% endfor %}
+</details>
+{% endif %}
 </div>
 </div>
 </body></html>
