@@ -10,7 +10,8 @@
 <div class="section" style="max-width:600px;margin:0 auto">
 <h2>Add Coachee</h2>
 <form method="post">
-    {{ csrf_field() }}
+    {{ flash_block }}
+{{ csrf_field() }}
 <label>Display Name</label><input type="text" name="name" required>
 <label>Username</label><input type="text" name="username" required>
 <label>Password</label><input type="password" name="password" required>

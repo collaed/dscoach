@@ -199,7 +199,7 @@ visibility.
 | H2 | correctness | 🔴 | Auto-grade heuristic produces only **A–D by response length**, but the documented scale is **A–F** and length rewards verbosity, not quality. Gameable. Candidate to fold into R6 (LLM auto-rating) or replace with a rubric. | routes_coachee.py `complete_task`; onboarding.md grading scale |
 | H3 | observability | 🔴 | **BUG-005 / BUG-006 / BUG-015** — silent `except Exception: pass` in `_audit`, cascade delete, and `init_db`. At minimum log to stderr so failures are visible. | BUGS.md |
 | H4 | config | 🟢 | **BUG-007** — ✅ **Done** — hardcoded `papillon.severin@gmail.com` replaced with `SUPPORT_EMAIL` env var; forgot-password link hidden when unset. | BUGS.md, helpers.py, login.html |
-| H5 | robustness | 🔴 | **BUG-010** — no input length validation; oversized form values can exceed VARCHAR limits (truncation or DB error). Add length guards on write paths. | BUGS.md |
+| H5 | robustness | 🟢 | **BUG-010** — ✅ **Done** — shared `_length_error()` helper added, wired into the two unvalidated account-creation paths (register, add_coachee). | BUGS.md, helpers.py |
 | H6 | performance | 🔴 | **BUG-011** — `_auto_assign_reserves` + freeze/streak all run on **every** `GET /me` (N+1). Acceptable now; revisit if multi-coachee scale grows. | BUGS.md, tasks.py |
 | H7 | robustness | 🟢 | **BUG-009** — ✅ **Done** — guarded the `None` coach in login flow; also fixed a fallthrough bug clobbering the frozen/orphaned error messages with "Invalid credentials". | BUGS.md, auth.py |
 | H8 | doc drift | 🔴 | `src/models.py` docstring says "20 tables" but 30 are defined (31 after R48/R49). Fix as part of Step 1. | models.py |

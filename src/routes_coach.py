@@ -10,7 +10,7 @@ from ai import _build_profile_prompt, _cf_ai_complete
 from auth import login_required
 from automation import _completion_hours, _engagement_score, _payment_compliance, _weekly_report
 from flask import Blueprint, Response, abort, flash, redirect, render_template_string, request, session, url_for
-from helpers import ATTACHMENTS_DIR, _audit, _hash_password, _tpl, _verify_password, db, utcnow
+from helpers import ATTACHMENTS_DIR, _audit, _hash_password, _length_error, _tpl, _verify_password, db, utcnow
 from merge import _merge_vars
 from tasks import FEATURES, _proof_required_for_template, _roll_proof_required
 
@@ -286,17 +286,24 @@ def add_coachee():
     When: GET on form load; POST on add-coachee form submit.
     """
     if request.method == "POST":
+        username = request.form["username"]
+        name = request.form["name"]
+        safe_word = request.form.get("safe_word", "RED")
+        length_err = _length_error([(username, 100, "Username"), (name, 200, "Name"), (safe_word, 100, "Safe word")])
+        if length_err:
+            flash(length_err, "error")
+            return redirect(url_for("coach.add_coachee"))
         c = db()
         c.execute(
             """INSERT INTO coachee (username, password_hash, name, coach_id, contract_text, safe_word,
                      task_unveil_time, task_freeze_time, timezone) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             (
-                request.form["username"],
+                username,
                 _hash_password(request.form["password"]),
-                request.form["name"],
+                name,
                 session["user_id"],
                 request.form.get("contract", ""),
-                request.form.get("safe_word", "RED"),
+                safe_word,
                 request.form.get("task_unveil_time", "08:00"),
                 request.form.get("task_freeze_time", "22:00"),
                 request.form.get("timezone", "Europe/London"),

@@ -81,6 +81,22 @@ def _audit(action, user_id=None, role=None):
         print(f"[_audit] write failed for action={action!r}: {e}")  # H3: visible, not swallowed silently
 
 
+def _length_error(fields):
+    """BUG-010: reject form input that would overflow a VARCHAR column before it reaches the DB.
+
+    PURPOSE: Give a clean validation error instead of a Postgres DataError (500) on oversized input.
+    CALLED BY: Account-creation routes (auth.py::register, routes_coach.py::add_coachee) — the two
+    places a username/name/etc. is first inserted, before any length-bounded column sees it.
+    WHEN: On form submit, before the INSERT.
+    fields: iterable of (value, max_len, label). Returns the first "<label> must be at most N
+    characters." error found, or None if all fields are within bounds.
+    """
+    for value, max_len, label in fields:
+        if value and len(value) > max_len:
+            return f"{label} must be at most {max_len} characters."
+    return None
+
+
 def _hash(pw):
     """Legacy SHA-256 hash. Used for backward compatibility only.
 

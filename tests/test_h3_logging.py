@@ -46,7 +46,9 @@ def test_photo_validation_failure_is_printed_not_swallowed(client, capsys):
             "name": "PV Tester",
             "contract": "",
             "safe_word": "RED",
-            "task_unveil_time": "08:00",
+            "task_unveil_time": "00:01",  # must be in the past regardless of wall-clock time, so
+            # the /me call below actually triggers _auto_assign_reserves (same pattern as
+            # test_reserves.py/test_proof.py/test_freeze.py)
             "task_freeze_time": "22:00",
             "timezone": "UTC",
         },

@@ -3,7 +3,7 @@
 from functools import wraps
 
 from flask import Blueprint, redirect, render_template_string, request, session, url_for
-from helpers import _audit, _hash_password, _real_ip, _tpl, _verify_password, db
+from helpers import _audit, _hash_password, _length_error, _real_ip, _tpl, _verify_password, db
 from rate_limit import is_rate_limited, record_failed_attempt, reset_attempts
 
 bp = Blueprint("auth", __name__)
@@ -187,10 +187,13 @@ def register():
         name = request.form["name"].strip()
         pw = request.form["password"]
         tz = request.form.get("timezone", "Europe/London")
+        length_err = _length_error([(username, 100, "Username"), (name, 200, "Name")])
         if not username or not name or not pw:
             err = "All fields are required."
         elif len(pw) < 6:
             err = "Password must be at least 6 characters."
+        elif length_err:
+            err = length_err
         else:
             c.execute("SELECT id FROM coach WHERE username=%s", (username,))
             if c.fetchone():

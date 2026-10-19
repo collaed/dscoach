@@ -26,7 +26,7 @@ next and why. Status mirrors the roadmap (🟢 done · 🟡 partial · 🔴 not 
 | H3 | ✅ **Done** — `_audit`/`_mood_sparkline`/photo-validation now print on failure; cascade (006) resolved by BUG-017's rewrite; `init_db` (015) was already non-silent on inspection | BUG-005/006/015, +022/023 found in the same pass |
 | H4 | ✅ **Done** — hardcoded email replaced with `SUPPORT_EMAIL` env var; link hidden when unset | BUG-007 |
 | H7 | ✅ **Done** — guarded `None` coach in login flow; also fixed error-message fallthrough bug found along the way | BUG-009 |
-| H5 | Input length validation on write paths | BUG-010 |
+| H5 | ✅ **Done** — shared length-validation helper wired into register + add_coachee (the two unvalidated account-creation paths) | BUG-010 |
 | R26 | Session timeout & auto-lock | roadmap R26 |
 | R42 | Protocol mode toggle (formal/relaxed) | roadmap R42 |
 | R47 | Unavailability protocol (pause miss-detection) | roadmap R47 |
