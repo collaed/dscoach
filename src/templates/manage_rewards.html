@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reward Catalog</title>
+<link rel="stylesheet" href="/static/style.css">
+</head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
+<nav><span class="title">DSCoaching</span><a href="/coach">&larr; Dashboard</a></nav>
+<div class="page">
+<h2>🎁 Reward Catalog</h2>
+{{ flash_block }}
+
+<div class="section" style="max-width:600px">
+<h3>Add a Reward</h3>
+<form method="post">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="create">
+<label>Title</label><input type="text" name="title" required maxlength="200">
+<label>Description (optional)</label><textarea name="description" maxlength="500"></textarea>
+<label>Point cost</label><input type="number" name="point_cost" min="1" value="10" required>
+<button type="submit">Add Reward</button>
+</form>
+</div>
+
+<div class="section">
+<h3>Catalog ({{ rewards|length }})</h3>
+{% for r in rewards %}
+<div class="entry">
+<strong>{{ r.title }}</strong> — {{ r.point_cost }} pts{% if not r.active %} <span class="badge" style="opacity:.6">inactive</span>{% endif %}
+{% if r.description %}<br><span class="muted small">{{ r.description }}</span>{% endif %}
+<form method="post" style="display:inline"><input type="hidden" name="action" value="toggle"><input type="hidden" name="reward_id" value="{{ r.id }}">{{ csrf_field() }}<button type="submit" class="small secondary" style="margin:0">{% if r.active %}Deactivate{% else %}Activate{% endif %}</button></form>
+</div>
+{% else %}<p class="muted">No rewards yet.</p>{% endfor %}
+</div>
+</div>
+</body></html>

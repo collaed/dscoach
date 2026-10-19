@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contract Sections</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.warn-adapt{background:var(--danger-subtle);color:var(--danger);border:1px solid var(--danger);border-radius:var(--radius-sm);padding:.4rem .6rem;font-size:.8rem;margin:.3rem 0}
+.sec-body{max-height:120px;overflow:auto;white-space:pre-wrap;font-size:.82rem;color:var(--muted);background:var(--input);padding:.5rem;border-radius:var(--radius-sm);margin:.4rem 0}
+</style></head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
+<nav><span class="title">DSCoaching</span><a href="/coach">&larr; Dashboard</a></nav>
+<div class="page">
+<h2>🧩 Contract Section Library</h2>
+{{ flash_block }}
+
+<div class="section" style="max-width:700px">
+<h3>Add Your Own Section</h3>
+<form method="post">
+    {{ csrf_field() }}
+<input type="hidden" name="action" value="create">
+<label>Title</label><input type="text" name="title" required maxlength="200">
+<label>Category</label>
+<select name="category">
+<option value="foundation">Foundation</option>
+<option value="roles">Roles</option>
+<option value="consent">Consent</option>
+<option value="time">Time</option>
+<option value="ritual">Ritual</option>
+<option value="service">Service</option>
+<option value="rewards">Rewards</option>
+<option value="physical">Physical</option>
+<option value="evaluation">Evaluation</option>
+<option value="dissolution">Dissolution</option>
+<option value="custom" selected>Custom</option>
+</select>
+<label>Body <span class="muted small">(supports {{ '{{coach_name}}, {{name}}, {{safe_word}}' }} and other merge vars)</span></label>
+<textarea name="body" rows="8" required></textarea>
+<button type="submit">Add Section</button>
+</form>
+</div>
+
+<div class="section">
+<h3>Library ({{ sections|length }})</h3>
+{% for s in sections %}
+<div class="entry">
+<strong>{{ s.title }}</strong>
+<span class="badge">{{ s.category }}</span>
+{% if s.coach_id %}<span class="badge">yours</span>{% else %}<span class="badge">system default</span>{% endif %}
+{% if s.reusability == 'adapt_heavily' %}
+<div class="warn-adapt">⚠ Drawn from a real personal example — read and rewrite before using, not drop-in boilerplate.</div>
+{% endif %}
+<div class="sec-body">{{ s.body }}</div>
+{% if not s.coach_id %}
+<form method="post" style="display:inline"><input type="hidden" name="action" value="clone"><input type="hidden" name="section_id" value="{{ s.id }}">{{ csrf_field() }}<button type="submit" class="small" style="margin:0">Clone to edit</button></form>
+{% else %}
+<form method="post" style="display:inline" onsubmit="return confirm('Delete this section?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="section_id" value="{{ s.id }}">{{ csrf_field() }}<button type="submit" class="small secondary" style="margin:0">Delete</button></form>
+{% endif %}
+</div>
+{% endfor %}
+</div>
+</div>
+</body></html>

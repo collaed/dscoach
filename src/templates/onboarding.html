@@ -2,7 +2,7 @@
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Onboarding Sequence</title>
 <link rel="stylesheet" href="/static/style.css">
-</head><body class="font-{{ font_pref }}">
+</head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
 <nav>
 <span class="title">DSCoaching</span>
 <a href="/coach">← Dashboard</a>
@@ -51,8 +51,7 @@
 {% if s.task_title %}<span class="badge info">📋 {{ s.task_title }}</span>{% endif %}
 {% if s.note_text %}<br><span style="font-size:0.82rem;color:var(--text-secondary);font-style:italic">💬 {{ s.note_text[:120] }}{% if s.note_text|length > 120 %}...{% endif %}</span>{% endif %}
 </div>
-<form method="post" style="margin:0"><input type="hidden" name="action" value="delete"><input type="hidden" name="step_id" value="{{ s.id }}"><button type="submit" class="small secondary" style="margin:0">✕</button></form>
-    {{ csrf_field() }}
+<form method="post" style="margin:0"><input type="hidden" name="action" value="delete"><input type="hidden" name="step_id" value="{{ s.id }}"><button type="submit" class="small secondary" style="margin:0">✕</button>{{ csrf_field() }}</form>
 </div>
 {% endfor %}
 </div>

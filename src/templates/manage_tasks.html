@@ -11,7 +11,7 @@
 .lib-item:hover{border-color:var(--accent)}
 .lib-item.selected{border-color:var(--accent);background:var(--input)}
 .lib-item .usage{color:var(--muted);font-size:.8rem}
-</style></head><body class="font-{{ font_pref }}">
+</style></head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
 <nav><span class="title">DSCoaching</span><a href="/coach">&larr; Dashboard</a></nav>
 <div class="page">
 <h2>Task Management</h2>
@@ -83,6 +83,13 @@
 <input type="checkbox" name="photo_validate" id="photo_validate" value="1">
 <label for="photo_validate" style="margin:0;color:var(--accent)">📷 AI photo validation</label>
 </div>
+<p class="muted small" style="margin:0 0 .2rem">📷 AI photo validation = <em>if</em> a photo is submitted, spend an AI call checking it. Proof demand chance below = the chance <em>this occurrence</em> demands a photo at all — distinct settings, use either or both.</p>
+<label for="proof_pct">Proof demand chance % <span class="muted small">(0 = never, 100 = always; recurring tasks work best well under 100%)</span></label>
+<input type="range" name="proof_pct" id="proof_pct" min="0" max="100" value="0" step="5"
+  oninput="document.getElementById('proof_pct_val').textContent=this.value+'%'">
+<span id="proof_pct_val" class="muted small">0%</span>
+<label for="points">Points <span class="muted small">(may be negative, for a task you're meant to avoid)</span></label>
+<input type="number" name="points" id="points" value="0" step="1">
 <label>Tags <span class="muted small">(comma-separated, e.g. morning,mindset,discipline)</span></label>
 <input type="text" name="tags" placeholder="morning, mindset, discipline">
 <div id="assign-section">
@@ -150,6 +157,8 @@
 {% if t.in_library %}<span class="tag library">lib</span>{% endif %}
 {% if t.auto_grade %}<span class="tag" style="background:var(--ok-subtle);color:var(--ok)">auto</span>{% endif %}
 {% if t.photo_validate %}<span class="tag" style="background:rgba(233,69,96,0.1);color:var(--accent)">📷 validate</span>{% endif %}
+{% if t.proof_pct %}<span class="tag" style="background:rgba(233,69,96,0.1);color:var(--accent)">📷 proof {{ t.proof_pct }}%</span>{% endif %}
+{% if t.points %}<span class="tag" style="background:{% if t.points > 0 %}var(--ok-subtle){% else %}rgba(239,68,68,0.1){% endif %};color:{% if t.points > 0 %}var(--ok){% else %}var(--danger){% endif %}">⭐ {{ '%+d'|format(t.points) }}</span>{% endif %}
 {% if t.tags %}{% for tag in t.tags.split(',') %}<span class="tag" style="background:rgba(59,130,246,0.1);color:#60a5fa">{{ tag.strip() }}</span> {% endfor %}{% endif %}
 {% if t.description %}<br><span class="muted">{{ t.description }}</span>{% endif %}
 <details style="margin-top:.3rem"><summary>Edit / Delete</summary>

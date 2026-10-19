@@ -2,7 +2,7 @@
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Contract History</title>
 <link rel="stylesheet" href="/static/style.css">
-</head><body class="font-{{ font_pref }}">
+</head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
 <nav><span class="title">DSCoaching</span><a href="/coach/coachee/{{ coachee.id if coachee else '' }}">&larr; Back</a></nav>
 <div class="page">
 <h2>Contract History — {{ coachee.name if coachee else 'Unknown' }}</h2>

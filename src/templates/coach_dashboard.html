@@ -17,7 +17,7 @@
 }
 .stat-pill .num { color: var(--text); font-weight: 700; }
 </style>
-</head><body class="font-{{ font_pref }}">
+</head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
 <nav>
 <span class="title">DSCoaching</span>
 <div class="menu-bar">
@@ -25,6 +25,8 @@
 <button onclick="toggleMenu(this)">📋 {{ t('nav.tasks') }}</button>
 <div class="menu-dropdown">
 <a href="/coach/tasks">📋 {{ t('nav.manage_tasks') }}</a>
+<a href="/coach/rewards">🎁 {{ t('nav.rewards') }}</a>
+<a href="/coach/contract-sections">🧩 {{ t('nav.contract_sections') }}</a>
 <a href="/coach/grading">📝 {{ t('nav.grade_submissions') }}{% if ungraded_total %}<span class="badge-count">{{ ungraded_total }}</span>{% endif %}</a>
 <a href="/coach/conditioning">🧠 {{ t('nav.conditioning') }}</a>
 <a href="/coach/rituals">🕯️ {{ t('nav.rituals') }}</a>
@@ -95,6 +97,7 @@
 <span class="badge {% if cc.avg_grade in ['A','B'] %}ok{% elif cc.avg_grade in ['C','D'] %}warn{% else %}danger{% endif %}">avg {{ cc.avg_grade }}</span>
 {% if cc.ungraded %}<span class="badge warn">{{ cc.ungraded }} ungraded</span>{% endif %}
 {% if cc.strikes %}<span class="badge danger">{{ cc.strikes }} strikes</span>{% endif %}
+{% if cc.rituals_missed %}<span class="badge warn">{{ cc.rituals_missed }} rituals missed (7d)</span>{% endif %}
 <span class="badge {% if cc.checkins_today > 0 %}ok{% else %}info{% endif %}">{{ cc.checkins_today }} check-ins</span>
 <span class="badge {% if cc.engagement >= 70 %}ok{% elif cc.engagement >= 40 %}warn{% else %}danger{% endif %}">{{ cc.engagement }}% engaged</span>
 {% if cc.days_inactive >= 3 %}<span class="badge danger">{{ cc.days_inactive }}d inactive</span>{% endif %}
@@ -116,10 +119,8 @@
 <button type="submit">✓</button>
 </form>
 <a href="/coach/coachee/{{ cc.id }}/summary" style="font-size:0.78rem;padding:0.3rem 0.55rem;border:1px solid var(--border-strong);border-radius:4px;color:var(--muted);display:inline-flex;align-items:center">📊</a>
-{% if cc.days_inactive >= 3 %}<form method="post" action="/coach/nudge/{{ cc.id }}"><button type="submit" class="small" style="margin:0;background:var(--warn)">👋 Nudge</button></form>{% endif %}
-    {{ csrf_field() }}
-{% if cc.payment.status not in ['none','green'] %}<form method="post" action="/coach/coachee/{{ cc.id }}/quick-pay"><button type="submit" class="small" style="margin:0;background:#10b981">💳 Confirm</button></form>{% endif %}
-    {{ csrf_field() }}
+{% if cc.days_inactive >= 3 %}<form method="post" action="/coach/nudge/{{ cc.id }}">{{ csrf_field() }}<button type="submit" class="small" style="margin:0;background:var(--warn)">👋 Nudge</button></form>{% endif %}
+{% if cc.payment.status not in ['none','green'] %}<form method="post" action="/coach/coachee/{{ cc.id }}/quick-pay">{{ csrf_field() }}<button type="submit" class="small" style="margin:0;background:#10b981">💳 Confirm</button></form>{% endif %}
 {% if cc.payment.status != 'none' %}<a href="/coach/coachee/{{ cc.id }}/payments" style="font-size:0.78rem;padding:0.3rem 0.55rem;border:1px solid var(--border-strong);border-radius:4px;color:var(--muted);display:inline-flex;align-items:center">💳</a>{% endif %}
 </div>
 </div>

@@ -6,7 +6,7 @@
 .preview{margin-top:1rem;padding:1rem;border-radius:var(--radius);text-align:center}
 .hint{color:var(--muted);font-size:.8rem}
 img.logo-preview{max-width:200px;max-height:80px;margin-top:.5rem;border-radius:var(--radius-sm)}
-</style></head><body class="font-{{ font_pref }}">
+</style></head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
 <nav><span class="title">DSCoaching</span><a href="/coach">&larr; Dashboard</a></nav>
 <div class="page">
 <div class="section" style="max-width:600px;margin:0 auto">
@@ -17,6 +17,7 @@ img.logo-preview{max-width:200px;max-height:80px;margin-top:.5rem;border-radius:
 <input type="file" accept="image/*" onchange="resizeLogo(this)" style="font-size:.85rem">
 <input type="hidden" name="logo_data" id="logo-data">
 {% if coach.has_logo %}<br><img src="/coach/logo" class="logo-preview">{% endif %}
+<button type="button" onclick="applyNoirPreset()" class="secondary" style="margin-bottom:.6rem">🖤 Noir (community dark) preset</button>
 <div class="row">
 <div>
 <label>Accent Color</label>
@@ -51,6 +52,13 @@ function updatePreview(){
 }
 document.querySelectorAll('input[type=color]').forEach(i=>i.addEventListener('input',updatePreview));
 updatePreview();
+function applyNoirPreset(){
+  // R50 - FetLife-inspired tokens, independently derived (devdocs/plan-aesthetic-noir.md)
+  document.getElementById('c-accent').value='#b3153a';
+  document.getElementById('c-bg').value='#1a1a1a';
+  document.getElementById('c-card').value='#242424';
+  updatePreview();
+}
 function resizeLogo(input){
   if(!input.files[0])return;
   const reader=new FileReader();

@@ -10,18 +10,26 @@ Business rules:
 - On reactivation, coach chooses: extend pending task deadlines or cancel them.
 """
 
-from helpers import db, utcnow
+from helpers import db
 
 
 def is_frozen(coachee_id: int) -> bool:
-    """Check if a coachee is in freeze state (paused or stopped)."""
+    """PURPOSE: Return True if the coachee's status is paused or stopped (in freeze state).
+    CALLED BY / SCREEN: coachee/coach route + background detection checks that gate task assignment
+    and penalties — affects /me dashboard and coach coachee views.
+    WHEN: whenever freeze state must be checked (task assignment, dashboard load, detection jobs)."""
     from repos.coachee_repo import get_status
+
     status = get_status(coachee_id)
     return status in ("paused", "stopped")
 
 
 def activate(coachee_id: int, initiated_by: str = "coachee", use_safeword: bool = False) -> str:
-    """Activate freeze for a coachee.
+    """PURPOSE: Set a coachee's status to paused (or stopped when safeword used) and audit it;
+    returns the new status.
+    CALLED BY / SCREEN: routes_coachee.py boundaries handler (POST /me safeword/pause) — coachee
+    Boundaries screen; also invokable by coach.
+    WHEN: on coachee triggering pause/safeword (form submit).
 
     Args:
         coachee_id: The coachee to freeze.
@@ -37,6 +45,7 @@ def activate(coachee_id: int, initiated_by: str = "coachee", use_safeword: bool 
 
     # Audit
     from helpers import _audit
+
     try:
         _audit(f"freeze_activated:{initiated_by}", coachee_id, initiated_by)
     except Exception:
@@ -46,7 +55,11 @@ def activate(coachee_id: int, initiated_by: str = "coachee", use_safeword: bool 
 
 
 def deactivate(coachee_id: int, pending_action: str = "extend") -> None:
-    """Reactivate a frozen coachee. Coach-only operation.
+    """PURPOSE: Reactivate a frozen coachee (status='active'), either extending pending task due
+    dates or cancelling them, and audit it. Coach-only.
+    CALLED BY / SCREEN: coach reactivation handler (POST on coach coachee-management screen);
+    freeze-service API. No live route caller found in src/ via grep (service entry point).
+    WHEN: on coach reactivating a paused/stopped coachee (form submit).
 
     Args:
         coachee_id: The coachee to reactivate.
@@ -74,6 +87,7 @@ def deactivate(coachee_id: int, pending_action: str = "extend") -> None:
 
     # Audit
     from helpers import _audit
+
     try:
         _audit(f"freeze_deactivated:pending={pending_action}", coachee_id, "coach")
     except Exception:
@@ -81,8 +95,12 @@ def deactivate(coachee_id: int, pending_action: str = "extend") -> None:
 
 
 def get_freeze_info(coachee_id: int) -> dict | None:
-    """Get freeze status info for a coachee. Returns None if not frozen."""
+    """PURPOSE: Return {status, coachee_id, name} for a frozen coachee, or None if active/missing.
+    CALLED BY / SCREEN: freeze-status display for coach coachee views / coachee Boundaries screen
+    (service accessor). No live route caller found in src/ via grep (service entry point).
+    WHEN: on rendering freeze/boundaries status for a coachee."""
     from repos.coachee_repo import get_by_id
+
     coachee = get_by_id(coachee_id)
     if not coachee:
         return None

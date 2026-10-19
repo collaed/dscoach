@@ -32,13 +32,15 @@ Coach override stored in task_assignment.photo_validation_override:
 import base64
 import json
 import random
-from datetime import datetime
 
 from helpers import db, utcnow
 
 
 def _get_coach_photo_settings(coach_id):
-    """Get photo validation settings for a coach."""
+    """PURPOSE: Read the coach's photo-validation settings from coach.features JSON; None if disabled.
+    CALLED BY / SCREEN: should_validate_photo() and validate_photo_proof() in this module — backs
+    coachee task-submission validation (/me tasks) driven by coach settings.
+    WHEN: on a coachee task submission with a photo, before deciding/running validation."""
     c = db()
     c.execute("SELECT features FROM coach WHERE id=%s", (coach_id,))
     row = c.fetchone()
@@ -52,7 +54,11 @@ def _get_coach_photo_settings(coach_id):
 
 
 def _get_coachee_validation_pct(coachee_id):
-    """Get the photo validation percentage for a coachee (0-100)."""
+    """PURPOSE: Return the coachee's photo-validation percentage (0-100) from coachee.features
+    (defaults 100).
+    CALLED BY / SCREEN: should_validate_photo() in this module — governs the /me task-submission
+    validation roll.
+    WHEN: on a coachee photo task submission, during the validation-decision roll."""
     c = db()
     c.execute("SELECT features FROM coachee WHERE id=%s", (coachee_id,))
     row = c.fetchone()
@@ -63,7 +69,11 @@ def _get_coachee_validation_pct(coachee_id):
 
 
 def should_validate_photo(coach_id, coachee_id, template_id):
-    """Decide whether to run AI validation on this submission.
+    """PURPOSE: Decide whether to run AI validation for this submission (coach enabled + template
+    photo_validate + random roll vs coachee percentage).
+    CALLED BY / SCREEN: routes_coachee.py task-submit handler (POST /me task submission) — coachee
+    tasks screen.
+    WHEN: on coachee submitting a photo-proof task (form submit).
 
     Returns True if:
     1. Coach has photo validation enabled
@@ -91,13 +101,11 @@ def should_validate_photo(coach_id, coachee_id, template_id):
 
 
 def validate_photo_proof(task_assignment_id, attachment_path, task_title, task_description, coach_id):
-    """Run AI validation on a photo proof submission.
-
-    Reads the image, sends to the configured LLM service with context about the task,
-    and stores the result in the task_assignment row.
-
-    Returns the validation result dict, or None if validation could not be performed.
-    """
+    """PURPOSE: Run AI validation on a submitted photo proof (read/encode image, call the configured
+    LLM service, store the result JSON on the task_assignment). Returns result dict or None.
+    CALLED BY / SCREEN: routes_coachee.py task-submit handler (POST /me task submission), after
+    should_validate_photo() passes — coachee tasks screen; result later shown on coach grading screen.
+    WHEN: on coachee photo-task submission when validation is triggered."""
     settings = _get_coach_photo_settings(coach_id)
     if not settings:
         return None
@@ -109,7 +117,7 @@ def validate_photo_proof(task_assignment_id, attachment_path, task_title, task_d
         with open(attachment_path, "rb") as f:
             img_data = f.read()
         img_b64 = base64.b64encode(img_data).decode()
-    except (FileNotFoundError, IOError):
+    except (OSError, FileNotFoundError):
         return None
 
     # Build prompt
@@ -136,9 +144,12 @@ def validate_photo_proof(task_assignment_id, attachment_path, task_title, task_d
 
 
 def _build_validation_prompt(task_title, task_description):
-    """Build the LLM prompt for photo validation."""
+    """PURPOSE: Build the LLM prompt (with strict JSON output spec) for photo-proof validation.
+    CALLED BY / SCREEN: validate_photo_proof() in this module — feeds the coachee task-submission
+    validation flow (/me tasks).
+    WHEN: during photo validation, on coachee task submission."""
     desc_part = f"\nTask description: {task_description}" if task_description else ""
-    return f"""You are a coaching assistant validating photo proof submissions. 
+    return f"""You are a coaching assistant validating photo proof submissions.
 A coachee submitted a photo as proof of completing a task.
 
 Task title: {task_title}{desc_part}
@@ -155,7 +166,11 @@ Be fair but vigilant. When uncertain, prefer "uncertain" over "rejected"."""
 
 
 def _validate_with_cloudflare(img_b64, prompt):
-    """Validate using Cloudflare Workers AI.
+    """PURPOSE: Perform a text-based (no native vision) validation via Cloudflare Workers AI and
+    parse a status/confidence/assessment JSON; falls back to "uncertain".
+    CALLED BY / SCREEN: validate_photo_proof() when service == cloudflare (default) — coachee
+    task-submission validation (/me tasks).
+    WHEN: during photo validation on coachee task submission when CF service is configured.
 
     Note: CF Workers AI llama models don't natively support vision.
     We describe what we expect and ask for a text-based assessment.
@@ -164,7 +179,10 @@ def _validate_with_cloudflare(img_b64, prompt):
     from ai import _cf_ai_complete
 
     # Since CF doesn't support vision, we do a simplified text-based check
-    simplified_prompt = prompt.replace("Analyze the photo and determine:", "Based on the task requirements, assess whether a photo submission is likely valid:")
+    simplified_prompt = prompt.replace(
+        "Analyze the photo and determine:",
+        "Based on the task requirements, assess whether a photo submission is likely valid:",
+    )
     simplified_prompt += "\n\nNote: You cannot see the actual image. Based on the task nature, provide a general assessment of what valid proof would look like and mark as 'uncertain' since visual verification is needed."
 
     response = _cf_ai_complete(simplified_prompt, max_tokens=300)
@@ -188,11 +206,19 @@ def _validate_with_cloudflare(img_b64, prompt):
         pass
 
     # Fallback: uncertain
-    return {"status": "uncertain", "confidence": 30, "assessment": "Could not perform visual analysis. Coach review recommended."}
+    return {
+        "status": "uncertain",
+        "confidence": 30,
+        "assessment": "Could not perform visual analysis. Coach review recommended.",
+    }
 
 
 def _validate_with_openai(img_b64, prompt, api_key):
-    """Validate using OpenAI Vision API (GPT-4o)."""
+    """PURPOSE: Validate the photo via OpenAI Vision (gpt-4o-mini), parsing a status/confidence/
+    assessment JSON; returns "uncertain" on missing key or error.
+    CALLED BY / SCREEN: validate_photo_proof() when the coach's service == openai — coachee
+    task-submission validation (/me tasks).
+    WHEN: during photo validation on coachee task submission when OpenAI service is configured."""
     if not api_key:
         return {"status": "uncertain", "confidence": 0, "assessment": "OpenAI API key not configured."}
 
@@ -200,19 +226,24 @@ def _validate_with_openai(img_b64, prompt, api_key):
     import urllib.request
 
     url = "https://api.openai.com/v1/chat/completions"
-    payload = json.dumps({
-        "model": "gpt-4o-mini",
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}", "detail": "low"}},
-                ],
-            }
-        ],
-        "max_tokens": 300,
-    }).encode()
+    payload = json.dumps(
+        {
+            "model": "gpt-4o-mini",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{img_b64}", "detail": "low"},
+                        },
+                    ],
+                }
+            ],
+            "max_tokens": 300,
+        }
+    ).encode()
 
     req = urllib.request.Request(
         url,
@@ -225,7 +256,7 @@ def _validate_with_openai(img_b64, prompt, api_key):
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 - fixed OpenAI API URL, not user input
             data = json.loads(resp.read().decode())
             content = data["choices"][0]["message"]["content"]
             # Parse JSON from response
@@ -247,7 +278,11 @@ def _validate_with_openai(img_b64, prompt, api_key):
 
 
 def get_validation_status(task_assignment_row):
-    """Get the effective validation status for display.
+    """PURPOSE: Resolve the effective photo-validation status for display, preferring a coach
+    override over the AI result (else None).
+    CALLED BY / SCREEN: display utility for the coach grade-submissions screen; not currently
+    referenced elsewhere in src/ (no live caller found via grep).
+    WHEN: intended for coach grading screen render, per submission with a photo proof.
 
     Priority: coach override > AI result > none
     Returns dict with keys: status, confidence, assessment, source, override

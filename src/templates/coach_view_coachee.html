@@ -27,7 +27,7 @@
 .grade-dot.E{background:#ef4444;color:#fff}.grade-dot.F{background:#991b1b;color:#fff}
 .last-resp{background:var(--input);border-radius:var(--radius-sm);padding:.5rem;font-size:.8rem;color:var(--text-secondary);margin-top:.4rem;white-space:pre-wrap;max-height:150px;overflow-y:auto;line-height:1.5}
 @media(max-width:900px){.two-col{grid-template-columns:1fr}.side-panel{position:static;order:-1}}
-</style></head><body class="font-{{ font_pref }}">
+</style></head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
 <div class="page">
 <p class="mb-1"><a href="/coach">← Dashboard</a></p>
 <h2>{{ coachee.avatar or '🐕' }} {{ coachee.name }} <span class="status {{ coachee.status }}">{{ coachee.status }}</span>{% if coachee.current_streak %} <span style="font-size:.9rem">🔥{{ coachee.current_streak }}</span>{% endif %}</h2>
@@ -36,6 +36,7 @@
 · <a href="/coach/coachee/{{ coachee.id }}/heatmap">📅 Heatmap</a>
 · <a href="/coach/coachee/{{ coachee.id }}/categories">📊 Categories</a>
 · <a href="/coach/coachee/{{ coachee.id }}/contracts">📜 Contract history</a>
+· <a href="/coach/coachee/{{ coachee.id }}/contract/draft">🧩 Draft contract</a>
 </p>
 <details style="margin-bottom:.8rem"><summary style="cursor:pointer;color:#888;font-size:.8rem">🔑 Reset password</summary>
 <form method="post" action="/coach/coachee/{{ coachee.id }}/reset-password" style="display:flex;gap:.3rem;margin-top:.3rem">
@@ -191,6 +192,109 @@
 </div>
 
 <div class="section">
+<h3>⭐ Score</h3>
+<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:.6rem">
+<div>Today: <strong>{{ score.today }}</strong></div>
+<div>This week: <strong>{{ score.this_week }}</strong></div>
+<div>This month: <strong>{{ score.this_month }}</strong></div>
+<div>Best week: <strong>{{ score.best_week }}</strong></div>
+<div>All-time: <strong>{{ score.all_time }}</strong></div>
+</div>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/week-start" style="margin-bottom:.6rem">
+    {{ csrf_field() }}
+<label style="font-size:.85rem">Week boundary:
+<select name="week_start" onchange="this.form.submit()">
+<option value="mon"{% if score.week_start == 'mon' %} selected{% endif %}>Mon–Sun</option>
+<option value="sun"{% if score.week_start == 'sun' %} selected{% endif %}>Sun–Sat</option>
+</select>
+</label>
+</form>
+{% if score_rows %}
+<details><summary class="muted small">Line-item history ({{ score_rows|length }})</summary>
+{% for s in score_rows %}
+<div class="entry" style="padding:.3rem 0">
+<span style="color:{% if s.points >= 0 %}var(--ok){% else %}var(--danger){% endif %}">{{ '%+d'|format(s.points) }}</span>
+{{ s.reason }}{% if s.note %} — {{ s.note }}{% endif %}
+<span class="time">{{ s.score_date }}</span>
+</div>
+{% endfor %}
+</details>
+{% endif %}
+</div>
+
+<div class="section">
+<h3>⚜ Protocol</h3>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/protocol-mode" style="margin-bottom:.6rem">
+    {{ csrf_field() }}
+<label style="font-size:.85rem">Mode:
+<select name="mode" onchange="this.form.submit()">
+<option value="relaxed"{% if coachee.protocol_mode != 'formal' %} selected{% endif %}>Relaxed</option>
+<option value="formal"{% if coachee.protocol_mode == 'formal' %} selected{% endif %}>Formal</option>
+</select>
+</label>
+</form>
+{% if protocol_mode_history %}
+<details><summary class="muted small">Mode history ({{ protocol_mode_history|length }})</summary>
+{% for h in protocol_mode_history %}
+<div class="entry" style="padding:.3rem 0">{{ h.mode }} <span class="time">{{ h.created_at }}</span></div>
+{% endfor %}
+</details>
+{% endif %}
+</div>
+
+<div class="section">
+<h3>🌙 Availability</h3>
+{% if unavailable %}
+<p><strong>Currently unavailable</strong>{% if coachee.unavailable_until %} until {{ coachee.unavailable_until }}{% endif %}{% if coachee.unavailable_note %} — {{ coachee.unavailable_note }}{% endif %}. Tasks are paused, nothing is being marked missed.</p>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/available">{{ csrf_field() }}<button type="submit" class="secondary" style="margin:0">End unavailability</button></form>
+{% else %}
+<details><summary class="muted small">Declare unavailable on their behalf</summary>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/unavailable" style="margin-top:.6rem">
+{{ csrf_field() }}
+<label>Expected return date (optional)</label><input type="date" name="until">
+<label>Note (optional)</label><input type="text" name="note" maxlength="300">
+<button type="submit">Mark unavailable</button>
+</form>
+</details>
+{% endif %}
+</div>
+
+<div class="section">
+<h3>📥 Check-in Mode</h3>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/checkin-mode">
+    {{ csrf_field() }}
+<label style="font-size:.85rem">Enforcement:
+<select name="mode" onchange="this.form.submit()">
+<option value="optional"{% if coachee.checkin_mode != 'rewarded' and coachee.checkin_mode != 'required' %} selected{% endif %}>Optional</option>
+<option value="rewarded"{% if coachee.checkin_mode == 'rewarded' %} selected{% endif %}>Rewarded (earns points)</option>
+<option value="required"{% if coachee.checkin_mode == 'required' %} selected{% endif %}>Required (strike + penalty if missed)</option>
+</select>
+</label>
+</form>
+</div>
+
+<div class="section">
+<h3>🎁 Rewards</h3>
+{% set pending = redemptions|selectattr('status','equalto','pending')|list %}
+{% if pending %}
+{% for r in pending %}
+<div class="entry">
+<strong>{{ r.title }}</strong> — {{ r.point_cost }} pts <span class="badge pending">pending</span>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/reward-redemption/{{ r.id }}/approve" style="display:inline">{{ csrf_field() }}<button type="submit" class="small" style="margin:0">Approve</button></form>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/reward-redemption/{{ r.id }}/deny" style="display:inline">{{ csrf_field() }}<button type="submit" class="small secondary" style="margin:0">Deny</button></form>
+</div>
+{% endfor %}
+{% else %}<p class="muted small">No pending requests.</p>{% endif %}
+{% if redemptions %}
+<details><summary class="muted small">History ({{ redemptions|length }})</summary>
+{% for r in redemptions %}
+<div class="entry" style="padding:.3rem 0">{{ r.title }} — {{ r.point_cost }} pts <span class="badge {{ r.status }}">{{ r.status }}</span> <span class="time">{{ r.requested_at }}</span></div>
+{% endfor %}
+</details>
+{% endif %}
+</div>
+
+<div class="section">
 <h3>📋 Recent Tasks</h3>
 {% for t in tasks %}
 <div class="entry">
@@ -207,6 +311,13 @@
 <select name="grade" style="width:60px"><option value="">—</option>{% for g in ['A','B','C','D','E','F'] %}<option{% if t.grade==g %} selected{% endif %}>{{ g }}</option>{% endfor %}</select>
 <input type="text" name="coach_comment" placeholder="Comment..." value="{{ t.coach_comment or '' }}" style="flex:1">
 <button type="submit" style="margin:0">Save</button>
+</form>
+{% elif t.status == 'missed' %}
+<form method="post" action="/coach/task/{{ t.id }}/excuse" style="margin-top:.3rem">
+    {{ csrf_field() }}
+<input type="hidden" name="coachee_id" value="{{ coachee.id }}">
+<button type="submit" class="secondary" style="margin:0">Excuse this miss</button>
+<span class="muted small">Reverses the score penalty too.</span>
 </form>
 {% endif %}
 <div class="time">{{ t.created_at }}</div>
@@ -260,11 +371,10 @@
 <h3>💬 Notes</h3>
 {% for n in notes %}
 <div class="entry">
-<span class="type">{{ n.author_role }}</span>{% if n.pinned %} 📌{% endif %}{% if n.scheduled_at and not n.read_at %} ⏰{% endif %} {{ n.content }}
+<span class="type">{{ n.author_role }}</span>{% if n.tagged_mode == 'formal' %} <span title="Submitted under formal protocol" style="font-size:.7rem;color:var(--accent)">⚜ formal</span>{% endif %}{% if n.pinned %} 📌{% endif %}{% if n.scheduled_at and not n.read_at %} ⏰{% endif %} {{ n.content }}
 <div class="time">{{ n.created_at }}
 {% if n.author_role=='coach' %}{% if n.read_at %}<span style="color:#2d6a4f"> ✓ read {{ n.read_at }}</span>{% else %}<span style="color:#888"> · unread</span>{% endif %}{% endif %}
-<form method="post" action="/coach/note/{{ n.id }}/pin" style="display:inline"><button type="submit" style="background:none;border:none;color:#888;cursor:pointer;font-size:.75rem;padding:0;margin:0">{% if n.pinned %}unpin{% else %}📌 pin{% endif %}</button></form>
-    {{ csrf_field() }}
+<form method="post" action="/coach/note/{{ n.id }}/pin" style="display:inline"><button type="submit" style="background:none;border:none;color:#888;cursor:pointer;font-size:.75rem;padding:0;margin:0">{% if n.pinned %}unpin{% else %}📌 pin{% endif %}</button>{{ csrf_field() }}</form>
 </div>
 </div>
 {% else %}<p style="color:#888">No notes yet.</p>{% endfor %}
@@ -365,7 +475,6 @@ unveil.addEventListener('change',update);
 freeze.addEventListener('change',update);
 update();setInterval(update,60000);
 
-const LKEY={{ llm_key|tojson }};
 const CID={{ coachee.id }};
 async function genProfile(){
   const btn=document.getElementById('gen-btn');
@@ -407,13 +516,10 @@ async function genConditioning(){
   btn.disabled=false;btn.textContent='🔄 Generate Today\'s Prompt';
 }
 
-const TG_TOKEN={{ tg_token|tojson }};
-const TG_CHAT={{ (coachee.telegram_chat_id or '')|tojson }};
 function tgSend(msg){
-  if(!TG_TOKEN||!TG_CHAT)return;
-  fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`,{
+  fetch(`/coach/coachee/${CID}/telegram-notify`,{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({chat_id:TG_CHAT,text:msg,parse_mode:'HTML'})
+    body:JSON.stringify({message:msg})
   }).catch(()=>{});
 }
 // hook into review forms

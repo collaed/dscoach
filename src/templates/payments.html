@@ -10,7 +10,7 @@
 .pay-status.red{background:rgba(239,68,68,0.15);color:#ef4444}
 .pay-status.none{background:rgba(107,107,128,0.15);color:#6b6b80}
 </style>
-</head><body class="font-{{ font_pref }}">
+</head><body class="font-{{ font_pref }} theme-{{ theme_pref }}">
 <nav>
 <span class="title">DSCoaching</span>
 <a href="/coach/coachee/{{ coachee.id }}">← {{ coachee.name }}</a>
@@ -62,8 +62,7 @@
 <div style="display:flex;gap:.5rem;margin-top:.5rem">
 <button type="submit">Save Plan</button>
 {% if plan and plan.active %}
-<form method="post" style="margin:0"><input type="hidden" name="action" value="deactivate_plan"><button type="submit" class="secondary" style="margin:0">Deactivate Plan</button></form>
-    {{ csrf_field() }}
+<form method="post" style="margin:0"><input type="hidden" name="action" value="deactivate_plan"><button type="submit" class="secondary" style="margin:0">Deactivate Plan</button>{{ csrf_field() }}</form>
 {% endif %}
 </div>
 </form>
