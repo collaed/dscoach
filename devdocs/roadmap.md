@@ -125,7 +125,7 @@
 | # | Feature | Status | Description | Depends on |
 |---|---------|--------|-------------|------------|
 | R25 | Discreet app name & branding | 🔴 | Coach can configure a neutral display name for the app (shown in browser tab, PWA name). Default: "DSCoaching". Options: "Daily Planner", "Wellness Tracker", custom text. Stored per-coach in branding settings. | Existing `coach_branding` |
-| R26 | Session timeout & auto-lock | 🔴 | Configurable session timeout (default: 30 min idle). On timeout, redirect to login. No sensitive data cached in browser. Add `Strict-Transport-Security` and `Clear-Site-Data` headers on logout. | Existing session system |
+| R26 | Session timeout & auto-lock | 🟢 | ✅ **Done** — `before_request` hook idle-timeouts a session (sliding window, default 30 min via `SESSION_TIMEOUT_MINUTES`), clearing it and redirecting to login. `after_request` sets `Strict-Transport-Security` on every response and `Cache-Control: no-store` on non-static ones. `logout()` sends `Clear-Site-Data`. | Existing session system |
 
 ### Priority 10 — Training Progression & Structure
 

@@ -2,10 +2,13 @@
 
 import os
 import secrets
+import time
 
 from database import init_db
-from flask import Flask, render_template_string
+from flask import Flask, redirect, render_template_string, request, session, url_for
 from helpers import TEMPLATES_DIR, close_db, inject_helpers
+
+SESSION_TIMEOUT_SECONDS = int(os.environ.get("SESSION_TIMEOUT_MINUTES", "30")) * 60
 
 
 def create_app():
@@ -25,6 +28,31 @@ def create_app():
 
     application.teardown_appcontext(close_db)
     application.context_processor(inject_helpers)
+
+    @application.before_request
+    def _enforce_session_timeout():
+        """R26: idle-timeout a logged-in session (sliding window, refreshed on every request).
+
+        PURPOSE: Auto-lock a coach/coachee session after SESSION_TIMEOUT_MINUTES of inactivity.
+        CALLED BY: Flask before_request — runs ahead of every route on every screen.
+        WHEN: On every request; no-ops for anonymous requests (no "user_id" in session)."""
+        if "user_id" in session and not request.path.startswith("/static/"):
+            last = session.get("last_activity")
+            now = time.time()
+            if last and now - last > SESSION_TIMEOUT_SECONDS:
+                session.clear()
+                return redirect(url_for("auth.login"))
+            session["last_activity"] = now
+        return None
+
+    @application.after_request
+    def _security_headers(response):
+        """R26: HSTS on every response; no-store on non-static responses so authenticated
+        pages aren't cached by the browser."""
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        if not request.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-store"
+        return response
 
     # CSRF protection
     from csrf import init_csrf

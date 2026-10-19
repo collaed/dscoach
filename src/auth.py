@@ -149,7 +149,9 @@ def logout():
     CALLED BY: Route GET /logout — logout link/button in coach, coachee and admin navigation templates.
     WHEN: On clicking logout."""
     session.clear()
-    return redirect(url_for("auth.login"))
+    resp = redirect(url_for("auth.login"))
+    resp.headers["Clear-Site-Data"] = '"cache","cookies","storage"'  # R26: no sensitive data left cached
+    return resp
 
 
 @bp.route("/setup", methods=["GET", "POST"])
