@@ -207,6 +207,15 @@ declaration is active), `unavailable_until` (Date, nullable - NULL means indefin
 
 Migration: Alembic `007_r47_unavailability` (`batch_alter_table` for SQLite).
 
+**`coachee`** (new column, R40): `checkin_mode` String(20), default `'optional'` —
+`'optional' | 'rewarded' | 'required'`. Bonus/penalty amounts are configurable via the existing
+`coach.features` JSON column (`checkin_bonus`, `checkin_miss_penalty` keys), same storage pattern
+as `proof_bonus`/`week_start` — no new columns needed for those. `score_log` gains two more
+`reason` values: `'checkin'` (rewarded bonus, one row per check-in submission) and
+`'checkin_missed'` (required-mode penalty, at most one row per coachee per missed calendar day).
+
+Migration: Alembic `008_r40_checkin_mode` (`batch_alter_table` for SQLite).
+
 ## Cascade Delete Order
 
 > ⚠️ **BUG-017 / H1 (open):** the cascade below does **not** include the 11

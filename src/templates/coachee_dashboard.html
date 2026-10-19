@@ -243,7 +243,8 @@ Tasks are paused and nothing will be marked missed while this is active.
 <div class="panel" id="tab-morning">
 <div class="section">
 <h3>Morning Check-In</h3>
-<p style="color:var(--muted);font-size:0.84rem;margin-bottom:1rem">To be completed within 2 hours of starting your day.</p>
+<p style="color:var(--muted);font-size:0.84rem;margin-bottom:1rem">To be completed within 2 hours of starting your day.
+{% if coachee.checkin_mode == 'rewarded' %}<span style="color:var(--accent)">⭐ Check-ins earn points.</span>{% elif coachee.checkin_mode == 'required' %}<span style="color:var(--danger)">⚠ Daily check-in required.</span>{% endif %}</p>
 {% for ci in today_checkins if ci.checkin_type == 'morning' %}
 <div class="checkin-done">
 <span>✓</span> Submitted at {{ ci.created_at }}

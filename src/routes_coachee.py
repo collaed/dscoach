@@ -22,6 +22,7 @@ from helpers import ATTACHMENTS_DIR, _tpl, db, ensure_aware, utcnow
 from merge import _merge_vars
 from tasks import (
     _auto_assign_reserves,
+    _check_required_checkin,
     _features_for,
     _freeze_overdue,
     _is_unavailable,
@@ -66,6 +67,7 @@ def coachee_dashboard():
 
     if not unavailable:
         _freeze_overdue(cid, tz)
+        _check_required_checkin(cid, coachee["coach_id"], tz)
     _update_streak(cid, tz)
     _check_and_award_badges(cid)
 
@@ -218,6 +220,14 @@ def submit_checkin():
         )
     flash("Check-in submitted.", "success")
     _run_auto_rules(session["user_id"], "checkin_submitted")
+    c.execute("SELECT checkin_mode, coach_id FROM coachee WHERE id=%s", (session["user_id"],))
+    mode_row = c.fetchone()
+    if mode_row and mode_row.get("checkin_mode") == "rewarded":
+        from scoring import award_points, get_checkin_bonus
+
+        bonus = get_checkin_bonus(mode_row["coach_id"])
+        if bonus:
+            award_points(session["user_id"], bonus, "checkin")
     return redirect(url_for("coachee.coachee_dashboard"))
 
 

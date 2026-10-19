@@ -259,6 +259,20 @@
 </div>
 
 <div class="section">
+<h3>📥 Check-in Mode</h3>
+<form method="post" action="/coach/coachee/{{ coachee.id }}/checkin-mode">
+    {{ csrf_field() }}
+<label style="font-size:.85rem">Enforcement:
+<select name="mode" onchange="this.form.submit()">
+<option value="optional"{% if coachee.checkin_mode != 'rewarded' and coachee.checkin_mode != 'required' %} selected{% endif %}>Optional</option>
+<option value="rewarded"{% if coachee.checkin_mode == 'rewarded' %} selected{% endif %}>Rewarded (earns points)</option>
+<option value="required"{% if coachee.checkin_mode == 'required' %} selected{% endif %}>Required (strike + penalty if missed)</option>
+</select>
+</label>
+</form>
+</div>
+
+<div class="section">
 <h3>📋 Recent Tasks</h3>
 {% for t in tasks %}
 <div class="entry">

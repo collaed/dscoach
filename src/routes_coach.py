@@ -960,6 +960,28 @@ def coach_declare_available(cid):
     return redirect(url_for("coach.coach_view_coachee", cid=cid))
 
 
+@bp.route("/coach/coachee/<int:cid>/checkin-mode", methods=["POST"])
+@login_required("coach")
+def set_checkin_mode(cid):
+    """R40: set the per-coachee check-in enforcement level.
+
+    Route POST /coach/coachee/<cid>/checkin-mode — no screen; redirects to the coachee
+    detail screen. 'optional': no consequence for skipping. 'rewarded': each check-in
+    earns configurable points (coach.features.checkin_bonus). 'required': a calendar
+    day with zero check-ins costs a strike + configurable penalty, once per missed day.
+    When: on the check-in mode toggle in coach_view_coachee.html.
+    """
+    c = db()
+    c.execute("SELECT id FROM coachee WHERE id=%s AND coach_id=%s", (cid, session["user_id"]))
+    if not c.fetchone():
+        abort(404)
+    mode = request.form.get("mode")
+    if mode not in ("optional", "rewarded", "required"):
+        mode = "optional"
+    c.execute("UPDATE coachee SET checkin_mode=%s WHERE id=%s", (mode, cid))
+    return redirect(url_for("coach.coach_view_coachee", cid=cid))
+
+
 @bp.route("/coach/task/<int:tid>/excuse", methods=["POST"])
 @login_required("coach")
 def excuse_task(tid):

@@ -249,6 +249,45 @@ def _freeze_overdue(coachee_id, tz):
         _run_auto_rules(coachee_id, "task_missed")
 
 
+def _check_required_checkin(coachee_id, coach_id, tz):
+    """R40: under 'required' checkin_mode, penalize a coachee once for a calendar day
+    with zero check-ins, after that day has fully ended.
+
+    Called by: routes_coachee.py::coachee_dashboard(), right after _freeze_overdue()
+    (skipped during R47 unavailability, same as task freezing). Checks *yesterday*
+    (not today, which isn't over yet) and is idempotent via a score_log lookup, since
+    NULL task_assignment_id rows don't collide under award_points()'s own idempotency key.
+    """
+    c = db()
+    c.execute("SELECT checkin_mode FROM coachee WHERE id=%s", (coachee_id,))
+    row = c.fetchone()
+    if not row or row.get("checkin_mode") != "required":
+        return
+    yesterday = (datetime.now(tz).date() - timedelta(days=1)).isoformat()
+    c.execute(
+        "SELECT COUNT(*) as cnt FROM checkin WHERE coachee_id=%s AND DATE(created_at)=%s", (coachee_id, yesterday)
+    )
+    if c.fetchone()["cnt"] > 0:
+        return
+    c.execute(
+        "SELECT 1 FROM score_log WHERE coachee_id=%s AND reason='checkin_missed' AND score_date=%s",
+        (coachee_id, yesterday),
+    )
+    if c.fetchone():
+        return
+    from scoring import get_checkin_miss_penalty
+
+    penalty = get_checkin_miss_penalty(coach_id)
+    c.execute("UPDATE coachee SET strikes=strikes+1 WHERE id=%s", (coachee_id,))
+    # Insert directly rather than via award_points(): that helper no-ops on points=0,
+    # but this row is also the once-per-day idempotency marker above, so it must be
+    # written even when the coach hasn't configured a miss penalty (the default).
+    c.execute(
+        "INSERT INTO score_log (coachee_id, points, reason, score_date, note) VALUES (%s,%s,%s,%s,%s)",
+        (coachee_id, -penalty, "checkin_missed", yesterday, f"missed required check-in on {yesterday}"),
+    )
+
+
 def _update_streak(coachee_id, tz):
     """Update streak if all tasks for yesterday were completed on time.
 

@@ -92,6 +92,38 @@ def get_proof_bonus(coach_id) -> int:
         return 0
 
 
+def get_checkin_bonus(coach_id) -> int:
+    """R40: configurable points awarded for a check-in under 'rewarded' checkin_mode,
+    read from coach.features (same storage pattern as proof_bonus) - default 0 if unset.
+
+    Called by: routes_coachee.py::submit_checkin.
+    """
+    c = db()
+    c.execute("SELECT features FROM coach WHERE id=%s", (coach_id,))
+    row = c.fetchone()
+    features = _parse_features(row and row.get("features"))
+    try:
+        return int(features.get("checkin_bonus", 0) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def get_checkin_miss_penalty(coach_id) -> int:
+    """R40: configurable points deducted for missing a day's check-in under 'required'
+    checkin_mode, read from coach.features - default 0 (no penalty) if unset.
+
+    Called by: tasks.py::_check_required_checkin.
+    """
+    c = db()
+    c.execute("SELECT features FROM coach WHERE id=%s", (coach_id,))
+    row = c.fetchone()
+    features = _parse_features(row and row.get("features"))
+    try:
+        return int(features.get("checkin_miss_penalty", 0) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def _parse_features(raw):
     if isinstance(raw, dict):
         return raw

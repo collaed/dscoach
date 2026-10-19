@@ -79,6 +79,7 @@ coachee = Table(
     Column("unavailable_since", DateTime),  # R47: set when a declaration is active, else NULL
     Column("unavailable_until", Date),  # R47: expected return date; NULL = indefinite
     Column("unavailable_note", String(300)),  # R47
+    Column("checkin_mode", String(20), server_default="optional"),  # R40: 'optional'|'rewarded'|'required'
     Column("created_at", DateTime, server_default=func.now()),
 )
 
@@ -142,7 +143,9 @@ score_log = Table(
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("coachee_id", Integer, ForeignKey("coachee.id"), nullable=False),
     Column("points", SmallInteger, nullable=False),
-    Column("reason", String(40), nullable=False),  # task_completed | task_missed | miss_reversed | proof_bonus | manual
+    Column(
+        "reason", String(40), nullable=False
+    ),  # task_completed | task_missed | miss_reversed | proof_bonus | manual | checkin | checkin_missed
     Column("task_assignment_id", Integer, ForeignKey("task_assignment.id"), nullable=True),
     Column("score_date", Date, nullable=False),  # coachee-local date, not server UTC (REQ-49.4)
     Column("note", String(200)),
